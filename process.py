@@ -163,12 +163,14 @@ class TextAugment:
   max_stoword_len_zh = max([len(a) for a in stopwords_ac_dc.get('zh')])
   max_stoword_len_ko = max([len(a) for a in stopwords_ac_dc.get('ko')])
   max_stoword_len_ja = max([len(a) for a in stopwords_ac_dc.get('ja')])
-
+  qg = None
+    
   def __init__(self):
     TextAugment.labse = labse 
     TextAugment.ontology_manager = ontology_manager
     TextAugment.translation_pipelines = translation_pipelines
     TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
+    TextAugment.qg = qg
     if False: # use the below for production usage. the above is for testing. 
       if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
       if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().cuda()
@@ -247,6 +249,109 @@ class TextAugment:
         return True
     return lang == src_lang
 
+def generate_questions(self, batch, default_answers=[]):
+    answers = {}
+
+    i= 0
+    allqa = []
+    for chunk in batch:
+      text = chunk['text']
+      answers1={}
+      #ti = time.time()
+      text = text.replace("U.S.","US").replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" He ", " Lincoln ").replace(" he ", " Lincoln ").replace(" him ", " Lincoln ").replace(" , ", ", ")
+      aHash = nlp(text) # , default_answers=default_answers)
+      allqa.append(aHash)
+      default_answers = list(set([a['answer'] for a in aHash]+default_answers))
+      print (aHash)
+      #for aHash1 in aHash:
+      #  extraction = vis.parse(list(dep_parser(aHash1['question']).sents)[0], aHash1['answer'])
+      #  print (extraction.arg1, '*', extraction.rel, '*', extraction.arg2)
+
+      for aHash1 in aHash:
+        if answers.get(aHash1['answer'].lower()) or answers1.get(aHash1['answer'].lower()):
+          continue
+        if len(aHash1['answer'].split()) > 10:
+          aHash1['answer'] = " ".join(aHash1['answer'].split()[:10])
+        i+=1
+        quest=aHash1['question'].lower().strip("?").replace("'s",  " 's").replace("  ", " ").split()
+        label=""
+        if quest[0] == "who" and aHash1['answer'][-1] =='s':
+          label="organization_"+str(i)
+          if "'s" in quest:
+            for j in range(len(quest)):
+              if j > 0 and quest[j-1]=="'s":
+                label = quest[j]+"_"+str(i)
+                break
+          for a in aHash1['answer'].lower().split():
+            if a not in stopwords_hash:
+              answers[a] = label
+        elif quest[0] == "who":
+          label="person_"+str(i)
+          if "'s" in quest:
+            for j in range(len(quest)):
+              if j > 0 and quest[j-1]=="'s":
+                label = quest[j]+"_"+str(i)
+                break
+          for a in aHash1['answer'].lower().split():
+            if a not in stopwords_hash:
+              answers[a] = label
+        elif quest[0] == "where":
+          label="location_"+str(i)
+        elif quest[0] == "when":
+          label="date_or_time_"+str(i)
+        elif quest[0] == "why":
+          label="reason_"+str(i)
+        elif quest[0] == "how" and quest[1] in ("much", "many"):
+          label="quantity_"+str(i)
+        elif quest[0] == "how":
+          label="method_"+str(i)
+        elif quest[0] in ("which", "what") and quest[1] not in stopwords_hash:
+          label=quest[1]+"_"+str(i)
+        elif "'s" in quest:
+          for j in range(len(quest)):
+            if j > 0 and quest[j-1]=="'s":
+              label = quest[j]+"_"+str(i)
+              break
+        if label:
+          answers[aHash1['answer'].lower()] = label
+
+
+        #for b in a['answer'].lower().split():
+        #  answers[b] = label
+      print (answers)
+
+    for aHash in allqa:
+      answers1={}
+      for aHash1 in aHash:
+        if answers1.get(aHash1['answer'].lower()):
+          continue
+        quest = " "+aHash1['question'].lower().strip("?").replace("'s",  " 's").replace("  ", " ")+" "
+        q_type =  quest[0]
+        agent = []
+        answer_keys = list(answers.keys())
+        answer_keys.sort(key=lambda k: len(k), reverse=True)
+        for a in answer_keys:
+          if " "+a+" " in quest:
+              quest = quest.replace(" "+a+" ", " "+answers[a]+" ")
+          elif " "+a+", " in quest:
+              quest = quest.replace(" "+a+", ", " "+answers[a]+", ")
+        quest = quest.split()
+        #print (quest)
+        qtype = []
+        if answers.get(aHash1['answer'].lower()):
+          if answers.get(aHash1['answer'].lower()).split("_")[0] == "person":
+            qtype = ["is", "who"]
+        if not qtype and quest[0] in ("when", "where", "why", "how"): #, "which"
+          qtype=[quest[0]]
+          if quest[0]=="how" and quest[1] in ("much", "many"):
+            qtype = qtype + [quest[1]]
+
+        #label=[q for q in quest if (q not in ("much", "many",) and not stopwords_hash.get(q) and q not in answers)]#+qtype
+        label=[q for q in quest if (q[0] not in "0123456789") and (q not in ("the", "a", "an"))]
+        if len(label) > 10:
+            label=label[:10]
+        answers1[aHash1['answer'].lower()] = " ".join(label)
+      print (answers1)
 
   @staticmethod
   def get_aligned_text(sent1, sent2, src_lang):
