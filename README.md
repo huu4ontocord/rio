@@ -2,6 +2,7 @@ Muliwai text data processing
 ```
 pip install spacy==3.2
 git clone https://github.com/bigscience-workshop/data_tooling
+git clone https://github.com/patil-suraj/question_generation
 pip install cdifflib transformers datasets langid faker nltk sentencepiece fsspec tqdm sentence-transformers
 python -m nltk.downloader punkt stopwords  wordnet
 python -m spacy download en_core_web_sm
