@@ -39,12 +39,10 @@ import spacy
 from sentence_transformers import SentenceTransformer
 from data_tooling.pii_processing.ontology.ontology_manager import OntologyManager
  
-import qg_pipelines
+import qg_pipeline
 from transformers import pipeline, AutoModelForSeq2SeqLM, AutoTokenizer
 labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().cuda()
-model = AutoModelForSeq2SeqLM.from_pretrained("valhalla/t5-small-qa-qg-hl").half().cuda()
-tokenizer = AutoTokenizer.from_pretrained("t5-small")
-nlp = qg_pipelines.pipeline("multitask-qa-qg")
+qg = qg_pipeline.pipeline("multitask-qa-qg")
 
 ontology_manager = None#OntologyManager(target_lang='en') #target_lang=target_lang
 translation_pipelines = {}
