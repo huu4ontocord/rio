@@ -275,6 +275,7 @@ class TextAugment:
         i+=1
         quest=aHash1['question'].lower().strip("?").replace("'s",  " 's").replace("  ", " ").split()
         label=""
+        #TODO, use spacy_en to get NER and only fall back to "who", "when", "where" to determine ner if we find nothing
         if quest[0] == "who" and aHash1['answer'][-1] =='s':
           label="organization_"+str(i)
           if "'s" in quest:
