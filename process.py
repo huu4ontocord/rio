@@ -249,7 +249,7 @@ class TextAugment:
         return True
     return lang == src_lang
 
-def generate_questions(self, batch, default_answers=[]):
+  def generate_questions(self, batch, default_answers=[]):
     answers = {}
 
     i= 0
@@ -258,8 +258,8 @@ def generate_questions(self, batch, default_answers=[]):
       text = chunk['text']
       answers1={}
       #ti = time.time()
-      text = text.replace("U.S.","US").replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" He ", " Lincoln ").replace(" he ", " Lincoln ").replace(" him ", " Lincoln ").replace(" , ", ", ")
-      aHash = nlp(text) # , default_answers=default_answers)
+      text = text.replace("U.S.","US").replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" , ", ", ") # replace(" He ", " Lincoln ").replace(" he ", " Lincoln ").replace(" him ", " Lincoln ")
+      aHash = self.qg(text) # , default_answers=default_answers)
       allqa.append(aHash)
       default_answers = list(set([a['answer'] for a in aHash]+default_answers))
       print (aHash)
