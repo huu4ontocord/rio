@@ -1233,7 +1233,8 @@ class TextAugment:
             do_docs_trim = len(docs2) == len(docs)
         docs, chunks = docs2, chunks2
 
-        if target_lang != src_lang:
+        if do_backtrans:
+            logging.info(f"Doing backtrans with src_lang={src_lang} to target_lang={target_lang}")
             # do ner processing in target language with optional backtrans
             docs2, chunks2 = self.process_ner_chunks_with_trans(
                 src_lang,
