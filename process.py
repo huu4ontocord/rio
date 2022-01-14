@@ -1184,6 +1184,7 @@ class TextAugment:
             d = load_dataset("TurkuNLP/register_mc4", data_files=f"{src_lang}/{src_lang}_00000*")
             docs = [doc for doc in d['train'] if 'labels' not in doc or doc['labels'] !=[]]
           except:
+            domain = 'oscar'
             url = _get_oscar_urls(src_lang)[0]
             _download_urls([url])
             docs = [{'text':text}  for text in [try_decode(t) for t in gzip.open(url.split("/")[-1], "rb").readlines()] if text]
