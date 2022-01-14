@@ -5,3 +5,5 @@ from .LogingHandler import LoggingHandler
 from .mariam_mt import mariam_mt
 from .regex_rules import rulebase
 from .CharManager import CharManager
+from .badwords import badwords
+from .stopwords import stopwords

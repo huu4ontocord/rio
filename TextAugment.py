@@ -28,10 +28,7 @@ import torch
 from torch.nn.functional import cosine_similarity
 import spacy
 from nltk.corpus import stopwords
-
-from data_tooling.ac_dc.stopwords import stopwords as stopwords_ac_dc
-from data_tooling.ac_dc.badwords import badwords as badwords_ac_dc
-from data_tooling.pii_processing.ontology.ontology_manager import OntologyManager
+from ontology.ontology_manager import OntologyManager
 
 from datasets import load_dataset
 from transformers import (
@@ -54,6 +51,8 @@ from utils import (
     download_urls,
     CharManager,
     get_docs,
+    badwords as badwords_ac_dc,
+    stopwords as stopwords_ac_dc,
 )
 
 # torch.cuda.empty_cache()
