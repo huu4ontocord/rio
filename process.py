@@ -38,7 +38,14 @@ mariam_mt = {('aav', 'en'): 'Helsinki-NLP/opus-mt-aav-en', ('aed', 'es'): 'Helsi
 import spacy
 from sentence_transformers import SentenceTransformer
 from data_tooling.pii_processing.ontology.ontology_manager import OntologyManager
- 
+import gzip
+
+def try_decode(text):
+   try: 
+     return text.decode().strip()
+   except: 
+     return None
+    
 import qg_pipeline
 from transformers import pipeline, AutoModelForSeq2SeqLM, AutoTokenizer
 labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().cuda()
@@ -1166,7 +1173,6 @@ class TextAugment:
         sep = ""
       else:
         sep = " "
-
       if text is None and docs is None:
         try:
           domain = 'oscar_registry'
@@ -1178,18 +1184,17 @@ class TextAugment:
             d = load_dataset("TurkuNLP/register_mc4", data_files=f"{src_lang}/{src_lang}_00000*")
             docs = [doc for doc in d['train'] if 'labels' not in doc or doc['labels'] !=[]]
           except:
-            domain = 'oscar'
             url = _get_oscar_urls(src_lang)[0]
             _download_urls([url])
-            docs = [{f'{src_lang}_text': text.decode()} for text in open(url.split("/")[-1], "rb").readlines()]
+            docs = [{'text':text}  for text in [try_decode(t) for t in gzip.open(url.split("/")[-1], "rb").readlines()] if text]
       elif docs is None:
         if isinstance(text, str):
-          docs = [{f'{src_lang}_text': text}]
+          docs = [{'text': text}]
         elif isinstance(text, list):
           if isinstance(text[0], dict):
             docs = text
           else:
-            docs = [{f'{src_lang}_text': t} for t in text]
+            docs = [{'text': t} for t in text]
       #for testing only
       if cutoff is not None and len(docs) > cutoff:
         docs = docs[:cutoff]
@@ -1198,6 +1203,7 @@ class TextAugment:
       for doc in docs:
         doc[f'{src_lang}_text'] = doc['text']
         del doc['text']
+        
       badwords1 = set([s for s in badwords_ac_dc.get(src_lang, []) if len(s) < 5])
       stopwords1 = set(stopwords_ac_dc.get(src_lang, []))
       docs = [doc for doc in docs if self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, badwords=badwords1)]
