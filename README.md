@@ -1,4 +1,4 @@
-Muliwai text data processing 
+Muliwai (pronounced: mu-lee-why, meaning river in Hawaiian) text data processing 
 ```
 pip install spacy==3.2
 git clone https://github.com/bigscience-workshop/data_tooling
