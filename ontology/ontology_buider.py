@@ -61,8 +61,8 @@ import transformers
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              os.path.pardir, os.path.pardir, os.path.pardir)))
-from data_tooling.pii_processing.ontology.ontology_manager import OntologyManager
-from data_tooling.pii_processing.ontology.ontology_builder_data import OntologyBuilderData
+from ontology_manager import OntologyManager
+from ontology_builder_data import OntologyBuilderData
 
 class OntologyBuilder (OntologyManager, OntologyBuilderData):
 
