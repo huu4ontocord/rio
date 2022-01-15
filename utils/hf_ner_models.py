@@ -27,7 +27,7 @@ hf_ner_model_map = {
     "ca": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8]],
     "pt": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0]],  # there is a
     "fr": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0]],
-    "zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0]],
+    "zh": [["ckiplab/bert-base-chinese-ner", BertForTokenClassification, 1.0]],
     'vi': [["lhkhiem28/COVID-19-Named-Entity-Recognition-for-Vietnamese", RobertaForTokenClassification, 1.0]],
     # ["jplu/tf-xlm-r-ner-40-lang", None ],
     'hi': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0]],

@@ -494,6 +494,7 @@ class TextAugment:
                 elif label in ('MISC',) and '@' in ner_result['word']:
                     label = 'USER_ID'
                 else:
+                    logging.warning(f"can not match label: {label}, set as MISC")
                     label = 'MISC'
                 if prev_label is not None:
                     if not ner_result['entity'].startswith('B-') and label == prev_label and (
@@ -1178,8 +1179,9 @@ class TextAugment:
 
         len_docs = len(docs)
         for doc in docs:
-            doc[f'{src_lang}_text'] = doc['text']
-            del doc['text']
+            if 'text' in doc:
+                doc[f'{src_lang}_text'] = doc['text']
+                del doc['text']
 
         badwords1 = set([s for s in badwords_ac_dc.get(src_lang, []) if len(s) < 5])
         stopwords1 = set(stopwords_ac_dc.get(src_lang, []))
