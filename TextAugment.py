@@ -1160,7 +1160,7 @@ class TextAugment:
                     backtrans_weight=0.9,
                     do_docs_trim=True,
                     do_postprocessing_after_backtrans=False,
-                    trim_bad_sentence=Fasle,
+                    trim_bad_sentence=False,
                     cutoff=None,
                     target_lang='en'):
 
