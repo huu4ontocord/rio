@@ -1195,7 +1195,7 @@ class TextAugment:
                     self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, badwords=badwords1)]
             logging.info(f'trimmed junk {str((len_docs - len(docs)) / len_docs)}')
 
-            chunks = []
+        chunks = []
 
         for _id, doc in enumerate(docs):
             if 'id' not in doc:
