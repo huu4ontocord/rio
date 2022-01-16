@@ -77,18 +77,19 @@ class TextAugment:
 
     def __init__(self,
                  ontology_manager: OntologyManager = None,
-                 translation_pipelines: Dict = {},
-                 ner_model_name2pipelines: Dict = {},
+                 translation_pipelines: Dict = None,
+                 ner_model_name2pipelines: Dict = None,
                  qg=None,
                  production_mode: bool = False):
 
+
+
         self.ontology_manager = ontology_manager
-        self.translation_pipelines = translation_pipelines
-        self.ner_model_name2pipelines = ner_model_name2pipelines
         self.qg = qg
         self.banned_words = banned_words
         self.hf_ner_model_map = hf_ner_model_map
-
+        self.translation_pipelines = translation_pipelines if translation_pipelines else {}
+        self.ner_model_name2pipelines = ner_model_name2pipelines if ner_model_name2pipelines else {}
         self.strip_chars = CharManager.strip_chars
         self.punc_char = CharManager.punc_char
         self.special_char = CharManager.special_char
@@ -489,6 +490,8 @@ class TextAugment:
                     label = 'DISEASE'
                 elif label in ('PATIENT_ID', 'GOVT_ID'):
                     label = 'GOVT_ID'
+                elif label in ('DATE'):
+                    label = 'DATE'
                 elif label in ('USER_ID',):
                     label = 'USER_ID'
                 elif label in ('MISC',) and '@' in ner_result['word']:
@@ -1157,6 +1160,7 @@ class TextAugment:
                     backtrans_weight=0.9,
                     do_docs_trim=True,
                     do_postprocessing_after_backtrans=False,
+                    trim_bad_sentence=Fasle,
                     cutoff=None,
                     target_lang='en'):
 
@@ -1185,11 +1189,13 @@ class TextAugment:
 
         badwords1 = set([s for s in badwords_ac_dc.get(src_lang, []) if len(s) < 5])
         stopwords1 = set(stopwords_ac_dc.get(src_lang, []))
-        docs = [doc for doc in docs if
-                self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, badwords=badwords1)]
-        logging.info(f'trimmed junk {str((len_docs - len(docs)) / len_docs)}')
 
-        chunks = []
+        if trim_bad_sentence:
+            docs = [doc for doc in docs if
+                    self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, badwords=badwords1)]
+            logging.info(f'trimmed junk {str((len_docs - len(docs)) / len_docs)}')
+
+            chunks = []
 
         for _id, doc in enumerate(docs):
             if 'id' not in doc:
