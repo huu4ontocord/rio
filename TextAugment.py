@@ -1263,4 +1263,17 @@ class TextAugment:
                 do_postprocessing_after_backtrans=True,
                 do_docs_trim=do_docs_trim)
             docs, chunks = docs2, chunks2
+
+
+        logging.info('Writing docs into out.jsonl')
+        with open('out.jsonl', 'w') as file:
+          for k, doc in docs.items():
+            file.write(f'{doc}\n')
+
+        logging.info('Writing chunks into chunk.jsonl')
+        with open('chunk.jsonl', 'w') as file:
+          for chunk in chunks:
+            file.write(f'{chunk}\n')
+
+
         return docs, chunks
