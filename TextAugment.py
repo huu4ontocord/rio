@@ -412,6 +412,8 @@ class TextAugment:
             label = 'USER_ID'
         elif label in ('MISC',) and '@' in ner_result['word']:
             label = 'USER_ID'
+        elif label in ('TRANSPORTATION', 'TRANS', 'TRANSPORT'):
+            label = 'TRANSPORTATION'
         else:
             logging.warning(f"can not match label: {label}, set as MISC")
             label = 'MISC'
@@ -505,7 +507,7 @@ class TextAugment:
                 else:
                     label = ner_result['entity']
 
-                label = convert_uniform_label.__func__(label)
+                label = self.convert_uniform_label(label)
 
                 if prev_label is not None:
                     if not ner_result['entity'].startswith('B-') and label == prev_label and (
