@@ -386,6 +386,38 @@ class TextAugment:
         for i in range(0, len(lst), n):
             yield lst[i: i + n]
 
+    @staticmethod
+    def convert_uniform_label(label: str) -> str:
+        if label in ('STREET_ADDRESS',):
+            label = 'STREET_ADDRESS'
+        elif label in ('PUBLIC_FIGURE',):
+            label = 'PUBLIC_FIGURE'
+        elif label in ('NAME', 'PER', 'PERSON'):
+            label = 'PERSON'
+        elif label in ('LOCATION', 'LOC', 'GPE'):
+            label = 'GPE'
+        elif label in ('ORGANIZATION', 'ORG'):
+            label = 'ORG'
+        elif label in ('AGE',):
+            label = 'AGE'
+        elif label in ('NORP',):
+            label = 'NORP'
+        elif label in ('BIO', 'SYMPTOM_AND_DISEASE', 'DISEASE'):
+            label = 'DISEASE'
+        elif label in ('PATIENT_ID', 'GOVT_ID'):
+            label = 'GOVT_ID'
+        elif label in ('DATE'):
+            label = 'DATE'
+        elif label in ('USER_ID',):
+            label = 'USER_ID'
+        elif label in ('MISC',) and '@' in ner_result['word']:
+            label = 'USER_ID'
+        else:
+            logging.warning(f"can not match label: {label}, set as MISC")
+            label = 'MISC'
+
+        return label
+
     def hf_ner(self, hf_pipeline, src_lang, docs, chunks, stopwords=None, weight=1.5):
         """
         run the text through a Huggingface ner pipeline.
@@ -472,33 +504,9 @@ class TextAugment:
                     _, label = ner_result['entity'].split('-')
                 else:
                     label = ner_result['entity']
-                if label in ('STREET_ADDRESS',):
-                    label = 'STREET_ADDRESS'
-                elif label in ('PUBLIC_FIGURE',):
-                    label = 'PUBLIC_FIGURE'
-                elif label in ('NAME', 'PER', 'PERSON'):
-                    label = 'PERSON'
-                elif label in ('LOCATION', 'LOC', 'GPE'):
-                    label = 'GPE'
-                elif label in ('ORGANIZATION', 'ORG'):
-                    label = 'ORG'
-                elif label in ('AGE',):
-                    label = 'AGE'
-                elif label in ('NORP',):
-                    label = 'NORP'
-                elif label in ('BIO', 'SYMPTOM_AND_DISEASE', 'DISEASE'):
-                    label = 'DISEASE'
-                elif label in ('PATIENT_ID', 'GOVT_ID'):
-                    label = 'GOVT_ID'
-                elif label in ('DATE'):
-                    label = 'DATE'
-                elif label in ('USER_ID',):
-                    label = 'USER_ID'
-                elif label in ('MISC',) and '@' in ner_result['word']:
-                    label = 'USER_ID'
-                else:
-                    logging.warning(f"can not match label: {label}, set as MISC")
-                    label = 'MISC'
+
+                label = convert_uniform_label.__func__(label)
+
                 if prev_label is not None:
                     if not ner_result['entity'].startswith('B-') and label == prev_label and (
                             prev_word[1] >= start - 5):
@@ -1167,6 +1175,7 @@ class TextAugment:
         src_is_cjk = src_lang in ('zh', 'ko', 'ja')
         sep = "" if src_is_cjk else " "
 
+        domain = 'custom'
         if docs is None:
             docs, domain = get_docs(src_lang=src_lang)
         elif isinstance(docs, str):
