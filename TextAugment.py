@@ -607,6 +607,8 @@ class TextAugment:
                         found_ner = doc[key] != {}
                     ner = doc[key]
                     for aHash in ner.values():
+                        if isinstance(aHash, int):
+                            continue
                         if 'PUBLIC_FIGURE' in aHash or 'PERSON' in aHash or 'GOVT_ID' in aHash or 'USER_ID' in aHash:
                             doc['has_person'] = True
                             do_ids.append(_id)
@@ -1277,12 +1279,12 @@ class TextAugment:
 
 
         logging.info('Writing docs into out.jsonl')
-        with open('out.jsonl', 'w') as file:
+        with open('out.jsonl', 'w', encoding='utf-8') as file:
           for k, doc in docs.items():
             file.write(f'{doc}\n')
 
         logging.info('Writing chunks into chunk.jsonl')
-        with open('chunk.jsonl', 'w') as file:
+        with open('chunk.jsonl', 'w', encoding='utf-8') as file:
           for chunk in chunks:
             file.write(f'{chunk}\n')
 
