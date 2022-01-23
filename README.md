@@ -1,5 +1,9 @@
+# Intro
 Muliwai (pronounced: mu-lee-why, meaning river in Hawaiian) is a library for text pre-processing, augmentation, synthesis and generalization
+
+# Installing
 ```
+git clone https://github.com/ontocord/muliwai
 pip install spacy==3.2 cdifflib transformers datasets langid faker nltk sentencepiece fsspec tqdm sentence-transformers
 python -m nltk.downloader punkt stopwords  wordnet
 python -m spacy download en_core_web_sm
