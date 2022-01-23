@@ -1,4 +1,4 @@
-Muliwai (pronounced: mu-lee-why, meaning river in Hawaiian) is a library for text pre-processing, augmentation and generalization
+Muliwai (pronounced: mu-lee-why, meaning river in Hawaiian) is a library for text pre-processing, augmentation, synthesis and generalization
 ```
 pip install spacy==3.2
 git clone https://github.com/bigscience-workshop/data_tooling
