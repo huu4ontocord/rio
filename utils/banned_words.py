@@ -32,5 +32,5 @@ banned_words = {
                 'loli', 'lolitaguy', 'girl', 'boy', 'child', 'kid', 'bath', 'baths', 'bathing', "pedo", 'nymphet', 'nimphet', 'babyj', 'voglia', 'eurololita', '349',
                 'hussyfan', 'kidzilla', 'raygold', 'ygold', 'qwerty', 'qqaazz', 'ptsc', 'pthc', 'nn', 'tanta', 'mylola', 'arina', 'newstar', 'playtoy', 'imouto', 'lourinha', 'amateurz',
                 'kacy', 'vicky', 'lsm', 'sandra', 'babyshivid', 'shiori', 'tvg', 'chiharu', 'kidzilla', 'izzy', 'rika', 'kdquality', 'cbaby', 'nablot',
-                'lso', 'kinderficker', 'yo', 'yr', }
+                'lso', 'kinderficker', 'yo', 'yr', } # yo might be too common an english word. we might need to translate all numbers to 1, and then do 1yo, 11yo, 1yr, 11yr.
 }
