@@ -28,10 +28,7 @@ import torch
 from torch.nn.functional import cosine_similarity
 import spacy
 from nltk.corpus import stopwords
-
-from data_tooling.ac_dc.stopwords import stopwords as stopwords_ac_dc
-from data_tooling.ac_dc.badwords import badwords as badwords_ac_dc
-from data_tooling.pii_processing.ontology.ontology_manager import OntologyManager
+from ontology.ontology_manager import OntologyManager
 
 from datasets import load_dataset
 from transformers import (
@@ -54,6 +51,8 @@ from utils import (
     download_urls,
     CharManager,
     get_docs,
+    badwords as badwords_ac_dc,
+    stopwords as stopwords_ac_dc,
 )
 
 # torch.cuda.empty_cache()
@@ -78,18 +77,19 @@ class TextAugment:
 
     def __init__(self,
                  ontology_manager: OntologyManager = None,
-                 translation_pipelines: Dict = {},
-                 ner_model_name2pipelines: Dict = {},
+                 translation_pipelines: Dict = None,
+                 ner_model_name2pipelines: Dict = None,
                  qg=None,
                  production_mode: bool = False):
 
+
+
         self.ontology_manager = ontology_manager
-        self.translation_pipelines = translation_pipelines
-        self.ner_model_name2pipelines = ner_model_name2pipelines
         self.qg = qg
         self.banned_words = banned_words
         self.hf_ner_model_map = hf_ner_model_map
-
+        self.translation_pipelines = translation_pipelines if translation_pipelines else {}
+        self.ner_model_name2pipelines = ner_model_name2pipelines if ner_model_name2pipelines else {}
         self.strip_chars = CharManager.strip_chars
         self.punc_char = CharManager.punc_char
         self.special_char = CharManager.special_char
@@ -386,6 +386,40 @@ class TextAugment:
         for i in range(0, len(lst), n):
             yield lst[i: i + n]
 
+    @staticmethod
+    def convert_uniform_label(label: str) -> str:
+        if label in ('STREET_ADDRESS',):
+            label = 'STREET_ADDRESS'
+        elif label in ('PUBLIC_FIGURE',):
+            label = 'PUBLIC_FIGURE'
+        elif label in ('NAME', 'PER', 'PERSON'):
+            label = 'PERSON'
+        elif label in ('LOCATION', 'LOC', 'GPE'):
+            label = 'GPE'
+        elif label in ('ORGANIZATION', 'ORG'):
+            label = 'ORG'
+        elif label in ('AGE',):
+            label = 'AGE'
+        elif label in ('NORP',):
+            label = 'NORP'
+        elif label in ('BIO', 'SYMPTOM_AND_DISEASE', 'DISEASE'):
+            label = 'DISEASE'
+        elif label in ('PATIENT_ID', 'GOVT_ID'):
+            label = 'GOVT_ID'
+        elif label in ('DATE'):
+            label = 'DATE'
+        elif label in ('USER_ID',):
+            label = 'USER_ID'
+        elif label in ('MISC',) and '@' in ner_result['word']:
+            label = 'USER_ID'
+        elif label in ('TRANSPORTATION', 'TRANS', 'TRANSPORT'):
+            label = 'TRANSPORTATION'
+        else:
+            logging.warning(f"can not match label: {label}, set as MISC")
+            label = 'MISC'
+
+        return label
+
     def hf_ner(self, hf_pipeline, src_lang, docs, chunks, stopwords=None, weight=1.5):
         """
         run the text through a Huggingface ner pipeline.
@@ -472,30 +506,9 @@ class TextAugment:
                     _, label = ner_result['entity'].split('-')
                 else:
                     label = ner_result['entity']
-                if label in ('STREET_ADDRESS',):
-                    label = 'STREET_ADDRESS'
-                elif label in ('PUBLIC_FIGURE',):
-                    label = 'PUBLIC_FIGURE'
-                elif label in ('NAME', 'PER', 'PERSON'):
-                    label = 'PERSON'
-                elif label in ('LOCATION', 'LOC', 'GPE'):
-                    label = 'GPE'
-                elif label in ('ORGANIZATION', 'ORG'):
-                    label = 'ORG'
-                elif label in ('AGE',):
-                    label = 'AGE'
-                elif label in ('NORP',):
-                    label = 'NORP'
-                elif label in ('BIO', 'SYMPTOM_AND_DISEASE', 'DISEASE'):
-                    label = 'DISEASE'
-                elif label in ('PATIENT_ID', 'GOVT_ID'):
-                    label = 'GOVT_ID'
-                elif label in ('USER_ID',):
-                    label = 'USER_ID'
-                elif label in ('MISC',) and '@' in ner_result['word']:
-                    label = 'USER_ID'
-                else:
-                    label = 'MISC'
+
+                label = self.convert_uniform_label(label)
+
                 if prev_label is not None:
                     if not ner_result['entity'].startswith('B-') and label == prev_label and (
                             prev_word[1] >= start - 5):
@@ -594,6 +607,8 @@ class TextAugment:
                         found_ner = doc[key] != {}
                     ner = doc[key]
                     for aHash in ner.values():
+                        if isinstance(aHash, int):
+                            continue
                         if 'PUBLIC_FIGURE' in aHash or 'PERSON' in aHash or 'GOVT_ID' in aHash or 'USER_ID' in aHash:
                             doc['has_person'] = True
                             do_ids.append(_id)
@@ -1157,12 +1172,14 @@ class TextAugment:
                     backtrans_weight=0.9,
                     do_docs_trim=True,
                     do_postprocessing_after_backtrans=False,
+                    trim_bad_sentence=False,
                     cutoff=None,
                     target_lang='en'):
 
         src_is_cjk = src_lang in ('zh', 'ko', 'ja')
         sep = "" if src_is_cjk else " "
 
+        domain = 'custom'
         if docs is None:
             docs, domain = get_docs(src_lang=src_lang)
         elif isinstance(docs, str):
@@ -1179,14 +1196,17 @@ class TextAugment:
 
         len_docs = len(docs)
         for doc in docs:
-            doc[f'{src_lang}_text'] = doc['text']
-            del doc['text']
+            if 'text' in doc:
+                doc[f'{src_lang}_text'] = doc['text']
+                del doc['text']
 
         badwords1 = set([s for s in badwords_ac_dc.get(src_lang, []) if len(s) < 5])
         stopwords1 = set(stopwords_ac_dc.get(src_lang, []))
-        docs = [doc for doc in docs if
-                self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, badwords=badwords1)]
-        logging.info(f'trimmed junk {str((len_docs - len(docs)) / len_docs)}')
+
+        if trim_bad_sentence:
+            docs = [doc for doc in docs if
+                    self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, badwords=badwords1)]
+            logging.info(f'trimmed junk {str((len_docs - len(docs)) / len_docs)}')
 
         chunks = []
 
@@ -1234,7 +1254,8 @@ class TextAugment:
             do_docs_trim = len(docs2) == len(docs)
         docs, chunks = docs2, chunks2
 
-        if target_lang != src_lang:
+        if do_backtrans:
+            logging.info(f"Doing backtrans with src_lang={src_lang} to target_lang={target_lang}")
             # do ner processing in target language with optional backtrans
             docs2, chunks2 = self.process_ner_chunks_with_trans(
                 src_lang,
@@ -1255,4 +1276,17 @@ class TextAugment:
                 do_postprocessing_after_backtrans=True,
                 do_docs_trim=do_docs_trim)
             docs, chunks = docs2, chunks2
+
+
+        logging.info('Writing docs into out.jsonl')
+        with open('out.jsonl', 'w', encoding='utf-8') as file:
+          for k, doc in docs.items():
+            file.write(f'{doc}\n')
+
+        logging.info('Writing chunks into chunk.jsonl')
+        with open('chunk.jsonl', 'w', encoding='utf-8') as file:
+          for chunk in chunks:
+            file.write(f'{chunk}\n')
+
+
         return docs, chunks
