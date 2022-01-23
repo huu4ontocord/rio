@@ -1,5 +1,5 @@
 # see https://www.researchgate.net/publication/259179064_Comparing_Methods_for_Detecting_Child_Exploitation_Content_Online for common Child Sexual Abuse Materials ("CSAM") words
-# http://antipaedo.lip6.fr/T12/keywords_cnrs.pdf - for top 20 from table 7 and 8 of the paper, plus other , ignoring stopwords like "tuesday"
+# http://antipaedo.lip6.fr/T12/keywords_cnrs.pdf - for top 20 from table 7 and 8 of the paper, plus other similar words , ignoring stopwords like "tuesday"
 # WARNING: Translations are probably not accurate. TODO to fix.
 # we are only doing our current covered langauges. TODO, do for all languages.
 # these words are used in conjunction with the badwords list in measure potential CSAM.
