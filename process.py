@@ -177,14 +177,16 @@ urdu_surnames = ["Abid", "Ahmad", "Akbar", "Akmal", "Alam", "Ayaz", "Bohra", "Bu
 #basque and catalan - use Spanish names
 
 class TextAugment:
-
+  # TO MAKE THIS MORE PARRALLELIZABLE - Make the below instance variables instead of class variables
   m2m_model = None
   m2m_tokenizer = None 
   en_spacy_nlp = None 
-  en_stopwords = set(stopwords['en'])
   faker_en_list  = None
   labse = None
-  
+  qg  None
+  translation_pipelines = {}
+  ner_model_name2pipelines = {}  
+
   #from https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py which is under the MIT License
   # see also for ICD https://stackoverflow.com/questions/5590862/icd9-regex-pattern - but this could be totally wrong!
   # we do regex in this order in order to not capture ner inside domain names and email addresses.
@@ -454,8 +456,7 @@ class TextAugment:
       'fo': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
       'is': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
       }
-  translation_pipelines = {}
-  ner_model_name2pipelines = {}  
+
   strip_chars = " ,،、{}[]|()\"'“”《》«»?!:;?…"
   punc_char = ".?!:;?。…"
   special_char = " ,{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø•�」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'"
@@ -466,7 +467,7 @@ class TextAugment:
   max_stoword_len_ko = max([0]+[len(a) for a in stopwords.get('ko', [])])
   max_stoword_len_ja = max([0]+[len(a) for a in stopwords.get('ja', [])])
   stopwords_en = set(stopwords.get('en',[]))
-
+  stopwords_en= set(stopwords['en'])
 
   def __init__(self):
 
