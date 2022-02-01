@@ -55,6 +55,7 @@ from faker import Faker
 from faker.providers import person, company, geo, address, ssn
 import qg_pipeline
 
+from mariam_mt import mariam_mt
 try:
   import neuralcoref
 except:
@@ -134,7 +135,6 @@ for faker_lang in faker_list:
   lang, _ = faker_lang.split("_")
   faker_map[lang] = faker_map.get(lang, []) + [faker_lang]
 
-from miriam_mt import miriam_mt
 def _get_oscar_urls(language, shuffled="unshuffled", deduplicated="deduplicated"):
   _BASE_DATA_URL_FORMAT_STR = ("https://s3.amazonaws.com/datasets.huggingface.co/oscar/1.0/{shuffled}/{deduplicated}/{language}/")
   _BASE_CHECKSUM_FILE_NAME = "{language}_sha256.txt"
@@ -477,7 +477,7 @@ class TextAugment:
       TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
       TextAugment.en_spacy_nlp = en_spacy_nlp
       TextAugment.faker_en_list = faker_en_list
-      
+      TextAugment.qg = qg
     except: # use the below for production usage. the above is for testing. 
       if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
       try:
@@ -486,7 +486,7 @@ class TextAugment:
         #we could potentially add new items to the vocabulary to improve coref.
       except:
         pass
-      if TextAugment.qg_pipeline is None: TextAugment.qg_pipeline = qg_pipeline.pipeline("multitask-qa-qg") # TODO make sure it's running in half mode
+      if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg") # TODO make sure it's running in half mode
       if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().cuda()
       if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
       if TextAugment.faker_en_list is None:
@@ -570,7 +570,8 @@ class TextAugment:
         return True
     return lang == src_lang
 
-def generate_questions(self, batch, default_answers=[]):
+  #WIP - we use this method to extract people, place and thing, and potentially age/date
+  def generate_questions(self, batch, default_answers=[]):
     answers = {}
 
     i= 0
