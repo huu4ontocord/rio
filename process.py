@@ -1309,6 +1309,7 @@ class TextAugment:
             if not found_ner:
               found_ner = doc[key] != {}
             ner =  doc[key] 
+            print (ner, key, doc)
             for aHash in ner.values():
               if type(aHash) is dict and 'PUBLIC_FIGURE' in aHash or 'PERSON' in aHash or 'ID' in aHash: 
                 doc['has_person'] = True
@@ -1401,6 +1402,877 @@ class TextAugment:
     if (do_augment or do_anonymization) and target_lang != src_lang:
       if target_lang not in ("eu", "ca") and target_lang not in faker_map:
         faker_target_lang = random.choice(self.faker_en_list)
+      else: 
+        faker_lang_list = faker_map["es" if target_lang in ("eu", "ca") else target_lang]                      
+        faker_target_lang = Faker(random.choice(faker_lang_list))
+        faker_target_lang.add_provider(person)
+        faker_target_lang.add_provider(ssn)
+        faker_target_lang.add_provider(address)
+        faker_target_lang.add_provider(company)
+  
+      if src_lang not in ("eu", "ca") and src_lang not in faker_map:
+        faker_src_lang = random.choice(self.faker_en_list)
+      else: 
+        faker_lang_list = faker_map["es" if src_lang in ("eu", "ca") else src_lang]                      
+        faker_src_lang = Faker(random.choice(faker_lang_list))
+        faker_src_lang.add_provider(person)
+        faker_src_lang.add_provider(ssn)
+        faker_src_lang.add_provider(address)
+        faker_src_lang.add_provider(company)
+
+      faker_en = random.choice(self.faker_en_list)
+
+    else:
+      faker_target_lang = None
+      faker_en = None
+    stopwords1 = set(stopwords[src_lang])
+    stopwords2 = set(stopwords[target_lang])
+
+    #init spacy pipeline
+    spacy_nlp = None
+    if do_spacy:
+      if target_lang == 'en':
+        spacy_nlp = self.en_spacy_nlp
+      elif target_lang == 'zh':
+        try:
+          spacy_nlp = spacy.load('zh_core_web_sm')
+        except:
+          pass
+      elif target_lang == 'pt':
+        spacy_nlp = spacy.load('pt_core_news_sm')
+      elif target_lang == 'fr':
+        spacy_nlp = spacy.load('fr_core_news_sm')
+      elif target_lang == 'ca':
+        try:
+          spacy_nlp = spacy.load('ca_core_news_sm')
+        except:
+          pass
+    model = None
+    ner_pipelines = []
+
+    # init hf ner pipelines
+    if do_hf_ner:
+      for model_name, model_cls, hf_ner_weight2 in self.hf_ner_model_map.get(target_lang, []):
+        if model_name not in self.ner_model_name2pipelines:
+          print ("setting") 
+          try:
+            model = model_cls.from_pretrained(model_name).half().eval().cuda()
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+            ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=0)
+            self.ner_model_name2pipelines[model_name] = ner_pipeline
+          except:
+            try:
+              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=0)
+              self.ner_model_name2pipelines[model_name] = ner_pipeline
+            except:
+              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), framework="tf", device=0)
+              self.ner_model_name2pipelines[model_name] = ner_pipeline
+        ner_pipelines.append((self.ner_model_name2pipelines[model_name], hf_ner_weight2))
+    target_is_cjk = target_lang in ('zh', 'ko', 'ja')
+    src_is_cjk = src_lang in ('zh', 'ko', 'ja')
+    if do_augment:
+      target_text_key = f'{target_lang}_text_aug'
+      target_ner_key =  f'{target_lang}_ner_aug'
+      target_offset_key = f'{target_lang}_offset_aug'
+      target_src_sim_key = f'{src_lang}_2_{target_lang}_sim_aug'
+    else:
+      target_text_key = f'{target_lang}_text'
+      target_ner_key = f'{target_lang}_ner'
+      target_offset_key = f'{target_lang}_offset'
+      target_src_sim_key = f'{src_lang}_2_{target_lang}_sim'
+
+    # do operations in the target_lang
+    if target_lang == src_lang:
+      backtrans_weight = 1.0
+      do_backtrans = False
+      
+    elif target_lang != src_lang:
+        #translate from src_lang to target_lang and do ner in target_lang.  translation also acts as an error check and additional ner. 
+        # we check to see if the already tagged items in src lang should have scores for tags increased or are common words in target lang and should not be tagged. 
+        # we also add new labels for items that are already tagged in src_lang.        
+        if src_is_cjk:
+            sep = ""
+        else:
+            sep = " "
+
+        if src_is_cjk or target_is_cjk:
+            lbracket = "[["
+            rbracket = "]]"
+        else:
+            lbracket = "["
+            rbracket = "]"
+
+        for chunk in chunks:
+          text = chunk[f'{src_lang}_text'].replace("(", "{").replace(")", "}")
+          _id = chunk['id']
+          offset = chunk[f'{src_lang}_offset']
+          doc = docs[_id]
+          offset_end = offset + len(text)
+          if f'{src_lang}_items' not in doc:
+            doc[f'{src_lang}_items'] = list(doc.get(f'{src_lang}_ner', {}).keys())
+            doc[f'{src_lang}_items'].sort(key=lambda a: a[1]) # sort by order in sentence
+          i = 0
+          for idx, key in enumerate(doc[f'{src_lang}_items']):
+            if key[1] < offset:
+              continue
+            if key[2] > offset_end:
+              break
+            if len(key[0]) < 4 and not self.cjk_detect(key[0]):
+              if " "+key[0]+" " in text[i:]:
+                j = text.index(" "+key[0]+" ", i)
+                text = text[:j]+(text[j:].replace(" "+key[0]+" ", f"  **{idx}**  ", 1))
+                i = j
+            else:
+              if key[0] in text[i:]:
+                j = text.index(key[0], i)
+                text = text[:j]+(text[j:].replace(key[0], f"  **{idx}**  ", 1))
+                i = j
+          chunk[f'{src_lang}_tmp_text'] = text
+
+        src_items_sorted = list(enumerate(doc[f'{src_lang}_items']))
+        src_items_sorted.sort(key=lambda a: len(a[1][0]), reverse=True)
+        for chunk in chunks:
+          text = chunk[f'{src_lang}_tmp_text']
+          _id = chunk['id']
+          doc = docs[_id]
+          for idx, key in src_items_sorted:
+            if len(key[0]) < 5 and not self.cjk_detect(key[0]):
+              text = text.replace(" "+key[0]+" ", f"  **{idx}**  ")
+            else:
+              text = text.replace(key[0], f" **{idx}** ")
+          chunk[f'{src_lang}_tmp_text'] = text
+
+        for doc in docs.values():
+          # do augmentation in src_lang, and then translate to target_lang. 
+          if do_augment and faker_target_lang is not None and faker_en is not None:
+            context = doc[f'{src_lang}_aug_context'] = doc.get(f'{src_lang}_aug_context', {})
+            ner = doc.get(f'{src_lang}_ner', {})
+            src_items_sorted = list(enumerate(doc[f'{src_lang}_items']))
+            src_items_sorted.sort(key=lambda a: len(a[1][0]), reverse=True)
+
+            for idx, key in src_items_sorted:
+              if key not in ner: continue
+              ent = key[0]
+              tag = ner[key]
+              if ent in context: continue
+              #TODO - do proper gender based aug and gender swap
+              if 'PERSON' in aug_scope and tag == 'PERSON':
+                context[ent] = context.get(ent, faker_en.first_name() + " " + random.choice(bantu_surnames) if " " in ent and target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
+                                      random.choice(bantu_surnames) if target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
+                                      random.choice(vietnamese_surnames) + " " + random.choice(vietnamese_firstnames) if " " in ent and target_lang =="vi" else \
+                                      random.choice(vietnamese_surnames) if  target_lang == "vi" else \
+                                      faker_en.first_name() + " " + random.choice(bengali_surnames) if " " in ent and target_lang =="bn" else \
+                                      random.choice(bengali_surnames) if target_lang == "bn" else \
+                                      random.choice(urdu_firstnames)  + " " + random.choice(urdu_surnames) if " " in ent and target_lang =="ur" else \
+                                      random.choice(urdu_surnames) if target_lang == "ur" else \
+                                      faker_target_lang.name() if " " in ent else \
+                                      faker_target_lang.first_name() )
+                
+              if 'LOC' in aug_scope and tag == 'LOC':
+                context[ent] = context.get(ent, faker_en.country() if  target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
+                                      faker_target_lang.state() if target_lang != 'zh' else \
+                                      faker_target_lang.province() if  target_lang == 'zh' else 
+                                      ent)
+              if 'ORG' in aug_scope and tag == 'ORG':
+                try:
+                  context[ent] = context.get(ent, faker_target_lang.company())
+                except:
+                  context[ent] = context.get(ent, faker_en.company())
+
+              if 'ID' in aug_scope and tag == 'ID':
+                context[ent] = context.get(ent, str(random.randrange(10000000,999999999)) if target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu")  else \
+                                      faker_target_lang.ssn())
+                
+              if 'ADDRESS' in aug_scope and tag == 'ADDRESS':
+                context[ent] = context.get(ent, faker_en.address() if target_lang not in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
+                                      faker_target_lang.address() )
+              
+              if tag in  ('PESON', 'ORG') and tag in aug_scope :
+                src_first, src_last = None, None
+                target_first, target_last = None, None
+                if src_lang in ("ja", "ko", "zh") and len(ent) > 1:
+                  src_first, src_last = ent[0], ent[-1]
+                elif " " in ent:
+                  src_first, src_last =  ent.split()[0], ent.split()[-1]
+                if target_lang in ("ja", "ko", "zh"):
+                  target_first, target_last = context[ent][0], context[ent][-1]
+                elif " " in context[ent]:
+                  target_first, target_last = context[ent].split()[0], context[ent].split()[-1]
+                if src_first and (src_lang  in ("ja", "ko", "zh") or len(src_first) > 3) and src_first not in context:
+                  context[src_first] = target_first
+                if src_last and (src_lang  in ("ja", "ko", "zh") or len(src_last) > 3) and src_last not in context:
+                  context[src_last] = target_last
+            print (context)
+        
+        for chunk in chunks:
+          context = doc[f'{src_lang}_aug_context'] = doc.get(f'{src_lang}_aug_context', {})
+          text = chunk[f'{src_lang}_tmp_text']
+          _id = chunk['id']
+          doc = docs[_id]
+          for idx, key in enumerate(doc[f'{src_lang}_items']):
+            if do_augment:
+              ent = context.get(key[0], key[0])
+            else:
+              ent = key[0]
+            text = text.replace(f" **{idx}** ", f" {idx} {lbracket} {ent} {rbracket}")
+          chunk[f'{src_lang}_tmp_text'] = text.replace("  ", " ")
+   
+        #print ('*****', chunks2)
+        chunks2 = [chunk[f'{src_lang}_tmp_text'] for chunk in chunks]
+        text2 = self.do_translations(chunks2, src_lang=src_lang, target_lang=target_lang, batch_size=batch_size)
+        for chunk, trans_text in zip(chunks, text2):
+          #langid check
+          try:
+            lang =  langid.classify(trans_text)[0]
+          except:
+            lang = target_lang
+          if lang == target_lang:
+            chunk[target_text_key] = trans_text.lstrip(" .").replace(rbracket, "]").replace(lbracket, "[").replace("}", ")").replace("{", "(")
+          else:
+            chunk[target_text_key] = " . . . "
+
+        all_embed = self.labse.encode(chunks2, convert_to_tensor=True)
+        all_trans_embed = self.labse.encode([chunk[target_text_key] for chunk in chunks], convert_to_tensor=True)
+        similarity = cosine_similarity(all_embed, all_trans_embed, dim=1)
+        for chunk, sim_score in zip(chunks, similarity):
+          trans_text = chunk[target_text_key]
+          sim_score = sim_score.item()
+          print (sim_score, '**', trans_text, '**', chunk[f'{src_lang}_tmp_text'])
+          _id = chunk['id']
+          doc = docs[_id]
+          if (do_augment and sim_score < 0.5) or (not do_augment and sim_score < 0.75):
+            trans_text = chunk[target_text_key] = " . . . "
+            if doc.get(target_text_key, ""):
+              chunk[target_offset_key] = len(doc.get(target_text_key, "")) + 1
+            else:
+              chunk[target_offset_key] = 0
+            doc[target_text_key] = (doc.get(target_text_key, "") + " " + trans_text).strip()
+            chunk[target_src_sim_key] = 0.0
+            continue
+          chunk[target_src_sim_key] = sim_score
+          len_items = len(doc[f'{src_lang}_items'])
+          doc[f'{target_lang}_2_{src_lang}_tmp'] = doc.get(f'{target_lang}_2_{src_lang}_tmp', {})
+          while "[" in trans_text:
+            before, after = trans_text.split("[",1)
+            before = before.strip()
+            after = after.strip()
+            before_arr = before.split()
+            if "]" not in after or not before_arr:
+              trans_text = before + sep + after
+              continue
+            idx = before_arr[-1]
+            ent, after = after.split("]", 1)
+            ent = ent.strip()
+
+            if True:
+              try:
+                idx = int(idx)
+              except:
+                idx = None
+              if idx is not None and idx < len_items:
+                before = " ".join(before_arr[:-1])
+                key = doc[f'{src_lang}_items'][idx]
+                ent_lower = ent.lower()
+                if ent_lower in stopwords2: 
+                  #reduce weight of target labels if this is translated into an en stopword
+                  if key in doc[f'{src_lang}_ner']: 
+                    aHash = doc[f'{src_lang}_ner'][key]
+                    for key in list(aHash.keys()):
+                      aHash[key] /= 2.0
+                else:
+                  vals = list(doc[f'{src_lang}_ner'][key].keys())
+                  ent = ent.strip(self.strip_chars)
+                  doc[f'{target_lang}_2_{src_lang}_tmp'][ent] = idx
+            else: # except:
+              pass
+            trans_text = before + " " + ent + " " + after
+          trans_text = chunk[target_text_key] = trans_text.replace("  ", " ").strip() 
+          if doc.get(target_text_key, ""):
+            chunk[target_offset_key] = len(doc.get(target_text_key, "")) + 1
+          else:
+            chunk[target_offset_key] = 0
+          doc[target_text_key] = (doc.get(target_text_key, "") + " " + trans_text).strip()
+    
+    if do_regex:
+      docs = self.apply_regex_ner(target_lang, docs=docs, weight=regex_weight, text_key=target_text_key, ner_key=target_ner_key)
+
+    if False: # do_ontology and self.ontology_manager is not None:
+        # ontology - context independent - there are some bugs in disease detection which needs to be fixed so we will skip for now
+        for doc in docs.values():
+          doc[target_ner_key] = ner = doc.get(target_ner_key, {})
+          if target_lang == 'en':
+            chunk2ner = self.ontology_manager.tokenize(doc[target_text_key])['chunk2ner']
+            onto_items = []
+            for c, label in chunk2ner.items():
+              ner_word  = c[0].replace(" ", "").replace("_", "").replace("_", "") if self.cjk_detect(c[0]) else c[0].replace("_", " ").replace("_", " ").rstrip(self.strip_chars)
+              if ner_word.lower() not in stopwords2:
+                if not self.cjk_detect(ner_word) and label in ('PERSON', 'PUBLIC_FIGURE', 'ORG') and " " not in ner_word: continue
+                onto_items.append(((ner_word, c[1], c[1] + len(ner_word)), label))
+            for ner_mention, label in list(set(onto_items)):
+                aHash = ner.get(ner_mention, {})
+                aHash[label] = aHash.get(label, 0) + ontology_weight * (1.0 + len(ner_mention[0])/100) * backtrans_weight
+                ner[ner_mention] = aHash
+
+    if do_spacy:
+        if spacy_nlp:
+          # spacy
+          self.spacy_ner(docs, spacy_nlp, stopwords2, spacy_weight, target_lang, extra_weight=backtrans_weight, text_key=target_text_key, ner_key=target_ner_key)
+
+    if do_hf_ner:
+        # transformer
+        for ner_pipeline, hf_ner_weight2 in ner_pipelines:
+          for a_batch in self.batch(chunks, batch_size):
+            self.hf_ner(ner_pipeline, target_lang, docs, a_batch, stopwords=stopwords2, weight=hf_ner_weight*backtrans_weight*hf_ner_weight2, text_key=target_text_key, ner_key=target_ner_key, offset_key=target_offset_key)
+    
+    if do_cleanup:
+        #do some cleanups. we don't want any ner that are just short numbers (but what about govt id?), stopwords or single characters.
+        for _id, doc in docs.items():
+          ner =  doc[target_ner_key] 
+          for key in list(doc[target_ner_key].keys()):
+            ner_word = key[0]
+            try:
+              if len(ner_word) < 4 and float(ner_word):
+                #print ("deleting ", ner_word)
+                del doc[target_ner_key][key]
+                continue
+            except:
+              pass
+            if ner_word.lower() in stopwords2 or (not self.cjk_detect(ner_word) and len(ner_word) <= 1):
+              #print ("deleting ", ner_word)
+              del doc[target_ner_key][key]
+
+    #increase weight of src ner items if the target translations indicate it's an NER
+    if target_lang != src_lang and not do_augment:
+          for doc in docs.values():
+            ner =  doc[f'{target_lang}_ner'] 
+            target2src_ner = doc.get(f'{target_lang}_2_{src_lang}_tmp', {})
+            for ent, idx in target2src_ner.items():
+              key = doc[f'{src_lang}_items'][idx]
+              #NOTE that this is an unordered match
+              ner_match = [key2 for key2 in ner if ent == key2[0]]
+              if not ner_match and len(ent) > 3:
+                ner_match = [key2 for key2 in ner if (ent in key2[0] or (len(key2[0]) > 3 and key2[0] in ent))]
+              if ner_match:
+                if key in doc[f'{src_lang}_ner']: 
+                  aHash = doc[f'{src_lang}_ner'][key]
+                  all_labels = []
+                  for key2 in ner_match:
+                    all_labels.extend(list(ner[key2].keys()))
+                  all_labels = set(all_labels)
+                  found = False
+                  for label in list(aHash.keys()):
+                    if label in all_labels or 'MISC' in all_labels:
+                      aHash[label] *= 1.1
+                      print ('increasing ', key, label, aHash[label])
+                      found = True
+                  if not found:
+                    print ('not found', key, all_labels)
+
+    if do_docs_trim:
+      docs, chunks = self.trim_to_prefer_person(docs, chunks)
+    
+    docs = self.collapse_ner(docs, target_ner_key, target_text_key)
+    
+    if do_backtrans and target_lang != src_lang and not do_augment:
+        #TBD: we could run the augmented text back to the original sentence create additional augmented data.
+
+        #backtrans from src_lang to target_lang back to src_lang allows us to catch more NER using target lang NER tools.
+        #then we tag in target_lang those items we haven't already found, and tranlsate back to match the original text.
+        #NOTE: We do not modify the original text, but only use backtrans to do NER tagging and other analysis. 
+        if target_is_cjk:
+              sep = ""
+        else:
+              sep = " "
+        if target_is_cjk: 
+              lbracket = "[["
+              rbracket = "]]"
+        else:
+              lbracket = "["
+              rbracket = "]"
+        for chunk in chunks:
+          _id = chunk['id']
+          text = chunk[f'{target_lang}_text'].replace("[", "{").replace("(", "{").replace(")", "}").replace("]", "}")
+          offset = chunk[f'{target_lang}_offset']
+          doc = docs[_id]
+          offset_end = offset + len(text)
+          if f'{target_lang}_items' not in doc:
+            doc[f'{target_lang}_items'] = list(doc.get(f'{target_lang}_ner', {}).keys())
+            doc[f'{target_lang}_items'].sort(key=lambda a: a[1])
+          i = 0
+          for idx, key in enumerate(doc[f'{target_lang}_items']):
+            if key[1] < offset:
+              continue
+            if key[2] > offset_end:
+              break
+            if len(key[0]) < 5 and not self.cjk_detect(key[0]):
+              if " "+key[0]+" " in text[i:]:
+                j = text.index(" "+key[0]+" ", i)
+                text = text[:j]+(text[j:].replace(" "+key[0]+" ", f"  **{idx}**  ", 1))
+                i = j
+            else:
+              if key[0] in text[i:]:
+                j = text.index(key[0], i)
+                text = text[:j]+(text[j:].replace(key[0], f"  **{idx}**  ", 1))
+                i = j
+          chunk[f'{target_lang}_tmp_text'] = text
+
+        target_items_sorted = list(enumerate(doc[f'{target_lang}_items']))
+        target_items_sorted.sort(key=lambda a: len(a[1][0]), reverse=True)
+        for chunk in chunks:
+          text = chunk[f'{target_lang}_tmp_text']
+          _id = chunk['id']
+          doc = docs[_id]
+          for idx, key in target_items_sorted:
+            if len(key[0]) < 5 and not self.cjk_detect(key[0]):
+              text = text.replace(" "+key[0]+" ", f"  **{idx}**  ")
+            else:
+              text = text.replace(key[0], f" **{idx}** ")
+          chunk[f'{target_lang}_tmp_text'] = text
+
+        for chunk in chunks:
+          text = chunk[f'{target_lang}_tmp_text']
+          _id = chunk['id']
+          doc = docs[_id]
+          for idx, key in enumerate(doc[f'{target_lang}_items']):
+            text = text.replace(f" **{idx}** ", f" {idx} {lbracket} {key[0]} {rbracket}")
+          chunk[f'{target_lang}_tmp_text'] = text.replace("  ", " ")
+
+        backtrans_text = self.do_translations([chunk[f'{target_lang}_tmp_text'] for chunk in chunks], src_lang=target_lang, target_lang=src_lang, batch_size=batch_size)
+        for chunk, trans_text in zip(chunks, backtrans_text):
+          #langid check
+          try:
+            lang =  langid.classify(trans_text)[0]
+          except:
+            lang = target_lang
+          if lang == target_lang:
+            chunk[f'{src_lang}_text_backtrans_from_{target_lang}'] = trans_text.lstrip(" .").replace(rbracket, "]").replace(lbracket, "[").replace("}", ")").replace("{", "(")
+          else:
+            chunk[f'{src_lang}_text_backtrans_from_{target_lang}'] = " . . . "
+        
+        #TODO: do similiarty test?
+        for chunk, trans_text in zip(chunks, backtrans_text):
+          _id = chunk['id']
+          doc = docs[_id]
+          orig_text = chunk[f'{src_lang}_text']
+          trans_text = chunk[f'{src_lang}_text_backtrans_from_{target_lang}'] 
+          items = doc[f'{target_lang}_items']
+          len_items = len(items)
+          doc[f'{src_lang}_2_{target_lang}_backtrans_tmp'] = ner = doc.get(f'{src_lang}_2_{target_lang}_backtrans_tmp', {})
+          pos = 0
+          blocks, score =  self.get_aligned_text(orig_text, trans_text, src_lang)
+          prev_t = None
+          prev_o = None
+          ner_word = ""
+          ent2 = ""
+          idx = None
+          for o, t, _ in blocks:
+            before = after = ""
+            if "]" in t:
+              ner_word = ""
+              ent2 = ""
+              t_arr = t.split("]")
+              before = sep.join(t_arr[-1:])
+              after = t_arr[-1]
+              before = before.strip()
+              if not before: 
+                continue
+              idx = before.split()[-1]
+              try:
+                idx = int(idx)
+              except:
+                idx = None
+                if prev_t and prev_t.strip():
+                  idx = prev_t.strip().split()[-1]
+                  try:
+                    idx = int(idx)
+                  except:
+                    idx = None
+                    pass  
+            if idx is not None and idx < len_items:
+              ner_word += o
+              if after:
+                ent2 = after.split("[", 1)[0]
+              else:
+                ent2 += t.split("[", 1)[0]
+              if "[" in t:
+                key = items[idx]
+                if key in ner:
+                  ner_word = ner_word.strip(self.strip_chars)
+                  ent2 = ent2.strip(self.strip_chars)
+                  if ent2 in ner_word:
+                    ner_word = ent2
+                  else:
+                    if src_is_cjk:
+                      ent2arr = list(ent2)
+                      ner_wordarr = list(ner_word)
+                    else:
+                      ent2arr = ent2.split()
+                      ner_wordarr = ner_word.split()
+                    len_ent2arr = len(ent2arr)
+                    found=False
+                    if  len_ent2arr > 3:
+                      ent3 = sep.join(ent2arr[:3])
+                      if ent3 in new_word:
+                        new_word = ner_word[ner_word.index(ent3):]
+                        found=True
+                    if not found:
+                      if len_ent2arr < len(new_wordarr):
+                        new_word = sep.join(new_wordarr[-len_ent2arr:])
+                  if ner_word and ner_word.lower() not in stopwords1: 
+                    i = orig_text[pos:].index(ner_word)
+                    start = pos + i 
+                    len_nerword = len(ner_word)
+                    pos = start + len_nerword
+                    mention = (ner_word, offset + start, offset + start + len_nerword)
+                    aHash = ner.get(mention, {})
+                    for label in ner[key]:
+                      #print (f'found new mention from {target_lang}', mention, label)
+                      aHash[label] = aHash.get(label, 0) + ner[key][label]
+                    ner[mention] = aHash
+                idx = None
+                ner_word = ""
+                ent2 = ""
+            prev_o, prev_t = o, t
+
+        # increase the src_lang ner score if we already matched this ner in src_lang or there was a partial match
+        for doc in docs.values():
+          bner = doc[f'{src_lang}_2_{target_lang}_backtrans_tmp']
+          ner = doc[f'{src_lang}_ner']
+          for key, aHash in bner.items():
+            if key in ner: continue
+            ent = key[0]
+            ner_match = [key2 for key2 in ner if ent == key2[0]]
+            if not ner_match and len(ent) > 3:
+              ner_match = [key2 for key2 in ner if (ent in key2[0] or (len(key2[0]) > 3 and key2[0] in ent))]
+            all_keys = []
+            for key2 in ner_match:
+              all_keys.extend(list(ner[key2].keys()))
+            all_keys = set(all_keys)
+            for label in list(aHash.keys()):
+              if label in all_keys or 'MISC' in all_keys:
+                    aHash[label] *= 1.1
+                    print ('increasing in backtrans ', key, label, aHash[label])
+          for key, aHash1 in bner.items():
+            ner[key] = aHash2 = ner.get(key, {})
+            for key2 in aHash1:
+              aHash2[key2] = aHash2.get(key2, 0.0) + aHash1[key2]
+
+        if do_cleanup:
+          #do some cleanups. we don't want any ner that are just short numbers, stopwords or single characters.
+          for _id, doc in docs.items():
+            ner =  doc[f'{src_lang}_ner'] 
+            for key in list(doc[f'{src_lang}_ner'].keys()):
+              ner_word = key[0]
+              try:
+                if len(ner_word) < 4 and float(ner_word):
+                  print ("deleting ", ner_word)
+                  del doc[f'{src_lang}_ner'][key]
+                  continue
+              except:
+                pass
+              if ner_word.lower()in stopwords1 or (not self.cjk_detect(ner_word) and len(ner_word) <= 1):
+                print ("deleting ", ner_word)
+                del doc[f'{src_lang}_ner'][key]
+
+    docs = self.collapse_ner(docs, target_ner_key, target_text_key)
+    
+    #anonymization is very similar to augmentation, except we operate in the src_lang space, and don't require translation. 
+    #we will replace the words directly from {src_lang}_text to {src_lang}_text_anon. we assume all ner process has been completed at this point. 
+    #anonymization will create a new {src_lang}_text_anon and {src_lang}_ner_anon field.
+    #anohter way to do anonymimzation is to pass the anonymized text through backtrans. TBD?
+    context = {}
+    if do_anonymization and faker_src_lang is not None and faker_en is not None:
+      for doc in docs.values():
+          context = doc[f'{src_lang}_anon_context'] = doc.get(f'{src_lang}_anon_context', {})
+          if f'{src_lang}_items' not in doc:
+            doc[f'{src_lang}_items'] = list(doc.get(f'{src_lang}_ner', {}).keys())
+            doc[f'{src_lang}_items'].sort(key=lambda a: a[1], reverse=True)
+
+          ner = doc.get(f'{src_lang}_ner', {})
+          idx_items = list(enumerate(doc[f'{src_lang}_items']))
+          idx_items.sort(key=lambda a: len(a[1][0]))
+
+          for idx, key in idx_items:
+            if key not in ner: continue
+            ent = key[0]
+            tag = ner[key]
+            if ent in context: continue
+            #TODO - do proper gender based aug and gender swap
+            if 'PERSON' in aug_scope and tag == 'PERSON':
+              context[ent] = context.get(ent, faker_en.first_name() + " " + random.choice(bantu_surnames) if " " in ent and src_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
+                                     random.choice(bantu_surnames) if src_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
+                                     random.choice(vietnamese_surnames) + " " + random.choice(vietnamese_firstnames) if " " in ent and src_lang =="vi" else \
+                                     random.choice(vietnamese_surnames) if  src_lang == "vi" else \
+                                     faker_en.first_name() + " " + random.choice(bengali_surnames) if " " in ent and src_lang =="bn" else \
+                                     random.choice(bengali_surnames) if src_lang == "bn" else \
+                                     random.choice(urdu_firstnames)  + " " + random.choice(urdu_surnames) if " " in ent and src_lang =="ur" else \
+                                     random.choice(urdu_surnames) if src_lang == "ur" else \
+                                     faker_src_lang.name() if " " in ent else \
+                                     faker_src_lang.first_name() )
+              
+            if 'LOC' in aug_scope and tag == 'LOC':
+              context[ent] = context.get(ent, faker_en.country() if  src_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
+                                     faker_src_lang.state() if src_lang != 'zh' else \
+                                     faker_src_lang.province() if  src_lang == 'zh' else 
+                                     ent)
+            if 'ORG' in aug_scope and tag == 'ORG':
+              try:
+                context[ent] = context.get(ent, faker_src_lang.company())
+              except:
+                context[ent] = context.get(ent, faker_en.company())
+
+            if 'ID' in aug_scope and tag == 'ID':
+              context[ent] = context.get(ent, str(random.randrange(10000000,999999999)) if src_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu")  else \
+                                     faker_src_lang.ssn())
+              
+            if 'ADDRESS' in aug_scope and tag == 'ADDRESS':
+              context[ent] = context.get(ent, faker_en.address() if src_lang not in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
+                                     faker_src_lang.address() )
+              
+            if tag in  ('PESON', 'ORG') and tag in aug_scope :
+              src_first, src_last = None, None
+              target_first, target_last = None, None
+              if src_lang in ("ja", "ko", "zh") and len(ent) > 1:
+                src_first, src_last = ent[0], ent[-1]
+              elif " " in ent:
+                src_first, src_last =  ent.split()[0], ent.split()[-1]
+              if src_lang in ("ja", "ko", "zh"):
+                target_first, target_last = context[ent][0], context[ent][-1]
+              elif " " in context[ent]:
+                target_first, target_last = context[ent].split()[0], context[ent].split()[-1]
+              if src_first and (src_lang  in ("ja", "ko", "zh") or len(src_first) > 3) and src_first not in context:
+                context[src_first] = target_first
+              if src_last and (src_lang  in ("ja", "ko", "zh") or len(src_last) > 3) and src_last not in context:
+                context[src_last] = target_last
+          print (context)
+      for chunk in chunks:
+          #TODO - finish this code
+          context = doc[f'{src_lang}_anon_context'] = doc.get(f'{src_lang}_anon_context', {})
+          text = chunk[f'{src_lang}_text']
+          _id = chunk['id']
+          doc = docs[_id]
+          for idx, key in enumerate(doc[f'{src_lang}_items']):
+            if do_augment:
+              ent = context.get(key[0], key[0])
+            else:
+              ent = key[0]
+            text = text.replace(f" **{idx}** ", f" {idx} {lbracket} {ent} {rbracket}")
+          chunk[f'{src_lang}_text_anon'] = text.replace("  ", " ")
+          #create {src_lang}_ner_anon
+    
+    return docs, chunks
+
+  def process_ner(self, 
+              src_lang,
+              text=None,
+              docs=None,
+              do_spacy = True,
+              do_hf_ner = True,
+              do_ontology = True,
+              do_backtrans=False,
+              do_augment=False,
+              do_anonymization=False,
+              augment_lang="es",
+              do_cleanup=True,
+              do_regex = True,
+              batch_size = 5, 
+              batch_window=70,
+              ontology_weight=0.9,
+              spacy_weight=1.25,
+              hf_ner_weight=1.5,
+              regex_weight=2.0,
+              backtrans_weight=0.9,
+              do_docs_trim=True,
+              cutoff=None,
+              target_lang='en', 
+              domain="",
+              aug_scope={'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
+              anon_scope={'PERSON', 'ID'}):
+      """
+      This is the main routine to perform crosslingual NER for a src_lang document with no NER models. 
+      It uses a cross lingual NER model that is 'close enough', and also uses backtranslation (target_lang English) to do further NER, and then map back to src_lang.
+      It can also create crosslingual augmented data to create additional data for training.
+      This routine can also be used to do anonymization of the original src_lang text at the end of the NER pipeline. 
+      """
+      src_is_cjk = src_lang in ('zh', 'ko', 'ja')
+      if src_is_cjk:
+        sep = ""
+      else:
+        sep = " "
+
+      if text is None and docs is None:
+        try:
+          domain = 'oscar_registry'
+          d = load_dataset("TurkuNLP/register_oscar", data_files=f"{src_lang}/{src_lang}_00000*")
+          docs = [doc for doc in d['train'] if 'labels' not in doc or doc['labels'] !=[]]
+        except:
+          try:
+            domain = 'mc4_registry'
+            d = load_dataset("TurkuNLP/register_mc4", data_files=f"{src_lang}/{src_lang}_00000*")
+            docs = [doc for doc in d['train'] if 'labels' not in doc or doc['labels'] !=[]]
+          except:
+            domain = 'oscar'
+            url = _get_oscar_urls(src_lang)[0]
+            _download_urls([url])
+            docs = [{'text':text}  for text in [try_decode(t) for t in gzip.open(url.split("/")[-1], "rb").readlines()] if text]
+      elif docs is None:
+        if isinstance(text, str):
+          docs = [{'text': text}]
+        elif isinstance(text, list):
+          if isinstance(text[0], dict):
+            docs = text
+          else:
+            docs = [{'text': t} for t in text]
+      #for testing only
+      if cutoff is not None and len(docs) > cutoff:
+        docs = docs[:cutoff]
+      #print (docs)
+      len_docs = len(docs)
+      for doc in docs:
+        doc[f'{src_lang}_text'] = doc['text']
+        del doc['text']
+      flagged_words1 = set([s for s in flagged_words.get(src_lang, []) if len(s) < 5])
+      stopwords1 = set(stopwords.get(src_lang, []))
+      docs = [doc for doc in docs if self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, flagged_words=flagged_words1)]
+      print ('trimmed junk', (len_docs-len(docs))/len_docs)
+      len_d = len(docs)
+      #flagged_words2 = set([s for s in flagged_words_ac_dc.get(target_lang, []) if len(s) < 5])
+      
+      counter = {}
+      chunks = []
+      _id = -1
+      for doc in docs:
+        _id += 1
+        if 'id' not in doc:
+          doc['id'] = str(_id)
+        doc[f'{src_lang}_text'] = doc[f'{src_lang}_text'].replace("[", "(").replace("]", ")") # we use [] as special chars
+        doc['lang'] = src_lang
+        doc['domain'] = domain
+        doc['chunks'] = [] 
+        offset = 0
+        if src_is_cjk:
+          textarr = doc[f'{src_lang}_text']
+        else:
+          textarr = doc[f'{src_lang}_text'].split()
+        if True:
+          text = []
+          for t in textarr:
+            punc_found = [punc for punc in t if punc in self.punc_char] 
+            if punc_found and t[-1] not in self.punc_char and t[0] not in "0123456789" and t[0] == t[0].lower():
+              w = t[t.index(punc_found[0])+1]
+              if w == w.upper():
+                t, t1 = t.split(punc_found[0],1)
+                t = t+punc_found[0]+(" " if src_is_cjk else "") 
+                text.append(t)
+                text.append(t1)
+                continue
+            text.append(t)
+          text[0] = text[0].lstrip()
+          text[-1] = text[-1].rstrip()
+          doc[f'{src_lang}_text'] = sep.join(text)
+          len_text = len(text)
+          while len_text > batch_window:
+            for j in range(batch_window-1, len_text):
+              if (src_is_cjk and text[j] in self.punc_char) or (not src_is_cjk and text[j][-1] in self.punc_char):
+                break
+            text_str = sep.join(text[:j+1])
+            chunks.append({f'{src_lang}_text': text_str, 'id': doc['id'], f'{src_lang}_offset': offset})
+            doc['chunks'].append(chunks[-1])
+            offset += len(text_str) + (0 if src_is_cjk else 1)
+            text = text[j+1:]
+            len_text = len(text)
+          if text:
+            text_str = sep.join(text)
+            chunks.append({f'{src_lang}_text': text_str, 'id': doc['id'], f'{src_lang}_offset': offset})
+            doc['chunks'].append(chunks[-1])
+    
+      docs = dict([(doc['id'], doc) for doc in docs])
+      if do_docs_trim:
+        docs2, chunks2 = self.trim_to_prefer_person(docs, chunks)
+        do_docs_trim = len(docs2) == len(docs)
+        docs, chunks = docs2, chunks2
+
+      # we do this here because we don't want to trim  ner items that are considered empty.
+      # we should probably fix trim_to_prefer_person to not do any trimming if all ner's are empty
+      for doc in docs.values():
+        doc[f'{src_lang}_ner'] = doc.get(f'{src_lang}_ner', {})
+        
+      #do ner processing in src_lang with potential anonymization
+      docs2, chunks2 = self.process_ner_chunks_with_trans(
+                          src_lang, 
+                          docs, 
+                          chunks, 
+                          target_lang=src_lang,
+                          do_spacy = do_spacy,
+                          do_hf_ner = do_hf_ner,
+                          do_ontology = do_ontology,
+                          do_backtrans=False,
+                          do_augment=False,
+                          do_anonymization=do_anonymization if target_lang == src_lang else False,
+                          do_regex = do_regex,
+                          do_cleanup=do_cleanup,
+                          batch_size = batch_size, 
+                          ontology_weight=ontology_weight,
+                          spacy_weight=spacy_weight,
+                          hf_ner_weight=hf_ner_weight,
+                          regex_weight=regex_weight,
+                          backtrans_weight=backtrans_weight,
+                          do_docs_trim=do_docs_trim)
+      if do_docs_trim:
+        do_docs_trim = len(docs2) == len(docs)
+      docs, chunks = docs2, chunks2
+      
+      if target_lang != src_lang:
+        #do ner processing in target language with optional backtrans and anonymization
+        docs2, chunks2 = self.process_ner_chunks_with_trans(
+                            src_lang, 
+                            docs, 
+                            chunks, 
+                            target_lang = target_lang,
+                            do_spacy = do_spacy,
+                            do_hf_ner = do_hf_ner,
+                            do_ontology = do_ontology,
+                            do_backtrans=do_backtrans,
+                            do_augment=False,
+                            do_anonymization=do_anonymization,
+                            do_regex = do_regex,
+                            do_cleanup = do_cleanup,
+                            batch_size = batch_size, 
+                            ontology_weight=ontology_weight,
+                            spacy_weight=spacy_weight,
+                            hf_ner_weight=hf_ner_weight,
+                            regex_weight=regex_weight,
+                            backtrans_weight=backtrans_weight,
+                            do_docs_trim=do_docs_trim)
+        docs, chunks = docs2, chunks2
+
+      assert not do_augment or augment_lang not in (src_lang, target_lang), "augmented langauge should be different than src_lang and target_lang"
+
+      if do_augment:
+        #do data augmentation by adding a new text field with fake names, etc. in augment_lang
+        docs2, chunks2 = self.process_ner_chunks_with_trans(
+                            src_lang, 
+                            docs, 
+                            chunks, 
+                            target_lang = augment_lang,
+                            do_spacy = do_spacy,
+                            do_hf_ner = do_hf_ner,
+                            do_ontology = do_ontology,
+                            do_backtrans=False,
+                            do_augment=do_augment,
+                            do_anonymization=False,
+                            do_regex = do_regex,
+                            do_cleanup=do_cleanup,
+                            batch_size = batch_size, 
+                            ontology_weight=ontology_weight,
+                            spacy_weight=spacy_weight,
+                            hf_ner_weight=hf_ner_weight,
+                            regex_weight=regex_weight,
+                            backtrans_weight=backtrans_weight,
+                            do_docs_trim=do_docs_trim)
+        docs, chunks = docs2, chunks2
+      return docs, chunks
+en_list)
       else: 
         faker_lang_list = faker_map["es" if target_lang in ("eu", "ca") else target_lang]                      
         faker_target_lang = Faker(random.choice(faker_lang_list))
