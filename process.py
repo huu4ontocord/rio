@@ -16,9 +16,6 @@ limitations under the License.
 import re
 import fsspec
 from collections import Counter
-from data_tooling.pii_processing.ontology.ontology_manager import OntologyManager
-from data_tooling.ac_dc.stopwords import stopwords as stopwords_ac_dc
-from data_tooling.ac_dc.badwords import badwords as badwords_ac_dc
 from  datasets import load_dataset
 from transformers import AutoTokenizer, RobertaForTokenClassification, M2M100ForConditionalGeneration, M2M100Tokenizer, pipelines
 import spacy
@@ -29,31 +26,46 @@ import random
 from sentence_transformers import SentenceTransformer
 from torch.nn.functional import cosine_similarity
 import langid
-from nltk.corpus import stopwords
 import json
 import os
-import torch
-torch.cuda.empty_cache()
-mariam_mt = {('aav', 'en'): 'Helsinki-NLP/opus-mt-aav-en', ('aed', 'es'): 'Helsinki-NLP/opus-mt-aed-es', ('af', 'de'): 'Helsinki-NLP/opus-mt-af-de', ('af', 'en'): 'Helsinki-NLP/opus-mt-af-en', ('af', 'eo'): 'Helsinki-NLP/opus-mt-af-eo', ('af', 'es'): 'Helsinki-NLP/opus-mt-af-es', ('af', 'fi'): 'Helsinki-NLP/opus-mt-af-fi', ('af', 'fr'): 'Helsinki-NLP/opus-mt-af-fr', ('af', 'nl'): 'Helsinki-NLP/opus-mt-af-nl', ('af', 'ru'): 'Helsinki-NLP/opus-mt-af-ru', ('af', 'sv'): 'Helsinki-NLP/opus-mt-af-sv', ('afa', 'afa'): 'Helsinki-NLP/opus-mt-afa-afa', ('afa', 'en'): 'Helsinki-NLP/opus-mt-afa-en', ('alv', 'en'): 'Helsinki-NLP/opus-mt-alv-en', ('am', 'sv'): 'Helsinki-NLP/opus-mt-am-sv', ('ar', 'de'): 'Helsinki-NLP/opus-mt-ar-de', ('ar', 'el'): 'Helsinki-NLP/opus-mt-ar-el', ('ar', 'en'): 'Helsinki-NLP/opus-mt-ar-en', ('ar', 'eo'): 'Helsinki-NLP/opus-mt-ar-eo', ('ar', 'es'): 'Helsinki-NLP/opus-mt-ar-es', ('ar', 'fr'): 'Helsinki-NLP/opus-mt-ar-fr', ('ar', 'he'): 'Helsinki-NLP/opus-mt-ar-he', ('ar', 'it'): 'Helsinki-NLP/opus-mt-ar-it', ('ar', 'pl'): 'Helsinki-NLP/opus-mt-ar-pl', ('ar', 'ru'): 'Helsinki-NLP/opus-mt-ar-ru', ('ar', 'tr'): 'Helsinki-NLP/opus-mt-ar-tr', ('art', 'en'): 'Helsinki-NLP/opus-mt-art-en', ('ase', 'de'): 'Helsinki-NLP/opus-mt-ase-de', ('ase', 'en'): 'Helsinki-NLP/opus-mt-ase-en', ('ase', 'es'): 'Helsinki-NLP/opus-mt-ase-es', ('ase', 'fr'): 'Helsinki-NLP/opus-mt-ase-fr', ('ase', 'sv'): 'Helsinki-NLP/opus-mt-ase-sv', ('az', 'en'): 'Helsinki-NLP/opus-mt-az-en', ('az', 'es'): 'Helsinki-NLP/opus-mt-az-es', ('az', 'tr'): 'Helsinki-NLP/opus-mt-az-tr', ('bat', 'en'): 'Helsinki-NLP/opus-mt-bat-en', ('bcl', 'de'): 'Helsinki-NLP/opus-mt-bcl-de', ('bcl', 'en'): 'Helsinki-NLP/opus-mt-bcl-en', ('bcl', 'es'): 'Helsinki-NLP/opus-mt-bcl-es', ('bcl', 'fi'): 'Helsinki-NLP/opus-mt-bcl-fi', ('bcl', 'fr'): 'Helsinki-NLP/opus-mt-bcl-fr', ('bcl', 'sv'): 'Helsinki-NLP/opus-mt-bcl-sv', ('be', 'es'): 'Helsinki-NLP/opus-mt-be-es', ('bem', 'en'): 'Helsinki-NLP/opus-mt-bem-en', ('bem', 'es'): 'Helsinki-NLP/opus-mt-bem-es', ('bem', 'fi'): 'Helsinki-NLP/opus-mt-bem-fi', ('bem', 'fr'): 'Helsinki-NLP/opus-mt-bem-fr', ('bem', 'sv'): 'Helsinki-NLP/opus-mt-bem-sv', ('ber', 'en'): 'Helsinki-NLP/opus-mt-ber-en', ('ber', 'es'): 'Helsinki-NLP/opus-mt-ber-es', ('ber', 'fr'): 'Helsinki-NLP/opus-mt-ber-fr', ('bg', 'de'): 'Helsinki-NLP/opus-mt-bg-de', ('bg', 'en'): 'Helsinki-NLP/opus-mt-bg-en', ('bg', 'eo'): 'Helsinki-NLP/opus-mt-bg-eo', ('bg', 'es'): 'Helsinki-NLP/opus-mt-bg-es', ('bg', 'fi'): 'Helsinki-NLP/opus-mt-bg-fi', ('bg', 'fr'): 'Helsinki-NLP/opus-mt-bg-fr', ('bg', 'it'): 'Helsinki-NLP/opus-mt-bg-it', ('bg', 'ru'): 'Helsinki-NLP/opus-mt-bg-ru', ('bg', 'sv'): 'Helsinki-NLP/opus-mt-bg-sv', ('bg', 'tr'): 'Helsinki-NLP/opus-mt-bg-tr', ('bg', 'uk'): 'Helsinki-NLP/opus-mt-bg-uk', ('bi', 'en'): 'Helsinki-NLP/opus-mt-bi-en', ('bi', 'es'): 'Helsinki-NLP/opus-mt-bi-es', ('bi', 'fr'): 'Helsinki-NLP/opus-mt-bi-fr', ('bi', 'sv'): 'Helsinki-NLP/opus-mt-bi-sv', ('bn', 'en'): 'Helsinki-NLP/opus-mt-bn-en', ('bnt', 'en'): 'Helsinki-NLP/opus-mt-bnt-en', ('bzs', 'en'): 'Helsinki-NLP/opus-mt-bzs-en', ('bzs', 'es'): 'Helsinki-NLP/opus-mt-bzs-es', ('bzs', 'fi'): 'Helsinki-NLP/opus-mt-bzs-fi', ('bzs', 'fr'): 'Helsinki-NLP/opus-mt-bzs-fr', ('bzs', 'sv'): 'Helsinki-NLP/opus-mt-bzs-sv', ('ca', 'de'): 'Helsinki-NLP/opus-mt-ca-de', ('ca', 'en'): 'Helsinki-NLP/opus-mt-ca-en', ('ca', 'es'): 'Helsinki-NLP/opus-mt-ca-es', ('ca', 'fr'): 'Helsinki-NLP/opus-mt-ca-fr', ('ca', 'it'): 'Helsinki-NLP/opus-mt-ca-it', ('ca', 'nl'): 'Helsinki-NLP/opus-mt-ca-nl', ('ca', 'pt'): 'Helsinki-NLP/opus-mt-ca-pt', ('ca', 'uk'): 'Helsinki-NLP/opus-mt-ca-uk', ('cau', 'en'): 'Helsinki-NLP/opus-mt-cau-en', ('ccs', 'en'): 'Helsinki-NLP/opus-mt-ccs-en', ('ceb', 'en'): 'Helsinki-NLP/opus-mt-ceb-en', ('ceb', 'es'): 'Helsinki-NLP/opus-mt-ceb-es', ('ceb', 'fi'): 'Helsinki-NLP/opus-mt-ceb-fi', ('ceb', 'fr'): 'Helsinki-NLP/opus-mt-ceb-fr', ('ceb', 'sv'): 'Helsinki-NLP/opus-mt-ceb-sv', ('cel', 'en'): 'Helsinki-NLP/opus-mt-cel-en', ('chk', 'en'): 'Helsinki-NLP/opus-mt-chk-en', ('chk', 'es'): 'Helsinki-NLP/opus-mt-chk-es', ('chk', 'fr'): 'Helsinki-NLP/opus-mt-chk-fr', ('chk', 'sv'): 'Helsinki-NLP/opus-mt-chk-sv', ('cpf', 'en'): 'Helsinki-NLP/opus-mt-cpf-en', ('cpp', 'cpp'): 'Helsinki-NLP/opus-mt-cpp-cpp', ('cpp', 'en'): 'Helsinki-NLP/opus-mt-cpp-en', ('crs', 'de'): 'Helsinki-NLP/opus-mt-crs-de', ('crs', 'en'): 'Helsinki-NLP/opus-mt-crs-en', ('crs', 'es'): 'Helsinki-NLP/opus-mt-crs-es', ('crs', 'fi'): 'Helsinki-NLP/opus-mt-crs-fi', ('crs', 'fr'): 'Helsinki-NLP/opus-mt-crs-fr', ('crs', 'sv'): 'Helsinki-NLP/opus-mt-crs-sv', ('cs', 'de'): 'Helsinki-NLP/opus-mt-cs-de', ('cs', 'en'): 'Helsinki-NLP/opus-mt-cs-en', ('cs', 'eo'): 'Helsinki-NLP/opus-mt-cs-eo', ('cs', 'fi'): 'Helsinki-NLP/opus-mt-cs-fi', ('cs', 'fr'): 'Helsinki-NLP/opus-mt-cs-fr', ('cs', 'sv'): 'Helsinki-NLP/opus-mt-cs-sv', ('cs', 'uk'): 'Helsinki-NLP/opus-mt-cs-uk', ('csg', 'es'): 'Helsinki-NLP/opus-mt-csg-es', ('csn', 'es'): 'Helsinki-NLP/opus-mt-csn-es', ('cus', 'en'): 'Helsinki-NLP/opus-mt-cus-en', ('cy', 'en'): 'Helsinki-NLP/opus-mt-cy-en', ('da', 'de'): 'Helsinki-NLP/opus-mt-da-de', ('da', 'en'): 'Helsinki-NLP/opus-mt-da-en', ('da', 'eo'): 'Helsinki-NLP/opus-mt-da-eo', ('da', 'es'): 'Helsinki-NLP/opus-mt-da-es', ('da', 'fi'): 'Helsinki-NLP/opus-mt-da-fi', ('da', 'fr'): 'Helsinki-NLP/opus-mt-da-fr', ('da', 'no'): 'Helsinki-NLP/opus-mt-da-no', ('da', 'ru'): 'Helsinki-NLP/opus-mt-da-ru', ('de', 'ZH'): 'Helsinki-NLP/opus-mt-de-ZH', ('de', 'af'): 'Helsinki-NLP/opus-mt-de-af', ('de', 'ar'): 'Helsinki-NLP/opus-mt-de-ar', ('de', 'ase'): 'Helsinki-NLP/opus-mt-de-ase', ('de', 'bcl'): 'Helsinki-NLP/opus-mt-de-bcl', ('de', 'bg'): 'Helsinki-NLP/opus-mt-de-bg', ('de', 'bi'): 'Helsinki-NLP/opus-mt-de-bi', ('de', 'bzs'): 'Helsinki-NLP/opus-mt-de-bzs', ('de', 'ca'): 'Helsinki-NLP/opus-mt-de-ca', ('de', 'crs'): 'Helsinki-NLP/opus-mt-de-crs', ('de', 'cs'): 'Helsinki-NLP/opus-mt-de-cs', ('de', 'da'): 'Helsinki-NLP/opus-mt-de-da', ('de', 'de'): 'Helsinki-NLP/opus-mt-de-de', ('de', 'ee'): 'Helsinki-NLP/opus-mt-de-ee', ('de', 'efi'): 'Helsinki-NLP/opus-mt-de-efi', ('de', 'el'): 'Helsinki-NLP/opus-mt-de-el', ('de', 'en'): 'Helsinki-NLP/opus-mt-de-en', ('de', 'eo'): 'Helsinki-NLP/opus-mt-de-eo', ('de', 'es'): 'Helsinki-NLP/opus-mt-de-es', ('de', 'et'): 'Helsinki-NLP/opus-mt-de-et', ('de', 'eu'): 'Helsinki-NLP/opus-mt-de-eu', ('de', 'fi'): 'Helsinki-NLP/opus-mt-de-fi', ('de', 'fj'): 'Helsinki-NLP/opus-mt-de-fj', ('de', 'fr'): 'Helsinki-NLP/opus-mt-de-fr', ('de', 'gaa'): 'Helsinki-NLP/opus-mt-de-gaa', ('de', 'gil'): 'Helsinki-NLP/opus-mt-de-gil', ('de', 'guw'): 'Helsinki-NLP/opus-mt-de-guw', ('de', 'ha'): 'Helsinki-NLP/opus-mt-de-ha', ('de', 'he'): 'Helsinki-NLP/opus-mt-de-he', ('de', 'hil'): 'Helsinki-NLP/opus-mt-de-hil', ('de', 'ho'): 'Helsinki-NLP/opus-mt-de-ho', ('de', 'hr'): 'Helsinki-NLP/opus-mt-de-hr', ('de', 'ht'): 'Helsinki-NLP/opus-mt-de-ht', ('de', 'hu'): 'Helsinki-NLP/opus-mt-de-hu', ('de', 'ig'): 'Helsinki-NLP/opus-mt-de-ig', ('de', 'ilo'): 'Helsinki-NLP/opus-mt-de-ilo', ('de', 'is'): 'Helsinki-NLP/opus-mt-de-is', ('de', 'iso'): 'Helsinki-NLP/opus-mt-de-iso', ('de', 'it'): 'Helsinki-NLP/opus-mt-de-it', ('de', 'kg'): 'Helsinki-NLP/opus-mt-de-kg', ('de', 'ln'): 'Helsinki-NLP/opus-mt-de-ln', ('de', 'loz'): 'Helsinki-NLP/opus-mt-de-loz', ('de', 'lt'): 'Helsinki-NLP/opus-mt-de-lt', ('de', 'lua'): 'Helsinki-NLP/opus-mt-de-lua', ('de', 'ms'): 'Helsinki-NLP/opus-mt-de-ms', ('de', 'mt'): 'Helsinki-NLP/opus-mt-de-mt', ('de', 'niu'): 'Helsinki-NLP/opus-mt-de-niu', ('de', 'nl'): 'Helsinki-NLP/opus-mt-de-nl', ('de', 'no'): 'Helsinki-NLP/opus-mt-de-no', ('de', 'nso'): 'Helsinki-NLP/opus-mt-de-nso', ('de', 'ny'): 'Helsinki-NLP/opus-mt-de-ny', ('de', 'pag'): 'Helsinki-NLP/opus-mt-de-pag', ('de', 'pap'): 'Helsinki-NLP/opus-mt-de-pap', ('de', 'pis'): 'Helsinki-NLP/opus-mt-de-pis', ('de', 'pl'): 'Helsinki-NLP/opus-mt-de-pl', ('de', 'pon'): 'Helsinki-NLP/opus-mt-de-pon', ('de', 'tl'): 'Helsinki-NLP/opus-mt-de-tl', ('de', 'uk'): 'Helsinki-NLP/opus-mt-de-uk', ('de', 'vi'): 'Helsinki-NLP/opus-mt-de-vi', ('dra', 'en'): 'Helsinki-NLP/opus-mt-dra-en', ('ee', 'de'): 'Helsinki-NLP/opus-mt-ee-de', ('ee', 'en'): 'Helsinki-NLP/opus-mt-ee-en', ('ee', 'es'): 'Helsinki-NLP/opus-mt-ee-es', ('ee', 'fi'): 'Helsinki-NLP/opus-mt-ee-fi', ('ee', 'fr'): 'Helsinki-NLP/opus-mt-ee-fr', ('ee', 'sv'): 'Helsinki-NLP/opus-mt-ee-sv', ('efi', 'de'): 'Helsinki-NLP/opus-mt-efi-de', ('efi', 'en'): 'Helsinki-NLP/opus-mt-efi-en', ('efi', 'fi'): 'Helsinki-NLP/opus-mt-efi-fi', ('efi', 'fr'): 'Helsinki-NLP/opus-mt-efi-fr', ('efi', 'sv'): 'Helsinki-NLP/opus-mt-efi-sv', ('el', 'ar'): 'Helsinki-NLP/opus-mt-el-ar', ('el', 'eo'): 'Helsinki-NLP/opus-mt-el-eo', ('el', 'fi'): 'Helsinki-NLP/opus-mt-el-fi', ('el', 'fr'): 'Helsinki-NLP/opus-mt-el-fr', ('el', 'sv'): 'Helsinki-NLP/opus-mt-el-sv', ('en', 'aav'): 'Helsinki-NLP/opus-mt-en-aav', ('en', 'af'): 'Helsinki-NLP/opus-mt-en-af', ('en', 'afa'): 'Helsinki-NLP/opus-mt-en-afa', ('en', 'alv'): 'Helsinki-NLP/opus-mt-en-alv', ('en', 'ar'): 'Helsinki-NLP/opus-mt-en-ar', ('en', 'az'): 'Helsinki-NLP/opus-mt-en-az', ('en', 'bat'): 'Helsinki-NLP/opus-mt-en-bat', ('en', 'bcl'): 'Helsinki-NLP/opus-mt-en-bcl', ('en', 'bem'): 'Helsinki-NLP/opus-mt-en-bem', ('en', 'ber'): 'Helsinki-NLP/opus-mt-en-ber', ('en', 'bg'): 'Helsinki-NLP/opus-mt-en-bg', ('en', 'bi'): 'Helsinki-NLP/opus-mt-en-bi', ('en', 'bnt'): 'Helsinki-NLP/opus-mt-en-bnt', ('en', 'bzs'): 'Helsinki-NLP/opus-mt-en-bzs', ('en', 'ca'): 'Helsinki-NLP/opus-mt-en-ca', ('en', 'ceb'): 'Helsinki-NLP/opus-mt-en-ceb', ('en', 'cel'): 'Helsinki-NLP/opus-mt-en-cel', ('en', 'chk'): 'Helsinki-NLP/opus-mt-en-chk', ('en', 'cpf'): 'Helsinki-NLP/opus-mt-en-cpf', ('en', 'cpp'): 'Helsinki-NLP/opus-mt-en-cpp', ('en', 'crs'): 'Helsinki-NLP/opus-mt-en-crs', ('en', 'cs'): 'Helsinki-NLP/opus-mt-en-cs', ('en', 'cus'): 'Helsinki-NLP/opus-mt-en-cus', ('en', 'cy'): 'Helsinki-NLP/opus-mt-en-cy', ('en', 'da'): 'Helsinki-NLP/opus-mt-en-da', ('en', 'de'): 'Helsinki-NLP/opus-mt-en-de', ('en', 'dra'): 'Helsinki-NLP/opus-mt-en-dra', ('en', 'ee'): 'Helsinki-NLP/opus-mt-en-ee', ('en', 'efi'): 'Helsinki-NLP/opus-mt-en-efi', ('en', 'el'): 'Helsinki-NLP/opus-mt-en-el', ('en', 'eo'): 'Helsinki-NLP/opus-mt-en-eo', ('en', 'es'): 'Helsinki-NLP/opus-mt-en-es', ('en', 'et'): 'Helsinki-NLP/opus-mt-en-et', ('en', 'eu'): 'Helsinki-NLP/opus-mt-en-eu', ('en', 'euq'): 'Helsinki-NLP/opus-mt-en-euq', ('en', 'fi'): 'Helsinki-NLP/opus-mt-en-fi', ('en', 'fiu'): 'Helsinki-NLP/opus-mt-en-fiu', ('en', 'fj'): 'Helsinki-NLP/opus-mt-en-fj', ('en', 'fr'): 'Helsinki-NLP/opus-mt-en-fr', ('en', 'ga'): 'Helsinki-NLP/opus-mt-en-ga', ('en', 'gaa'): 'Helsinki-NLP/opus-mt-en-gaa', ('en', 'gem'): 'Helsinki-NLP/opus-mt-en-gem', ('en', 'gil'): 'Helsinki-NLP/opus-mt-en-gil', ('en', 'gl'): 'Helsinki-NLP/opus-mt-en-gl', ('en', 'gmq'): 'Helsinki-NLP/opus-mt-en-gmq', ('en', 'gmw'): 'Helsinki-NLP/opus-mt-en-gmw', ('en', 'grk'): 'Helsinki-NLP/opus-mt-en-grk', ('en', 'guw'): 'Helsinki-NLP/opus-mt-en-guw', ('en', 'gv'): 'Helsinki-NLP/opus-mt-en-gv', ('en', 'ha'): 'Helsinki-NLP/opus-mt-en-ha', ('en', 'he'): 'Helsinki-NLP/opus-mt-en-he', ('en', 'hi'): 'Helsinki-NLP/opus-mt-en-hi', ('en', 'hil'): 'Helsinki-NLP/opus-mt-en-hil', ('en', 'ho'): 'Helsinki-NLP/opus-mt-en-ho', ('en', 'ht'): 'Helsinki-NLP/opus-mt-en-ht', ('en', 'hu'): 'Helsinki-NLP/opus-mt-en-hu', ('en', 'hy'): 'Helsinki-NLP/opus-mt-en-hy', ('en', 'id'): 'Helsinki-NLP/opus-mt-en-id', ('en', 'ig'): 'Helsinki-NLP/opus-mt-en-ig', ('en', 'iir'): 'Helsinki-NLP/opus-mt-en-iir', ('en', 'ilo'): 'Helsinki-NLP/opus-mt-en-ilo', ('en', 'inc'): 'Helsinki-NLP/opus-mt-en-inc', ('en', 'ine'): 'Helsinki-NLP/opus-mt-en-ine', ('en', 'is'): 'Helsinki-NLP/opus-mt-en-is', ('en', 'iso'): 'Helsinki-NLP/opus-mt-en-iso', ('en', 'it'): 'Helsinki-NLP/opus-mt-en-it', ('en', 'itc'): 'Helsinki-NLP/opus-mt-en-itc', ('en', 'jap'): 'Helsinki-NLP/opus-mt-en-jap', ('en', 'kg'): 'Helsinki-NLP/opus-mt-en-kg', ('en', 'kj'): 'Helsinki-NLP/opus-mt-en-kj', ('en', 'kqn'): 'Helsinki-NLP/opus-mt-en-kqn', ('en', 'kwn'): 'Helsinki-NLP/opus-mt-en-kwn', ('en', 'kwy'): 'Helsinki-NLP/opus-mt-en-kwy', ('en', 'lg'): 'Helsinki-NLP/opus-mt-en-lg', ('en', 'ln'): 'Helsinki-NLP/opus-mt-en-ln', ('en', 'loz'): 'Helsinki-NLP/opus-mt-en-loz', ('en', 'lu'): 'Helsinki-NLP/opus-mt-en-lu', ('en', 'lua'): 'Helsinki-NLP/opus-mt-en-lua', ('en', 'lue'): 'Helsinki-NLP/opus-mt-en-lue', ('en', 'lun'): 'Helsinki-NLP/opus-mt-en-lun', ('en', 'luo'): 'Helsinki-NLP/opus-mt-en-luo', ('en', 'lus'): 'Helsinki-NLP/opus-mt-en-lus', ('en', 'map'): 'Helsinki-NLP/opus-mt-en-map', ('en', 'mfe'): 'Helsinki-NLP/opus-mt-en-mfe', ('en', 'mg'): 'Helsinki-NLP/opus-mt-en-mg', ('en', 'mh'): 'Helsinki-NLP/opus-mt-en-mh', ('en', 'mk'): 'Helsinki-NLP/opus-mt-en-mk', ('en', 'mkh'): 'Helsinki-NLP/opus-mt-en-mkh', ('en', 'ml'): 'Helsinki-NLP/opus-mt-en-ml', ('en', 'mos'): 'Helsinki-NLP/opus-mt-en-mos', ('en', 'mr'): 'Helsinki-NLP/opus-mt-en-mr', ('en', 'mt'): 'Helsinki-NLP/opus-mt-en-mt', ('en', 'mul'): 'Helsinki-NLP/opus-mt-en-mul', ('en', 'ng'): 'Helsinki-NLP/opus-mt-en-ng', ('en', 'nic'): 'Helsinki-NLP/opus-mt-en-nic', ('en', 'niu'): 'Helsinki-NLP/opus-mt-en-niu', ('en', 'nl'): 'Helsinki-NLP/opus-mt-en-nl', ('en', 'nso'): 'Helsinki-NLP/opus-mt-en-nso', ('en', 'ny'): 'Helsinki-NLP/opus-mt-en-ny', ('en', 'nyk'): 'Helsinki-NLP/opus-mt-en-nyk', ('en', 'om'): 'Helsinki-NLP/opus-mt-en-om', ('en', 'pag'): 'Helsinki-NLP/opus-mt-en-pag', ('en', 'pap'): 'Helsinki-NLP/opus-mt-en-pap', ('en', 'phi'): 'Helsinki-NLP/opus-mt-en-phi', ('en', 'pis'): 'Helsinki-NLP/opus-mt-en-pis', ('en', 'pon'): 'Helsinki-NLP/opus-mt-en-pon', ('en', 'poz'): 'Helsinki-NLP/opus-mt-en-poz', ('en', 'pqe'): 'Helsinki-NLP/opus-mt-en-pqe', ('en', 'pqw'): 'Helsinki-NLP/opus-mt-en-pqw', ('en', 'rn'): 'Helsinki-NLP/opus-mt-en-rn', ('en', 'rnd'): 'Helsinki-NLP/opus-mt-en-rnd', ('en', 'ro'): 'Helsinki-NLP/opus-mt-en-ro', ('en', 'roa'): 'Helsinki-NLP/opus-mt-en-roa', ('en', 'ru'): 'Helsinki-NLP/opus-mt-en-ru', ('en', 'run'): 'Helsinki-NLP/opus-mt-en-run', ('en', 'rw'): 'Helsinki-NLP/opus-mt-en-rw', ('en', 'sal'): 'Helsinki-NLP/opus-mt-en-sal', ('en', 'sem'): 'Helsinki-NLP/opus-mt-en-sem', ('en', 'sg'): 'Helsinki-NLP/opus-mt-en-sg', ('en', 'sit'): 'Helsinki-NLP/opus-mt-en-sit', ('en', 'sk'): 'Helsinki-NLP/opus-mt-en-sk', ('en', 'sla'): 'Helsinki-NLP/opus-mt-en-sla', ('en', 'sm'): 'Helsinki-NLP/opus-mt-en-sm', ('en', 'sn'): 'Helsinki-NLP/opus-mt-en-sn', ('en', 'sq'): 'Helsinki-NLP/opus-mt-en-sq', ('en', 'ss'): 'Helsinki-NLP/opus-mt-en-ss', ('en', 'st'): 'Helsinki-NLP/opus-mt-en-st', ('en', 'sv'): 'Helsinki-NLP/opus-mt-en-sv', ('en', 'sw'): 'Helsinki-NLP/opus-mt-en-sw', ('en', 'swc'): 'Helsinki-NLP/opus-mt-en-swc', ('en', 'tdt'): 'Helsinki-NLP/opus-mt-en-tdt', ('en', 'ti'): 'Helsinki-NLP/opus-mt-en-ti', ('en', 'tiv'): 'Helsinki-NLP/opus-mt-en-tiv', ('en', 'tl'): 'Helsinki-NLP/opus-mt-en-tl', ('en', 'tll'): 'Helsinki-NLP/opus-mt-en-tll', ('en', 'tn'): 'Helsinki-NLP/opus-mt-en-tn', ('en', 'to'): 'Helsinki-NLP/opus-mt-en-to', ('en', 'toi'): 'Helsinki-NLP/opus-mt-en-toi', ('en', 'tpi'): 'Helsinki-NLP/opus-mt-en-tpi', ('en', 'trk'): 'Helsinki-NLP/opus-mt-en-trk', ('en', 'ts'): 'Helsinki-NLP/opus-mt-en-ts', ('en', 'tut'): 'Helsinki-NLP/opus-mt-en-tut', ('en', 'tvl'): 'Helsinki-NLP/opus-mt-en-tvl', ('en', 'tw'): 'Helsinki-NLP/opus-mt-en-tw', ('en', 'ty'): 'Helsinki-NLP/opus-mt-en-ty', ('en', 'uk'): 'Helsinki-NLP/opus-mt-en-uk', ('en', 'umb'): 'Helsinki-NLP/opus-mt-en-umb', ('en', 'ur'): 'Helsinki-NLP/opus-mt-en-ur', ('en', 'urj'): 'Helsinki-NLP/opus-mt-en-urj', ('en', 'vi'): 'Helsinki-NLP/opus-mt-en-vi', ('en', 'xh'): 'Helsinki-NLP/opus-mt-en-xh', ('en', 'zh'): 'Helsinki-NLP/opus-mt-en-zh', ('en', 'zle'): 'Helsinki-NLP/opus-mt-en-zle', ('en', 'zls'): 'Helsinki-NLP/opus-mt-en-zls', ('en', 'zlw'): 'Helsinki-NLP/opus-mt-en-zlw', ('en_el_es_fi', 'en_el_es_fi'): 'Helsinki-NLP/opus-mt-en_el_es_fi-en_el_es_fi', ('eo', 'af'): 'Helsinki-NLP/opus-mt-eo-af', ('eo', 'bg'): 'Helsinki-NLP/opus-mt-eo-bg', ('eo', 'cs'): 'Helsinki-NLP/opus-mt-eo-cs', ('eo', 'da'): 'Helsinki-NLP/opus-mt-eo-da', ('eo', 'de'): 'Helsinki-NLP/opus-mt-eo-de', ('eo', 'el'): 'Helsinki-NLP/opus-mt-eo-el', ('eo', 'en'): 'Helsinki-NLP/opus-mt-eo-en', ('eo', 'es'): 'Helsinki-NLP/opus-mt-eo-es', ('eo', 'fi'): 'Helsinki-NLP/opus-mt-eo-fi', ('eo', 'fr'): 'Helsinki-NLP/opus-mt-eo-fr', ('eo', 'he'): 'Helsinki-NLP/opus-mt-eo-he', ('eo', 'hu'): 'Helsinki-NLP/opus-mt-eo-hu', ('eo', 'it'): 'Helsinki-NLP/opus-mt-eo-it', ('eo', 'nl'): 'Helsinki-NLP/opus-mt-eo-nl', ('eo', 'pl'): 'Helsinki-NLP/opus-mt-eo-pl', ('eo', 'pt'): 'Helsinki-NLP/opus-mt-eo-pt', ('eo', 'ro'): 'Helsinki-NLP/opus-mt-eo-ro', ('eo', 'ru'): 'Helsinki-NLP/opus-mt-eo-ru', ('eo', 'sh'): 'Helsinki-NLP/opus-mt-eo-sh', ('eo', 'sv'): 'Helsinki-NLP/opus-mt-eo-sv', ('es', 'NORWAY'): 'Helsinki-NLP/opus-mt-es-NORWAY', ('es', 'aed'): 'Helsinki-NLP/opus-mt-es-aed', ('es', 'af'): 'Helsinki-NLP/opus-mt-es-af', ('es', 'ar'): 'Helsinki-NLP/opus-mt-es-ar', ('es', 'ase'): 'Helsinki-NLP/opus-mt-es-ase', ('es', 'bcl'): 'Helsinki-NLP/opus-mt-es-bcl', ('es', 'ber'): 'Helsinki-NLP/opus-mt-es-ber', ('es', 'bg'): 'Helsinki-NLP/opus-mt-es-bg', ('es', 'bi'): 'Helsinki-NLP/opus-mt-es-bi', ('es', 'bzs'): 'Helsinki-NLP/opus-mt-es-bzs', ('es', 'ca'): 'Helsinki-NLP/opus-mt-es-ca', ('es', 'ceb'): 'Helsinki-NLP/opus-mt-es-ceb', ('es', 'crs'): 'Helsinki-NLP/opus-mt-es-crs', ('es', 'cs'): 'Helsinki-NLP/opus-mt-es-cs', ('es', 'csg'): 'Helsinki-NLP/opus-mt-es-csg', ('es', 'csn'): 'Helsinki-NLP/opus-mt-es-csn', ('es', 'da'): 'Helsinki-NLP/opus-mt-es-da', ('es', 'de'): 'Helsinki-NLP/opus-mt-es-de', ('es', 'ee'): 'Helsinki-NLP/opus-mt-es-ee', ('es', 'efi'): 'Helsinki-NLP/opus-mt-es-efi', ('es', 'el'): 'Helsinki-NLP/opus-mt-es-el', ('es', 'en'): 'Helsinki-NLP/opus-mt-es-en', ('es', 'eo'): 'Helsinki-NLP/opus-mt-es-eo', ('es', 'es'): 'Helsinki-NLP/opus-mt-es-es', ('es', 'et'): 'Helsinki-NLP/opus-mt-es-et', ('es', 'eu'): 'Helsinki-NLP/opus-mt-es-eu', ('es', 'fi'): 'Helsinki-NLP/opus-mt-es-fi', ('es', 'fj'): 'Helsinki-NLP/opus-mt-es-fj', ('es', 'fr'): 'Helsinki-NLP/opus-mt-es-fr', ('es', 'gaa'): 'Helsinki-NLP/opus-mt-es-gaa', ('es', 'gil'): 'Helsinki-NLP/opus-mt-es-gil', ('es', 'gl'): 'Helsinki-NLP/opus-mt-es-gl', ('es', 'guw'): 'Helsinki-NLP/opus-mt-es-guw', ('es', 'ha'): 'Helsinki-NLP/opus-mt-es-ha', ('es', 'he'): 'Helsinki-NLP/opus-mt-es-he', ('es', 'hil'): 'Helsinki-NLP/opus-mt-es-hil', ('es', 'ho'): 'Helsinki-NLP/opus-mt-es-ho', ('es', 'hr'): 'Helsinki-NLP/opus-mt-es-hr', ('es', 'ht'): 'Helsinki-NLP/opus-mt-es-ht', ('es', 'id'): 'Helsinki-NLP/opus-mt-es-id', ('es', 'ig'): 'Helsinki-NLP/opus-mt-es-ig', ('es', 'ilo'): 'Helsinki-NLP/opus-mt-es-ilo', ('es', 'is'): 'Helsinki-NLP/opus-mt-es-is', ('es', 'iso'): 'Helsinki-NLP/opus-mt-es-iso', ('es', 'it'): 'Helsinki-NLP/opus-mt-es-it', ('es', 'kg'): 'Helsinki-NLP/opus-mt-es-kg', ('es', 'ln'): 'Helsinki-NLP/opus-mt-es-ln', ('es', 'loz'): 'Helsinki-NLP/opus-mt-es-loz', ('es', 'lt'): 'Helsinki-NLP/opus-mt-es-lt', ('es', 'lua'): 'Helsinki-NLP/opus-mt-es-lua', ('es', 'lus'): 'Helsinki-NLP/opus-mt-es-lus', ('es', 'mfs'): 'Helsinki-NLP/opus-mt-es-mfs', ('es', 'mk'): 'Helsinki-NLP/opus-mt-es-mk', ('es', 'mt'): 'Helsinki-NLP/opus-mt-es-mt', ('es', 'niu'): 'Helsinki-NLP/opus-mt-es-niu', ('es', 'nl'): 'Helsinki-NLP/opus-mt-es-nl', ('es', 'no'): 'Helsinki-NLP/opus-mt-es-no', ('es', 'nso'): 'Helsinki-NLP/opus-mt-es-nso', ('es', 'ny'): 'Helsinki-NLP/opus-mt-es-ny', ('es', 'pag'): 'Helsinki-NLP/opus-mt-es-pag', ('es', 'pap'): 'Helsinki-NLP/opus-mt-es-pap', ('es', 'pis'): 'Helsinki-NLP/opus-mt-es-pis', ('es', 'pl'): 'Helsinki-NLP/opus-mt-es-pl', ('es', 'pon'): 'Helsinki-NLP/opus-mt-es-pon', ('es', 'prl'): 'Helsinki-NLP/opus-mt-es-prl', ('es', 'rn'): 'Helsinki-NLP/opus-mt-es-rn', ('es', 'ro'): 'Helsinki-NLP/opus-mt-es-ro', ('es', 'ru'): 'Helsinki-NLP/opus-mt-es-ru', ('es', 'rw'): 'Helsinki-NLP/opus-mt-es-rw', ('es', 'sg'): 'Helsinki-NLP/opus-mt-es-sg', ('es', 'sl'): 'Helsinki-NLP/opus-mt-es-sl', ('es', 'sm'): 'Helsinki-NLP/opus-mt-es-sm', ('es', 'sn'): 'Helsinki-NLP/opus-mt-es-sn', ('es', 'srn'): 'Helsinki-NLP/opus-mt-es-srn', ('es', 'st'): 'Helsinki-NLP/opus-mt-es-st', ('es', 'swc'): 'Helsinki-NLP/opus-mt-es-swc', ('es', 'tl'): 'Helsinki-NLP/opus-mt-es-tl', ('es', 'tll'): 'Helsinki-NLP/opus-mt-es-tll', ('es', 'tn'): 'Helsinki-NLP/opus-mt-es-tn', ('es', 'to'): 'Helsinki-NLP/opus-mt-es-to', ('es', 'tpi'): 'Helsinki-NLP/opus-mt-es-tpi', ('es', 'tvl'): 'Helsinki-NLP/opus-mt-es-tvl', ('es', 'tw'): 'Helsinki-NLP/opus-mt-es-tw', ('es', 'ty'): 'Helsinki-NLP/opus-mt-es-ty', ('es', 'tzo'): 'Helsinki-NLP/opus-mt-es-tzo', ('es', 'uk'): 'Helsinki-NLP/opus-mt-es-uk', ('es', 've'): 'Helsinki-NLP/opus-mt-es-ve', ('es', 'vi'): 'Helsinki-NLP/opus-mt-es-vi', ('es', 'war'): 'Helsinki-NLP/opus-mt-es-war', ('es', 'wls'): 'Helsinki-NLP/opus-mt-es-wls', ('es', 'xh'): 'Helsinki-NLP/opus-mt-es-xh', ('es', 'yo'): 'Helsinki-NLP/opus-mt-es-yo', ('es', 'yua'): 'Helsinki-NLP/opus-mt-es-yua', ('es', 'zai'): 'Helsinki-NLP/opus-mt-es-zai', ('et', 'de'): 'Helsinki-NLP/opus-mt-et-de', ('et', 'en'): 'Helsinki-NLP/opus-mt-et-en', ('et', 'es'): 'Helsinki-NLP/opus-mt-et-es', ('et', 'fi'): 'Helsinki-NLP/opus-mt-et-fi', ('et', 'fr'): 'Helsinki-NLP/opus-mt-et-fr', ('et', 'ru'): 'Helsinki-NLP/opus-mt-et-ru', ('et', 'sv'): 'Helsinki-NLP/opus-mt-et-sv', ('eu', 'de'): 'Helsinki-NLP/opus-mt-eu-de', ('eu', 'en'): 'Helsinki-NLP/opus-mt-eu-en', ('eu', 'es'): 'Helsinki-NLP/opus-mt-eu-es', ('eu', 'ru'): 'Helsinki-NLP/opus-mt-eu-ru', ('euq', 'en'): 'Helsinki-NLP/opus-mt-euq-en', ('fi', 'NORWAY'): 'Helsinki-NLP/opus-mt-fi-NORWAY', ('fi', 'ZH'): 'Helsinki-NLP/opus-mt-fi-ZH', ('fi', 'af'): 'Helsinki-NLP/opus-mt-fi-af', ('fi', 'bcl'): 'Helsinki-NLP/opus-mt-fi-bcl', ('fi', 'bem'): 'Helsinki-NLP/opus-mt-fi-bem', ('fi', 'bg'): 'Helsinki-NLP/opus-mt-fi-bg', ('fi', 'bzs'): 'Helsinki-NLP/opus-mt-fi-bzs', ('fi', 'ceb'): 'Helsinki-NLP/opus-mt-fi-ceb', ('fi', 'crs'): 'Helsinki-NLP/opus-mt-fi-crs', ('fi', 'cs'): 'Helsinki-NLP/opus-mt-fi-cs', ('fi', 'de'): 'Helsinki-NLP/opus-mt-fi-de', ('fi', 'ee'): 'Helsinki-NLP/opus-mt-fi-ee', ('fi', 'efi'): 'Helsinki-NLP/opus-mt-fi-efi', ('fi', 'el'): 'Helsinki-NLP/opus-mt-fi-el', ('fi', 'en'): 'Helsinki-NLP/opus-mt-fi-en', ('fi', 'eo'): 'Helsinki-NLP/opus-mt-fi-eo', ('fi', 'es'): 'Helsinki-NLP/opus-mt-fi-es', ('fi', 'et'): 'Helsinki-NLP/opus-mt-fi-et', ('fi', 'fi'): 'Helsinki-NLP/opus-mt-fi-fi', ('fi', 'fj'): 'Helsinki-NLP/opus-mt-fi-fj', ('fi', 'fr'): 'Helsinki-NLP/opus-mt-fi-fr', ('fi', 'fse'): 'Helsinki-NLP/opus-mt-fi-fse', ('fi', 'gaa'): 'Helsinki-NLP/opus-mt-fi-gaa', ('fi', 'gil'): 'Helsinki-NLP/opus-mt-fi-gil', ('fi', 'guw'): 'Helsinki-NLP/opus-mt-fi-guw', ('fi', 'ha'): 'Helsinki-NLP/opus-mt-fi-ha', ('fi', 'he'): 'Helsinki-NLP/opus-mt-fi-he', ('fi', 'hil'): 'Helsinki-NLP/opus-mt-fi-hil', ('fi', 'ho'): 'Helsinki-NLP/opus-mt-fi-ho', ('fi', 'hr'): 'Helsinki-NLP/opus-mt-fi-hr', ('fi', 'ht'): 'Helsinki-NLP/opus-mt-fi-ht', ('fi', 'hu'): 'Helsinki-NLP/opus-mt-fi-hu', ('fi', 'id'): 'Helsinki-NLP/opus-mt-fi-id', ('fi', 'ig'): 'Helsinki-NLP/opus-mt-fi-ig', ('fi', 'ilo'): 'Helsinki-NLP/opus-mt-fi-ilo', ('fi', 'is'): 'Helsinki-NLP/opus-mt-fi-is', ('fi', 'iso'): 'Helsinki-NLP/opus-mt-fi-iso', ('fi', 'it'): 'Helsinki-NLP/opus-mt-fi-it', ('fi', 'kg'): 'Helsinki-NLP/opus-mt-fi-kg', ('fi', 'kqn'): 'Helsinki-NLP/opus-mt-fi-kqn', ('fi', 'lg'): 'Helsinki-NLP/opus-mt-fi-lg', ('fi', 'ln'): 'Helsinki-NLP/opus-mt-fi-ln', ('fi', 'lu'): 'Helsinki-NLP/opus-mt-fi-lu', ('fi', 'lua'): 'Helsinki-NLP/opus-mt-fi-lua', ('fi', 'lue'): 'Helsinki-NLP/opus-mt-fi-lue', ('fi', 'lus'): 'Helsinki-NLP/opus-mt-fi-lus', ('fi', 'lv'): 'Helsinki-NLP/opus-mt-fi-lv', ('fi', 'mfe'): 'Helsinki-NLP/opus-mt-fi-mfe', ('fi', 'mg'): 'Helsinki-NLP/opus-mt-fi-mg', ('fi', 'mh'): 'Helsinki-NLP/opus-mt-fi-mh', ('fi', 'mk'): 'Helsinki-NLP/opus-mt-fi-mk', ('fi', 'mos'): 'Helsinki-NLP/opus-mt-fi-mos', ('fi', 'mt'): 'Helsinki-NLP/opus-mt-fi-mt', ('fi', 'niu'): 'Helsinki-NLP/opus-mt-fi-niu', ('fi', 'nl'): 'Helsinki-NLP/opus-mt-fi-nl', ('fi', 'no'): 'Helsinki-NLP/opus-mt-fi-no', ('fi', 'nso'): 'Helsinki-NLP/opus-mt-fi-nso', ('fi', 'ny'): 'Helsinki-NLP/opus-mt-fi-ny', ('fi', 'pag'): 'Helsinki-NLP/opus-mt-fi-pag', ('fi', 'pap'): 'Helsinki-NLP/opus-mt-fi-pap', ('fi', 'pis'): 'Helsinki-NLP/opus-mt-fi-pis', ('fi', 'pon'): 'Helsinki-NLP/opus-mt-fi-pon', ('fi', 'ro'): 'Helsinki-NLP/opus-mt-fi-ro', ('fi', 'ru'): 'Helsinki-NLP/opus-mt-fi-ru', ('fi', 'run'): 'Helsinki-NLP/opus-mt-fi-run', ('fi', 'rw'): 'Helsinki-NLP/opus-mt-fi-rw', ('fi', 'sg'): 'Helsinki-NLP/opus-mt-fi-sg', ('fi', 'sk'): 'Helsinki-NLP/opus-mt-fi-sk', ('fi', 'sl'): 'Helsinki-NLP/opus-mt-fi-sl', ('fi', 'sm'): 'Helsinki-NLP/opus-mt-fi-sm', ('fi', 'sn'): 'Helsinki-NLP/opus-mt-fi-sn', ('fi', 'sq'): 'Helsinki-NLP/opus-mt-fi-sq', ('fi', 'srn'): 'Helsinki-NLP/opus-mt-fi-srn', ('fi', 'st'): 'Helsinki-NLP/opus-mt-fi-st', ('fi', 'sv'): 'Helsinki-NLP/opus-mt-fi-sv', ('fi', 'sw'): 'Helsinki-NLP/opus-mt-fi-sw', ('fi', 'swc'): 'Helsinki-NLP/opus-mt-fi-swc', ('fi', 'tiv'): 'Helsinki-NLP/opus-mt-fi-tiv', ('fi', 'tll'): 'Helsinki-NLP/opus-mt-fi-tll', ('fi', 'tn'): 'Helsinki-NLP/opus-mt-fi-tn', ('fi', 'to'): 'Helsinki-NLP/opus-mt-fi-to', ('fi', 'toi'): 'Helsinki-NLP/opus-mt-fi-toi', ('fi', 'tpi'): 'Helsinki-NLP/opus-mt-fi-tpi', ('fi', 'tr'): 'Helsinki-NLP/opus-mt-fi-tr', ('fi', 'ts'): 'Helsinki-NLP/opus-mt-fi-ts', ('fi', 'tvl'): 'Helsinki-NLP/opus-mt-fi-tvl', ('fi', 'tw'): 'Helsinki-NLP/opus-mt-fi-tw', ('fi', 'ty'): 'Helsinki-NLP/opus-mt-fi-ty', ('fi', 'uk'): 'Helsinki-NLP/opus-mt-fi-uk', ('fi', 've'): 'Helsinki-NLP/opus-mt-fi-ve', ('fi', 'war'): 'Helsinki-NLP/opus-mt-fi-war', ('fi', 'wls'): 'Helsinki-NLP/opus-mt-fi-wls', ('fi', 'xh'): 'Helsinki-NLP/opus-mt-fi-xh', ('fi', 'yap'): 'Helsinki-NLP/opus-mt-fi-yap', ('fi', 'yo'): 'Helsinki-NLP/opus-mt-fi-yo', ('fi', 'zne'): 'Helsinki-NLP/opus-mt-fi-zne', ('fi_nb_no_nn_ru_sv_en', 'SAMI'): 'Helsinki-NLP/opus-mt-fi_nb_no_nn_ru_sv_en-SAMI', ('fiu', 'en'): 'Helsinki-NLP/opus-mt-fiu-en', ('fiu', 'fiu'): 'Helsinki-NLP/opus-mt-fiu-fiu', ('fj', 'en'): 'Helsinki-NLP/opus-mt-fj-en', ('fj', 'fr'): 'Helsinki-NLP/opus-mt-fj-fr', ('fr', 'af'): 'Helsinki-NLP/opus-mt-fr-af', ('fr', 'ar'): 'Helsinki-NLP/opus-mt-fr-ar', ('fr', 'ase'): 'Helsinki-NLP/opus-mt-fr-ase', ('fr', 'bcl'): 'Helsinki-NLP/opus-mt-fr-bcl', ('fr', 'bem'): 'Helsinki-NLP/opus-mt-fr-bem', ('fr', 'ber'): 'Helsinki-NLP/opus-mt-fr-ber', ('fr', 'bg'): 'Helsinki-NLP/opus-mt-fr-bg', ('fr', 'bi'): 'Helsinki-NLP/opus-mt-fr-bi', ('fr', 'bzs'): 'Helsinki-NLP/opus-mt-fr-bzs', ('fr', 'ca'): 'Helsinki-NLP/opus-mt-fr-ca', ('fr', 'ceb'): 'Helsinki-NLP/opus-mt-fr-ceb', ('fr', 'crs'): 'Helsinki-NLP/opus-mt-fr-crs', ('fr', 'de'): 'Helsinki-NLP/opus-mt-fr-de', ('fr', 'ee'): 'Helsinki-NLP/opus-mt-fr-ee', ('fr', 'efi'): 'Helsinki-NLP/opus-mt-fr-efi', ('fr', 'el'): 'Helsinki-NLP/opus-mt-fr-el', ('fr', 'en'): 'Helsinki-NLP/opus-mt-fr-en', ('fr', 'eo'): 'Helsinki-NLP/opus-mt-fr-eo', ('fr', 'es'): 'Helsinki-NLP/opus-mt-fr-es', ('fr', 'fj'): 'Helsinki-NLP/opus-mt-fr-fj', ('fr', 'gaa'): 'Helsinki-NLP/opus-mt-fr-gaa', ('fr', 'gil'): 'Helsinki-NLP/opus-mt-fr-gil', ('fr', 'guw'): 'Helsinki-NLP/opus-mt-fr-guw', ('fr', 'ha'): 'Helsinki-NLP/opus-mt-fr-ha', ('fr', 'he'): 'Helsinki-NLP/opus-mt-fr-he', ('fr', 'hil'): 'Helsinki-NLP/opus-mt-fr-hil', ('fr', 'ho'): 'Helsinki-NLP/opus-mt-fr-ho', ('fr', 'hr'): 'Helsinki-NLP/opus-mt-fr-hr', ('fr', 'ht'): 'Helsinki-NLP/opus-mt-fr-ht', ('fr', 'hu'): 'Helsinki-NLP/opus-mt-fr-hu', ('fr', 'id'): 'Helsinki-NLP/opus-mt-fr-id', ('fr', 'ig'): 'Helsinki-NLP/opus-mt-fr-ig', ('fr', 'ilo'): 'Helsinki-NLP/opus-mt-fr-ilo', ('fr', 'iso'): 'Helsinki-NLP/opus-mt-fr-iso', ('fr', 'kg'): 'Helsinki-NLP/opus-mt-fr-kg', ('fr', 'kqn'): 'Helsinki-NLP/opus-mt-fr-kqn', ('fr', 'kwy'): 'Helsinki-NLP/opus-mt-fr-kwy', ('fr', 'lg'): 'Helsinki-NLP/opus-mt-fr-lg', ('fr', 'ln'): 'Helsinki-NLP/opus-mt-fr-ln', ('fr', 'loz'): 'Helsinki-NLP/opus-mt-fr-loz', ('fr', 'lu'): 'Helsinki-NLP/opus-mt-fr-lu', ('fr', 'lua'): 'Helsinki-NLP/opus-mt-fr-lua', ('fr', 'lue'): 'Helsinki-NLP/opus-mt-fr-lue', ('fr', 'lus'): 'Helsinki-NLP/opus-mt-fr-lus', ('fr', 'mfe'): 'Helsinki-NLP/opus-mt-fr-mfe', ('fr', 'mh'): 'Helsinki-NLP/opus-mt-fr-mh', ('fr', 'mos'): 'Helsinki-NLP/opus-mt-fr-mos', ('fr', 'ms'): 'Helsinki-NLP/opus-mt-fr-ms', ('fr', 'mt'): 'Helsinki-NLP/opus-mt-fr-mt', ('fr', 'niu'): 'Helsinki-NLP/opus-mt-fr-niu', ('fr', 'no'): 'Helsinki-NLP/opus-mt-fr-no', ('fr', 'nso'): 'Helsinki-NLP/opus-mt-fr-nso', ('fr', 'ny'): 'Helsinki-NLP/opus-mt-fr-ny', ('fr', 'pag'): 'Helsinki-NLP/opus-mt-fr-pag', ('fr', 'pap'): 'Helsinki-NLP/opus-mt-fr-pap', ('fr', 'pis'): 'Helsinki-NLP/opus-mt-fr-pis', ('fr', 'pl'): 'Helsinki-NLP/opus-mt-fr-pl', ('fr', 'pon'): 'Helsinki-NLP/opus-mt-fr-pon', ('fr', 'rnd'): 'Helsinki-NLP/opus-mt-fr-rnd', ('fr', 'ro'): 'Helsinki-NLP/opus-mt-fr-ro', ('fr', 'ru'): 'Helsinki-NLP/opus-mt-fr-ru', ('fr', 'run'): 'Helsinki-NLP/opus-mt-fr-run', ('fr', 'rw'): 'Helsinki-NLP/opus-mt-fr-rw', ('fr', 'sg'): 'Helsinki-NLP/opus-mt-fr-sg', ('fr', 'sk'): 'Helsinki-NLP/opus-mt-fr-sk', ('fr', 'sl'): 'Helsinki-NLP/opus-mt-fr-sl', ('fr', 'sm'): 'Helsinki-NLP/opus-mt-fr-sm', ('fr', 'sn'): 'Helsinki-NLP/opus-mt-fr-sn', ('fr', 'srn'): 'Helsinki-NLP/opus-mt-fr-srn', ('fr', 'st'): 'Helsinki-NLP/opus-mt-fr-st', ('fr', 'sv'): 'Helsinki-NLP/opus-mt-fr-sv', ('fr', 'swc'): 'Helsinki-NLP/opus-mt-fr-swc', ('fr', 'tiv'): 'Helsinki-NLP/opus-mt-fr-tiv', ('fr', 'tl'): 'Helsinki-NLP/opus-mt-fr-tl', ('fr', 'tll'): 'Helsinki-NLP/opus-mt-fr-tll', ('fr', 'tn'): 'Helsinki-NLP/opus-mt-fr-tn', ('fr', 'to'): 'Helsinki-NLP/opus-mt-fr-to', ('fr', 'tpi'): 'Helsinki-NLP/opus-mt-fr-tpi', ('fr', 'ts'): 'Helsinki-NLP/opus-mt-fr-ts', ('fr', 'tum'): 'Helsinki-NLP/opus-mt-fr-tum', ('fr', 'tvl'): 'Helsinki-NLP/opus-mt-fr-tvl', ('fr', 'tw'): 'Helsinki-NLP/opus-mt-fr-tw', ('fr', 'ty'): 'Helsinki-NLP/opus-mt-fr-ty', ('fr', 'uk'): 'Helsinki-NLP/opus-mt-fr-uk', ('fr', 've'): 'Helsinki-NLP/opus-mt-fr-ve', ('fr', 'vi'): 'Helsinki-NLP/opus-mt-fr-vi', ('fr', 'war'): 'Helsinki-NLP/opus-mt-fr-war', ('fr', 'wls'): 'Helsinki-NLP/opus-mt-fr-wls', ('fr', 'xh'): 'Helsinki-NLP/opus-mt-fr-xh', ('fr', 'yap'): 'Helsinki-NLP/opus-mt-fr-yap', ('fr', 'yo'): 'Helsinki-NLP/opus-mt-fr-yo', ('fr', 'zne'): 'Helsinki-NLP/opus-mt-fr-zne', ('fse', 'fi'): 'Helsinki-NLP/opus-mt-fse-fi', ('ga', 'en'): 'Helsinki-NLP/opus-mt-ga-en', ('gaa', 'de'): 'Helsinki-NLP/opus-mt-gaa-de', ('gaa', 'en'): 'Helsinki-NLP/opus-mt-gaa-en', ('gaa', 'es'): 'Helsinki-NLP/opus-mt-gaa-es', ('gaa', 'fi'): 'Helsinki-NLP/opus-mt-gaa-fi', ('gaa', 'fr'): 'Helsinki-NLP/opus-mt-gaa-fr', ('gaa', 'sv'): 'Helsinki-NLP/opus-mt-gaa-sv', ('gem', 'en'): 'Helsinki-NLP/opus-mt-gem-en', ('gem', 'gem'): 'Helsinki-NLP/opus-mt-gem-gem', ('gil', 'en'): 'Helsinki-NLP/opus-mt-gil-en', ('gil', 'es'): 'Helsinki-NLP/opus-mt-gil-es', ('gil', 'fi'): 'Helsinki-NLP/opus-mt-gil-fi', ('gil', 'fr'): 'Helsinki-NLP/opus-mt-gil-fr', ('gil', 'sv'): 'Helsinki-NLP/opus-mt-gil-sv', ('gl', 'en'): 'Helsinki-NLP/opus-mt-gl-en', ('gl', 'es'): 'Helsinki-NLP/opus-mt-gl-es', ('gl', 'pt'): 'Helsinki-NLP/opus-mt-gl-pt', ('gmq', 'en'): 'Helsinki-NLP/opus-mt-gmq-en', ('gmq', 'gmq'): 'Helsinki-NLP/opus-mt-gmq-gmq', ('gmw', 'en'): 'Helsinki-NLP/opus-mt-gmw-en', ('gmw', 'gmw'): 'Helsinki-NLP/opus-mt-gmw-gmw', ('grk', 'en'): 'Helsinki-NLP/opus-mt-grk-en', ('guw', 'de'): 'Helsinki-NLP/opus-mt-guw-de', ('guw', 'en'): 'Helsinki-NLP/opus-mt-guw-en', ('guw', 'es'): 'Helsinki-NLP/opus-mt-guw-es', ('guw', 'fi'): 'Helsinki-NLP/opus-mt-guw-fi', ('guw', 'fr'): 'Helsinki-NLP/opus-mt-guw-fr', ('guw', 'sv'): 'Helsinki-NLP/opus-mt-guw-sv', ('gv', 'en'): 'Helsinki-NLP/opus-mt-gv-en', ('ha', 'en'): 'Helsinki-NLP/opus-mt-ha-en', ('ha', 'es'): 'Helsinki-NLP/opus-mt-ha-es', ('ha', 'fi'): 'Helsinki-NLP/opus-mt-ha-fi', ('ha', 'fr'): 'Helsinki-NLP/opus-mt-ha-fr', ('ha', 'sv'): 'Helsinki-NLP/opus-mt-ha-sv', ('he', 'ar'): 'Helsinki-NLP/opus-mt-he-ar', ('he', 'de'): 'Helsinki-NLP/opus-mt-he-de', ('he', 'eo'): 'Helsinki-NLP/opus-mt-he-eo', ('he', 'es'): 'Helsinki-NLP/opus-mt-he-es', ('he', 'fi'): 'Helsinki-NLP/opus-mt-he-fi', ('he', 'fr'): 'Helsinki-NLP/opus-mt-he-fr', ('he', 'it'): 'Helsinki-NLP/opus-mt-he-it', ('he', 'ru'): 'Helsinki-NLP/opus-mt-he-ru', ('he', 'sv'): 'Helsinki-NLP/opus-mt-he-sv', ('he', 'uk'): 'Helsinki-NLP/opus-mt-he-uk', ('hi', 'en'): 'Helsinki-NLP/opus-mt-hi-en', ('hi', 'ur'): 'Helsinki-NLP/opus-mt-hi-ur', ('hil', 'de'): 'Helsinki-NLP/opus-mt-hil-de', ('hil', 'en'): 'Helsinki-NLP/opus-mt-hil-en', ('hil', 'fi'): 'Helsinki-NLP/opus-mt-hil-fi', ('ho', 'en'): 'Helsinki-NLP/opus-mt-ho-en', ('hr', 'es'): 'Helsinki-NLP/opus-mt-hr-es', ('hr', 'fi'): 'Helsinki-NLP/opus-mt-hr-fi', ('hr', 'fr'): 'Helsinki-NLP/opus-mt-hr-fr', ('hr', 'sv'): 'Helsinki-NLP/opus-mt-hr-sv', ('ht', 'en'): 'Helsinki-NLP/opus-mt-ht-en', ('ht', 'es'): 'Helsinki-NLP/opus-mt-ht-es', ('ht', 'fi'): 'Helsinki-NLP/opus-mt-ht-fi', ('ht', 'fr'): 'Helsinki-NLP/opus-mt-ht-fr', ('ht', 'sv'): 'Helsinki-NLP/opus-mt-ht-sv', ('hu', 'de'): 'Helsinki-NLP/opus-mt-hu-de', ('hu', 'en'): 'Helsinki-NLP/opus-mt-hu-en', ('hu', 'eo'): 'Helsinki-NLP/opus-mt-hu-eo', ('hu', 'fi'): 'Helsinki-NLP/opus-mt-hu-fi', ('hu', 'fr'): 'Helsinki-NLP/opus-mt-hu-fr', ('hu', 'sv'): 'Helsinki-NLP/opus-mt-hu-sv', ('hu', 'uk'): 'Helsinki-NLP/opus-mt-hu-uk', ('hy', 'en'): 'Helsinki-NLP/opus-mt-hy-en', ('hy', 'ru'): 'Helsinki-NLP/opus-mt-hy-ru', ('id', 'en'): 'Helsinki-NLP/opus-mt-id-en', ('id', 'es'): 'Helsinki-NLP/opus-mt-id-es', ('id', 'fi'): 'Helsinki-NLP/opus-mt-id-fi', ('id', 'fr'): 'Helsinki-NLP/opus-mt-id-fr', ('id', 'sv'): 'Helsinki-NLP/opus-mt-id-sv', ('ig', 'de'): 'Helsinki-NLP/opus-mt-ig-de', ('ig', 'en'): 'Helsinki-NLP/opus-mt-ig-en', ('ig', 'es'): 'Helsinki-NLP/opus-mt-ig-es', ('ig', 'fi'): 'Helsinki-NLP/opus-mt-ig-fi', ('ig', 'fr'): 'Helsinki-NLP/opus-mt-ig-fr', ('ig', 'sv'): 'Helsinki-NLP/opus-mt-ig-sv', ('iir', 'en'): 'Helsinki-NLP/opus-mt-iir-en', ('iir', 'iir'): 'Helsinki-NLP/opus-mt-iir-iir', ('ilo', 'de'): 'Helsinki-NLP/opus-mt-ilo-de', ('ilo', 'en'): 'Helsinki-NLP/opus-mt-ilo-en', ('ilo', 'es'): 'Helsinki-NLP/opus-mt-ilo-es', ('ilo', 'fi'): 'Helsinki-NLP/opus-mt-ilo-fi', ('ilo', 'sv'): 'Helsinki-NLP/opus-mt-ilo-sv', ('inc', 'en'): 'Helsinki-NLP/opus-mt-inc-en', ('inc', 'inc'): 'Helsinki-NLP/opus-mt-inc-inc', ('ine', 'en'): 'Helsinki-NLP/opus-mt-ine-en', ('ine', 'ine'): 'Helsinki-NLP/opus-mt-ine-ine', ('is', 'de'): 'Helsinki-NLP/opus-mt-is-de', ('is', 'en'): 'Helsinki-NLP/opus-mt-is-en', ('is', 'eo'): 'Helsinki-NLP/opus-mt-is-eo', ('is', 'es'): 'Helsinki-NLP/opus-mt-is-es', ('is', 'fi'): 'Helsinki-NLP/opus-mt-is-fi', ('is', 'fr'): 'Helsinki-NLP/opus-mt-is-fr', ('is', 'it'): 'Helsinki-NLP/opus-mt-is-it', ('is', 'sv'): 'Helsinki-NLP/opus-mt-is-sv', ('iso', 'en'): 'Helsinki-NLP/opus-mt-iso-en', ('iso', 'es'): 'Helsinki-NLP/opus-mt-iso-es', ('iso', 'fi'): 'Helsinki-NLP/opus-mt-iso-fi', ('iso', 'fr'): 'Helsinki-NLP/opus-mt-iso-fr', ('iso', 'sv'): 'Helsinki-NLP/opus-mt-iso-sv', ('it', 'ar'): 'Helsinki-NLP/opus-mt-it-ar', ('it', 'bg'): 'Helsinki-NLP/opus-mt-it-bg', ('it', 'ca'): 'Helsinki-NLP/opus-mt-it-ca', ('it', 'de'): 'Helsinki-NLP/opus-mt-it-de', ('it', 'en'): 'Helsinki-NLP/opus-mt-it-en', ('it', 'eo'): 'Helsinki-NLP/opus-mt-it-eo', ('it', 'es'): 'Helsinki-NLP/opus-mt-it-es', ('it', 'fr'): 'Helsinki-NLP/opus-mt-it-fr', ('it', 'is'): 'Helsinki-NLP/opus-mt-it-is', ('it', 'lt'): 'Helsinki-NLP/opus-mt-it-lt', ('it', 'ms'): 'Helsinki-NLP/opus-mt-it-ms', ('it', 'sv'): 'Helsinki-NLP/opus-mt-it-sv', ('it', 'uk'): 'Helsinki-NLP/opus-mt-it-uk', ('it', 'vi'): 'Helsinki-NLP/opus-mt-it-vi', ('itc', 'en'): 'Helsinki-NLP/opus-mt-itc-en', ('itc', 'itc'): 'Helsinki-NLP/opus-mt-itc-itc', ('ja', 'ar'): 'Helsinki-NLP/opus-mt-ja-ar', ('ja', 'bg'): 'Helsinki-NLP/opus-mt-ja-bg', ('ja', 'da'): 'Helsinki-NLP/opus-mt-ja-da', ('ja', 'de'): 'Helsinki-NLP/opus-mt-ja-de', ('ja', 'en'): 'Helsinki-NLP/opus-mt-ja-en', ('ja', 'es'): 'Helsinki-NLP/opus-mt-ja-es', ('ja', 'fi'): 'Helsinki-NLP/opus-mt-ja-fi', ('ja', 'fr'): 'Helsinki-NLP/opus-mt-ja-fr', ('ja', 'he'): 'Helsinki-NLP/opus-mt-ja-he', ('ja', 'hu'): 'Helsinki-NLP/opus-mt-ja-hu', ('ja', 'it'): 'Helsinki-NLP/opus-mt-ja-it', ('ja', 'ms'): 'Helsinki-NLP/opus-mt-ja-ms', ('ja', 'nl'): 'Helsinki-NLP/opus-mt-ja-nl', ('ja', 'pl'): 'Helsinki-NLP/opus-mt-ja-pl', ('ja', 'pt'): 'Helsinki-NLP/opus-mt-ja-pt', ('ja', 'ru'): 'Helsinki-NLP/opus-mt-ja-ru', ('ja', 'sh'): 'Helsinki-NLP/opus-mt-ja-sh', ('ja', 'sv'): 'Helsinki-NLP/opus-mt-ja-sv', ('ja', 'tr'): 'Helsinki-NLP/opus-mt-ja-tr', ('ja', 'vi'): 'Helsinki-NLP/opus-mt-ja-vi', ('jap', 'en'): 'Helsinki-NLP/opus-mt-jap-en', ('ka', 'en'): 'Helsinki-NLP/opus-mt-ka-en', ('ka', 'ru'): 'Helsinki-NLP/opus-mt-ka-ru', ('kab', 'en'): 'Helsinki-NLP/opus-mt-kab-en', ('kg', 'en'): 'Helsinki-NLP/opus-mt-kg-en', ('kg', 'es'): 'Helsinki-NLP/opus-mt-kg-es', ('kg', 'fr'): 'Helsinki-NLP/opus-mt-kg-fr', ('kg', 'sv'): 'Helsinki-NLP/opus-mt-kg-sv', ('kj', 'en'): 'Helsinki-NLP/opus-mt-kj-en', ('kl', 'en'): 'Helsinki-NLP/opus-mt-kl-en', ('ko', 'de'): 'Helsinki-NLP/opus-mt-ko-de', ('ko', 'en'): 'Helsinki-NLP/opus-mt-ko-en', ('ko', 'es'): 'Helsinki-NLP/opus-mt-ko-es', ('ko', 'fi'): 'Helsinki-NLP/opus-mt-ko-fi', ('ko', 'fr'): 'Helsinki-NLP/opus-mt-ko-fr', ('ko', 'hu'): 'Helsinki-NLP/opus-mt-ko-hu', ('ko', 'ru'): 'Helsinki-NLP/opus-mt-ko-ru', ('ko', 'sv'): 'Helsinki-NLP/opus-mt-ko-sv', ('kqn', 'en'): 'Helsinki-NLP/opus-mt-kqn-en', ('kqn', 'es'): 'Helsinki-NLP/opus-mt-kqn-es', ('kqn', 'fr'): 'Helsinki-NLP/opus-mt-kqn-fr', ('kqn', 'sv'): 'Helsinki-NLP/opus-mt-kqn-sv', ('kwn', 'en'): 'Helsinki-NLP/opus-mt-kwn-en', ('kwy', 'en'): 'Helsinki-NLP/opus-mt-kwy-en', ('kwy', 'fr'): 'Helsinki-NLP/opus-mt-kwy-fr', ('kwy', 'sv'): 'Helsinki-NLP/opus-mt-kwy-sv', ('lg', 'en'): 'Helsinki-NLP/opus-mt-lg-en', ('lg', 'es'): 'Helsinki-NLP/opus-mt-lg-es', ('lg', 'fi'): 'Helsinki-NLP/opus-mt-lg-fi', ('lg', 'fr'): 'Helsinki-NLP/opus-mt-lg-fr', ('lg', 'sv'): 'Helsinki-NLP/opus-mt-lg-sv', ('ln', 'de'): 'Helsinki-NLP/opus-mt-ln-de', ('ln', 'en'): 'Helsinki-NLP/opus-mt-ln-en', ('ln', 'es'): 'Helsinki-NLP/opus-mt-ln-es', ('ln', 'fr'): 'Helsinki-NLP/opus-mt-ln-fr', ('loz', 'de'): 'Helsinki-NLP/opus-mt-loz-de', ('loz', 'en'): 'Helsinki-NLP/opus-mt-loz-en', ('loz', 'es'): 'Helsinki-NLP/opus-mt-loz-es', ('loz', 'fi'): 'Helsinki-NLP/opus-mt-loz-fi', ('loz', 'fr'): 'Helsinki-NLP/opus-mt-loz-fr', ('loz', 'sv'): 'Helsinki-NLP/opus-mt-loz-sv', ('lt', 'de'): 'Helsinki-NLP/opus-mt-lt-de', ('lt', 'eo'): 'Helsinki-NLP/opus-mt-lt-eo', ('lt', 'es'): 'Helsinki-NLP/opus-mt-lt-es', ('lt', 'fr'): 'Helsinki-NLP/opus-mt-lt-fr', ('lt', 'it'): 'Helsinki-NLP/opus-mt-lt-it', ('lt', 'pl'): 'Helsinki-NLP/opus-mt-lt-pl', ('lt', 'ru'): 'Helsinki-NLP/opus-mt-lt-ru', ('lt', 'sv'): 'Helsinki-NLP/opus-mt-lt-sv', ('lt', 'tr'): 'Helsinki-NLP/opus-mt-lt-tr', ('lu', 'en'): 'Helsinki-NLP/opus-mt-lu-en', ('lu', 'es'): 'Helsinki-NLP/opus-mt-lu-es', ('lu', 'fi'): 'Helsinki-NLP/opus-mt-lu-fi', ('lu', 'fr'): 'Helsinki-NLP/opus-mt-lu-fr', ('lu', 'sv'): 'Helsinki-NLP/opus-mt-lu-sv', ('lua', 'en'): 'Helsinki-NLP/opus-mt-lua-en', ('lua', 'es'): 'Helsinki-NLP/opus-mt-lua-es', ('lua', 'fi'): 'Helsinki-NLP/opus-mt-lua-fi', ('lua', 'fr'): 'Helsinki-NLP/opus-mt-lua-fr', ('lua', 'sv'): 'Helsinki-NLP/opus-mt-lua-sv', ('lue', 'en'): 'Helsinki-NLP/opus-mt-lue-en', ('lue', 'es'): 'Helsinki-NLP/opus-mt-lue-es', ('lue', 'fi'): 'Helsinki-NLP/opus-mt-lue-fi', ('lue', 'fr'): 'Helsinki-NLP/opus-mt-lue-fr', ('lue', 'sv'): 'Helsinki-NLP/opus-mt-lue-sv', ('lun', 'en'): 'Helsinki-NLP/opus-mt-lun-en', ('luo', 'en'): 'Helsinki-NLP/opus-mt-luo-en', ('lus', 'en'): 'Helsinki-NLP/opus-mt-lus-en', ('lus', 'es'): 'Helsinki-NLP/opus-mt-lus-es', ('lus', 'fi'): 'Helsinki-NLP/opus-mt-lus-fi', ('lus', 'fr'): 'Helsinki-NLP/opus-mt-lus-fr', ('lus', 'sv'): 'Helsinki-NLP/opus-mt-lus-sv', ('lv', 'en'): 'Helsinki-NLP/opus-mt-lv-en', ('lv', 'es'): 'Helsinki-NLP/opus-mt-lv-es', ('lv', 'fi'): 'Helsinki-NLP/opus-mt-lv-fi', ('lv', 'fr'): 'Helsinki-NLP/opus-mt-lv-fr', ('lv', 'ru'): 'Helsinki-NLP/opus-mt-lv-ru', ('lv', 'sv'): 'Helsinki-NLP/opus-mt-lv-sv', ('mfe', 'en'): 'Helsinki-NLP/opus-mt-mfe-en', ('mfe', 'es'): 'Helsinki-NLP/opus-mt-mfe-es', ('mfs', 'es'): 'Helsinki-NLP/opus-mt-mfs-es', ('mg', 'en'): 'Helsinki-NLP/opus-mt-mg-en', ('mg', 'es'): 'Helsinki-NLP/opus-mt-mg-es', ('mh', 'en'): 'Helsinki-NLP/opus-mt-mh-en', ('mh', 'es'): 'Helsinki-NLP/opus-mt-mh-es', ('mh', 'fi'): 'Helsinki-NLP/opus-mt-mh-fi', ('mk', 'en'): 'Helsinki-NLP/opus-mt-mk-en', ('mk', 'es'): 'Helsinki-NLP/opus-mt-mk-es', ('mk', 'fi'): 'Helsinki-NLP/opus-mt-mk-fi', ('mk', 'fr'): 'Helsinki-NLP/opus-mt-mk-fr', ('mkh', 'en'): 'Helsinki-NLP/opus-mt-mkh-en', ('ml', 'en'): 'Helsinki-NLP/opus-mt-ml-en', ('mos', 'en'): 'Helsinki-NLP/opus-mt-mos-en', ('mr', 'en'): 'Helsinki-NLP/opus-mt-mr-en', ('ms', 'de'): 'Helsinki-NLP/opus-mt-ms-de', ('ms', 'fr'): 'Helsinki-NLP/opus-mt-ms-fr', ('ms', 'it'): 'Helsinki-NLP/opus-mt-ms-it', ('ms', 'ms'): 'Helsinki-NLP/opus-mt-ms-ms', ('mt', 'en'): 'Helsinki-NLP/opus-mt-mt-en', ('mt', 'es'): 'Helsinki-NLP/opus-mt-mt-es', ('mt', 'fi'): 'Helsinki-NLP/opus-mt-mt-fi', ('mt', 'fr'): 'Helsinki-NLP/opus-mt-mt-fr', ('mt', 'sv'): 'Helsinki-NLP/opus-mt-mt-sv', ('mul', 'en'): 'Helsinki-NLP/opus-mt-mul-en', ('ng', 'en'): 'Helsinki-NLP/opus-mt-ng-en', ('nic', 'en'): 'Helsinki-NLP/opus-mt-nic-en', ('niu', 'de'): 'Helsinki-NLP/opus-mt-niu-de', ('niu', 'en'): 'Helsinki-NLP/opus-mt-niu-en', ('niu', 'es'): 'Helsinki-NLP/opus-mt-niu-es', ('niu', 'fi'): 'Helsinki-NLP/opus-mt-niu-fi', ('niu', 'fr'): 'Helsinki-NLP/opus-mt-niu-fr', ('niu', 'sv'): 'Helsinki-NLP/opus-mt-niu-sv', ('nl', 'af'): 'Helsinki-NLP/opus-mt-nl-af', ('nl', 'ca'): 'Helsinki-NLP/opus-mt-nl-ca', ('nl', 'en'): 'Helsinki-NLP/opus-mt-nl-en', ('nl', 'eo'): 'Helsinki-NLP/opus-mt-nl-eo', ('nl', 'es'): 'Helsinki-NLP/opus-mt-nl-es', ('nl', 'fi'): 'Helsinki-NLP/opus-mt-nl-fi', ('nl', 'fr'): 'Helsinki-NLP/opus-mt-nl-fr', ('nl', 'no'): 'Helsinki-NLP/opus-mt-nl-no', ('nl', 'sv'): 'Helsinki-NLP/opus-mt-nl-sv', ('nl', 'uk'): 'Helsinki-NLP/opus-mt-nl-uk', ('no', 'da'): 'Helsinki-NLP/opus-mt-no-da', ('no', 'de'): 'Helsinki-NLP/opus-mt-no-de', ('no', 'es'): 'Helsinki-NLP/opus-mt-no-es', ('no', 'fi'): 'Helsinki-NLP/opus-mt-no-fi', ('no', 'fr'): 'Helsinki-NLP/opus-mt-no-fr', ('no', 'nl'): 'Helsinki-NLP/opus-mt-no-nl', ('no', 'no'): 'Helsinki-NLP/opus-mt-no-no', ('no', 'pl'): 'Helsinki-NLP/opus-mt-no-pl', ('no', 'ru'): 'Helsinki-NLP/opus-mt-no-ru', ('no', 'sv'): 'Helsinki-NLP/opus-mt-no-sv', ('no', 'uk'): 'Helsinki-NLP/opus-mt-no-uk', ('nso', 'de'): 'Helsinki-NLP/opus-mt-nso-de', ('nso', 'en'): 'Helsinki-NLP/opus-mt-nso-en', ('nso', 'es'): 'Helsinki-NLP/opus-mt-nso-es', ('nso', 'fi'): 'Helsinki-NLP/opus-mt-nso-fi', ('nso', 'fr'): 'Helsinki-NLP/opus-mt-nso-fr', ('nso', 'sv'): 'Helsinki-NLP/opus-mt-nso-sv', ('ny', 'de'): 'Helsinki-NLP/opus-mt-ny-de', ('ny', 'en'): 'Helsinki-NLP/opus-mt-ny-en', ('ny', 'es'): 'Helsinki-NLP/opus-mt-ny-es', ('nyk', 'en'): 'Helsinki-NLP/opus-mt-nyk-en', ('om', 'en'): 'Helsinki-NLP/opus-mt-om-en', ('pa', 'en'): 'Helsinki-NLP/opus-mt-pa-en', ('pag', 'de'): 'Helsinki-NLP/opus-mt-pag-de', ('pag', 'en'): 'Helsinki-NLP/opus-mt-pag-en', ('pag', 'es'): 'Helsinki-NLP/opus-mt-pag-es', ('pag', 'fi'): 'Helsinki-NLP/opus-mt-pag-fi', ('pag', 'sv'): 'Helsinki-NLP/opus-mt-pag-sv', ('pap', 'de'): 'Helsinki-NLP/opus-mt-pap-de', ('pap', 'en'): 'Helsinki-NLP/opus-mt-pap-en', ('pap', 'es'): 'Helsinki-NLP/opus-mt-pap-es', ('pap', 'fi'): 'Helsinki-NLP/opus-mt-pap-fi', ('pap', 'fr'): 'Helsinki-NLP/opus-mt-pap-fr', ('phi', 'en'): 'Helsinki-NLP/opus-mt-phi-en', ('pis', 'en'): 'Helsinki-NLP/opus-mt-pis-en', ('pis', 'es'): 'Helsinki-NLP/opus-mt-pis-es', ('pis', 'fi'): 'Helsinki-NLP/opus-mt-pis-fi', ('pis', 'fr'): 'Helsinki-NLP/opus-mt-pis-fr', ('pis', 'sv'): 'Helsinki-NLP/opus-mt-pis-sv', ('pl', 'ar'): 'Helsinki-NLP/opus-mt-pl-ar', ('pl', 'de'): 'Helsinki-NLP/opus-mt-pl-de', ('pl', 'en'): 'Helsinki-NLP/opus-mt-pl-en', ('pl', 'eo'): 'Helsinki-NLP/opus-mt-pl-eo', ('pl', 'es'): 'Helsinki-NLP/opus-mt-pl-es', ('pl', 'fr'): 'Helsinki-NLP/opus-mt-pl-fr', ('pl', 'lt'): 'Helsinki-NLP/opus-mt-pl-lt', ('pl', 'no'): 'Helsinki-NLP/opus-mt-pl-no', ('pl', 'sv'): 'Helsinki-NLP/opus-mt-pl-sv', ('pl', 'uk'): 'Helsinki-NLP/opus-mt-pl-uk', ('pon', 'en'): 'Helsinki-NLP/opus-mt-pon-en', ('pon', 'es'): 'Helsinki-NLP/opus-mt-pon-es', ('pon', 'fi'): 'Helsinki-NLP/opus-mt-pon-fi', ('pon', 'fr'): 'Helsinki-NLP/opus-mt-pon-fr', ('pon', 'sv'): 'Helsinki-NLP/opus-mt-pon-sv', ('pqe', 'en'): 'Helsinki-NLP/opus-mt-pqe-en', ('prl', 'es'): 'Helsinki-NLP/opus-mt-prl-es', ('pt', 'ca'): 'Helsinki-NLP/opus-mt-pt-ca', ('pt', 'eo'): 'Helsinki-NLP/opus-mt-pt-eo', ('pt', 'gl'): 'Helsinki-NLP/opus-mt-pt-gl', ('pt', 'tl'): 'Helsinki-NLP/opus-mt-pt-tl', ('pt', 'uk'): 'Helsinki-NLP/opus-mt-pt-uk', ('rn', 'de'): 'Helsinki-NLP/opus-mt-rn-de', ('rn', 'en'): 'Helsinki-NLP/opus-mt-rn-en', ('rn', 'es'): 'Helsinki-NLP/opus-mt-rn-es', ('rn', 'fr'): 'Helsinki-NLP/opus-mt-rn-fr', ('rn', 'ru'): 'Helsinki-NLP/opus-mt-rn-ru', ('rnd', 'en'): 'Helsinki-NLP/opus-mt-rnd-en', ('rnd', 'fr'): 'Helsinki-NLP/opus-mt-rnd-fr', ('rnd', 'sv'): 'Helsinki-NLP/opus-mt-rnd-sv', ('ro', 'eo'): 'Helsinki-NLP/opus-mt-ro-eo', ('ro', 'fi'): 'Helsinki-NLP/opus-mt-ro-fi', ('ro', 'fr'): 'Helsinki-NLP/opus-mt-ro-fr', ('ro', 'sv'): 'Helsinki-NLP/opus-mt-ro-sv', ('roa', 'en'): 'Helsinki-NLP/opus-mt-roa-en', ('ru', 'af'): 'Helsinki-NLP/opus-mt-ru-af', ('ru', 'ar'): 'Helsinki-NLP/opus-mt-ru-ar', ('ru', 'bg'): 'Helsinki-NLP/opus-mt-ru-bg', ('ru', 'da'): 'Helsinki-NLP/opus-mt-ru-da', ('ru', 'en'): 'Helsinki-NLP/opus-mt-ru-en', ('ru', 'eo'): 'Helsinki-NLP/opus-mt-ru-eo', ('ru', 'es'): 'Helsinki-NLP/opus-mt-ru-es', ('ru', 'et'): 'Helsinki-NLP/opus-mt-ru-et', ('ru', 'eu'): 'Helsinki-NLP/opus-mt-ru-eu', ('ru', 'fi'): 'Helsinki-NLP/opus-mt-ru-fi', ('ru', 'fr'): 'Helsinki-NLP/opus-mt-ru-fr', ('ru', 'he'): 'Helsinki-NLP/opus-mt-ru-he', ('ru', 'hy'): 'Helsinki-NLP/opus-mt-ru-hy', ('ru', 'lt'): 'Helsinki-NLP/opus-mt-ru-lt', ('ru', 'lv'): 'Helsinki-NLP/opus-mt-ru-lv', ('ru', 'no'): 'Helsinki-NLP/opus-mt-ru-no', ('ru', 'sl'): 'Helsinki-NLP/opus-mt-ru-sl', ('ru', 'sv'): 'Helsinki-NLP/opus-mt-ru-sv', ('ru', 'uk'): 'Helsinki-NLP/opus-mt-ru-uk', ('ru', 'vi'): 'Helsinki-NLP/opus-mt-ru-vi', ('run', 'en'): 'Helsinki-NLP/opus-mt-run-en', ('run', 'es'): 'Helsinki-NLP/opus-mt-run-es', ('run', 'sv'): 'Helsinki-NLP/opus-mt-run-sv', ('rw', 'en'): 'Helsinki-NLP/opus-mt-rw-en', ('rw', 'es'): 'Helsinki-NLP/opus-mt-rw-es', ('rw', 'fr'): 'Helsinki-NLP/opus-mt-rw-fr', ('rw', 'sv'): 'Helsinki-NLP/opus-mt-rw-sv', ('sal', 'en'): 'Helsinki-NLP/opus-mt-sal-en', ('sem', 'en'): 'Helsinki-NLP/opus-mt-sem-en', ('sem', 'sem'): 'Helsinki-NLP/opus-mt-sem-sem', ('sg', 'en'): 'Helsinki-NLP/opus-mt-sg-en', ('sg', 'es'): 'Helsinki-NLP/opus-mt-sg-es', ('sg', 'fi'): 'Helsinki-NLP/opus-mt-sg-fi', ('sg', 'fr'): 'Helsinki-NLP/opus-mt-sg-fr', ('sg', 'sv'): 'Helsinki-NLP/opus-mt-sg-sv', ('sh', 'eo'): 'Helsinki-NLP/opus-mt-sh-eo', ('sh', 'uk'): 'Helsinki-NLP/opus-mt-sh-uk', ('sk', 'en'): 'Helsinki-NLP/opus-mt-sk-en', ('sk', 'es'): 'Helsinki-NLP/opus-mt-sk-es', ('sk', 'fi'): 'Helsinki-NLP/opus-mt-sk-fi', ('sk', 'fr'): 'Helsinki-NLP/opus-mt-sk-fr', ('sk', 'sv'): 'Helsinki-NLP/opus-mt-sk-sv', ('sl', 'es'): 'Helsinki-NLP/opus-mt-sl-es', ('sl', 'fi'): 'Helsinki-NLP/opus-mt-sl-fi', ('sl', 'fr'): 'Helsinki-NLP/opus-mt-sl-fr', ('sl', 'ru'): 'Helsinki-NLP/opus-mt-sl-ru', ('sl', 'sv'): 'Helsinki-NLP/opus-mt-sl-sv', ('sl', 'uk'): 'Helsinki-NLP/opus-mt-sl-uk', ('sla', 'en'): 'Helsinki-NLP/opus-mt-sla-en', ('sla', 'sla'): 'Helsinki-NLP/opus-mt-sla-sla', ('sm', 'en'): 'Helsinki-NLP/opus-mt-sm-en', ('sm', 'es'): 'Helsinki-NLP/opus-mt-sm-es', ('sm', 'fr'): 'Helsinki-NLP/opus-mt-sm-fr', ('sn', 'en'): 'Helsinki-NLP/opus-mt-sn-en', ('sn', 'es'): 'Helsinki-NLP/opus-mt-sn-es', ('sn', 'fr'): 'Helsinki-NLP/opus-mt-sn-fr', ('sn', 'sv'): 'Helsinki-NLP/opus-mt-sn-sv', ('sq', 'en'): 'Helsinki-NLP/opus-mt-sq-en', ('sq', 'es'): 'Helsinki-NLP/opus-mt-sq-es', ('sq', 'sv'): 'Helsinki-NLP/opus-mt-sq-sv', ('srn', 'en'): 'Helsinki-NLP/opus-mt-srn-en', ('srn', 'es'): 'Helsinki-NLP/opus-mt-srn-es', ('srn', 'fr'): 'Helsinki-NLP/opus-mt-srn-fr', ('srn', 'sv'): 'Helsinki-NLP/opus-mt-srn-sv', ('ss', 'en'): 'Helsinki-NLP/opus-mt-ss-en', ('ssp', 'es'): 'Helsinki-NLP/opus-mt-ssp-es', ('st', 'en'): 'Helsinki-NLP/opus-mt-st-en', ('st', 'es'): 'Helsinki-NLP/opus-mt-st-es', ('st', 'fi'): 'Helsinki-NLP/opus-mt-st-fi', ('st', 'fr'): 'Helsinki-NLP/opus-mt-st-fr', ('st', 'sv'): 'Helsinki-NLP/opus-mt-st-sv', ('sv', 'NORWAY'): 'Helsinki-NLP/opus-mt-sv-NORWAY', ('sv', 'ZH'): 'Helsinki-NLP/opus-mt-sv-ZH', ('sv', 'af'): 'Helsinki-NLP/opus-mt-sv-af', ('sv', 'ase'): 'Helsinki-NLP/opus-mt-sv-ase', ('sv', 'bcl'): 'Helsinki-NLP/opus-mt-sv-bcl', ('sv', 'bem'): 'Helsinki-NLP/opus-mt-sv-bem', ('sv', 'bg'): 'Helsinki-NLP/opus-mt-sv-bg', ('sv', 'bi'): 'Helsinki-NLP/opus-mt-sv-bi', ('sv', 'bzs'): 'Helsinki-NLP/opus-mt-sv-bzs', ('sv', 'ceb'): 'Helsinki-NLP/opus-mt-sv-ceb', ('sv', 'chk'): 'Helsinki-NLP/opus-mt-sv-chk', ('sv', 'crs'): 'Helsinki-NLP/opus-mt-sv-crs', ('sv', 'cs'): 'Helsinki-NLP/opus-mt-sv-cs', ('sv', 'ee'): 'Helsinki-NLP/opus-mt-sv-ee', ('sv', 'efi'): 'Helsinki-NLP/opus-mt-sv-efi', ('sv', 'el'): 'Helsinki-NLP/opus-mt-sv-el', ('sv', 'en'): 'Helsinki-NLP/opus-mt-sv-en', ('sv', 'eo'): 'Helsinki-NLP/opus-mt-sv-eo', ('sv', 'es'): 'Helsinki-NLP/opus-mt-sv-es', ('sv', 'et'): 'Helsinki-NLP/opus-mt-sv-et', ('sv', 'fi'): 'Helsinki-NLP/opus-mt-sv-fi', ('sv', 'fj'): 'Helsinki-NLP/opus-mt-sv-fj', ('sv', 'fr'): 'Helsinki-NLP/opus-mt-sv-fr', ('sv', 'gaa'): 'Helsinki-NLP/opus-mt-sv-gaa', ('sv', 'gil'): 'Helsinki-NLP/opus-mt-sv-gil', ('sv', 'guw'): 'Helsinki-NLP/opus-mt-sv-guw', ('sv', 'ha'): 'Helsinki-NLP/opus-mt-sv-ha', ('sv', 'he'): 'Helsinki-NLP/opus-mt-sv-he', ('sv', 'hil'): 'Helsinki-NLP/opus-mt-sv-hil', ('sv', 'ho'): 'Helsinki-NLP/opus-mt-sv-ho', ('sv', 'hr'): 'Helsinki-NLP/opus-mt-sv-hr', ('sv', 'ht'): 'Helsinki-NLP/opus-mt-sv-ht', ('sv', 'hu'): 'Helsinki-NLP/opus-mt-sv-hu', ('sv', 'id'): 'Helsinki-NLP/opus-mt-sv-id', ('sv', 'ig'): 'Helsinki-NLP/opus-mt-sv-ig', ('sv', 'ilo'): 'Helsinki-NLP/opus-mt-sv-ilo', ('sv', 'is'): 'Helsinki-NLP/opus-mt-sv-is', ('sv', 'iso'): 'Helsinki-NLP/opus-mt-sv-iso', ('sv', 'kg'): 'Helsinki-NLP/opus-mt-sv-kg', ('sv', 'kqn'): 'Helsinki-NLP/opus-mt-sv-kqn', ('sv', 'kwy'): 'Helsinki-NLP/opus-mt-sv-kwy', ('sv', 'lg'): 'Helsinki-NLP/opus-mt-sv-lg', ('sv', 'ln'): 'Helsinki-NLP/opus-mt-sv-ln', ('sv', 'lu'): 'Helsinki-NLP/opus-mt-sv-lu', ('sv', 'lua'): 'Helsinki-NLP/opus-mt-sv-lua', ('sv', 'lue'): 'Helsinki-NLP/opus-mt-sv-lue', ('sv', 'lus'): 'Helsinki-NLP/opus-mt-sv-lus', ('sv', 'lv'): 'Helsinki-NLP/opus-mt-sv-lv', ('sv', 'mfe'): 'Helsinki-NLP/opus-mt-sv-mfe', ('sv', 'mh'): 'Helsinki-NLP/opus-mt-sv-mh', ('sv', 'mos'): 'Helsinki-NLP/opus-mt-sv-mos', ('sv', 'mt'): 'Helsinki-NLP/opus-mt-sv-mt', ('sv', 'niu'): 'Helsinki-NLP/opus-mt-sv-niu', ('sv', 'nl'): 'Helsinki-NLP/opus-mt-sv-nl', ('sv', 'no'): 'Helsinki-NLP/opus-mt-sv-no', ('sv', 'nso'): 'Helsinki-NLP/opus-mt-sv-nso', ('sv', 'ny'): 'Helsinki-NLP/opus-mt-sv-ny', ('sv', 'pag'): 'Helsinki-NLP/opus-mt-sv-pag', ('sv', 'pap'): 'Helsinki-NLP/opus-mt-sv-pap', ('sv', 'pis'): 'Helsinki-NLP/opus-mt-sv-pis', ('sv', 'pon'): 'Helsinki-NLP/opus-mt-sv-pon', ('sv', 'rnd'): 'Helsinki-NLP/opus-mt-sv-rnd', ('sv', 'ro'): 'Helsinki-NLP/opus-mt-sv-ro', ('sv', 'ru'): 'Helsinki-NLP/opus-mt-sv-ru', ('sv', 'run'): 'Helsinki-NLP/opus-mt-sv-run', ('sv', 'rw'): 'Helsinki-NLP/opus-mt-sv-rw', ('sv', 'sg'): 'Helsinki-NLP/opus-mt-sv-sg', ('sv', 'sk'): 'Helsinki-NLP/opus-mt-sv-sk', ('sv', 'sl'): 'Helsinki-NLP/opus-mt-sv-sl', ('sv', 'sm'): 'Helsinki-NLP/opus-mt-sv-sm', ('sv', 'sn'): 'Helsinki-NLP/opus-mt-sv-sn', ('sv', 'sq'): 'Helsinki-NLP/opus-mt-sv-sq', ('sv', 'srn'): 'Helsinki-NLP/opus-mt-sv-srn', ('sv', 'st'): 'Helsinki-NLP/opus-mt-sv-st', ('sv', 'sv'): 'Helsinki-NLP/opus-mt-sv-sv', ('sv', 'swc'): 'Helsinki-NLP/opus-mt-sv-swc', ('sv', 'th'): 'Helsinki-NLP/opus-mt-sv-th', ('sv', 'tiv'): 'Helsinki-NLP/opus-mt-sv-tiv', ('sv', 'tll'): 'Helsinki-NLP/opus-mt-sv-tll', ('sv', 'tn'): 'Helsinki-NLP/opus-mt-sv-tn', ('sv', 'to'): 'Helsinki-NLP/opus-mt-sv-to', ('sv', 'toi'): 'Helsinki-NLP/opus-mt-sv-toi', ('sv', 'tpi'): 'Helsinki-NLP/opus-mt-sv-tpi', ('sv', 'ts'): 'Helsinki-NLP/opus-mt-sv-ts', ('sv', 'tum'): 'Helsinki-NLP/opus-mt-sv-tum', ('sv', 'tvl'): 'Helsinki-NLP/opus-mt-sv-tvl', ('sv', 'tw'): 'Helsinki-NLP/opus-mt-sv-tw', ('sv', 'ty'): 'Helsinki-NLP/opus-mt-sv-ty', ('sv', 'uk'): 'Helsinki-NLP/opus-mt-sv-uk', ('sv', 'umb'): 'Helsinki-NLP/opus-mt-sv-umb', ('sv', 've'): 'Helsinki-NLP/opus-mt-sv-ve', ('sv', 'war'): 'Helsinki-NLP/opus-mt-sv-war', ('sv', 'wls'): 'Helsinki-NLP/opus-mt-sv-wls', ('sv', 'xh'): 'Helsinki-NLP/opus-mt-sv-xh', ('sv', 'yap'): 'Helsinki-NLP/opus-mt-sv-yap', ('sv', 'yo'): 'Helsinki-NLP/opus-mt-sv-yo', ('sv', 'zne'): 'Helsinki-NLP/opus-mt-sv-zne', ('swc', 'en'): 'Helsinki-NLP/opus-mt-swc-en', ('swc', 'es'): 'Helsinki-NLP/opus-mt-swc-es', ('swc', 'fi'): 'Helsinki-NLP/opus-mt-swc-fi', ('swc', 'fr'): 'Helsinki-NLP/opus-mt-swc-fr', ('swc', 'sv'): 'Helsinki-NLP/opus-mt-swc-sv', ('taw', 'en'): 'Helsinki-NLP/opus-mt-taw-en', ('th', 'en'): 'Helsinki-NLP/opus-mt-th-en', ('th', 'fr'): 'Helsinki-NLP/opus-mt-th-fr', ('ti', 'en'): 'Helsinki-NLP/opus-mt-ti-en', ('tiv', 'en'): 'Helsinki-NLP/opus-mt-tiv-en', ('tiv', 'fr'): 'Helsinki-NLP/opus-mt-tiv-fr', ('tiv', 'sv'): 'Helsinki-NLP/opus-mt-tiv-sv', ('tl', 'de'): 'Helsinki-NLP/opus-mt-tl-de', ('tl', 'en'): 'Helsinki-NLP/opus-mt-tl-en', ('tl', 'es'): 'Helsinki-NLP/opus-mt-tl-es', ('tl', 'pt'): 'Helsinki-NLP/opus-mt-tl-pt', ('tll', 'en'): 'Helsinki-NLP/opus-mt-tll-en', ('tll', 'es'): 'Helsinki-NLP/opus-mt-tll-es', ('tll', 'fi'): 'Helsinki-NLP/opus-mt-tll-fi', ('tll', 'fr'): 'Helsinki-NLP/opus-mt-tll-fr', ('tll', 'sv'): 'Helsinki-NLP/opus-mt-tll-sv', ('tn', 'en'): 'Helsinki-NLP/opus-mt-tn-en', ('tn', 'es'): 'Helsinki-NLP/opus-mt-tn-es', ('tn', 'fr'): 'Helsinki-NLP/opus-mt-tn-fr', ('tn', 'sv'): 'Helsinki-NLP/opus-mt-tn-sv', ('to', 'en'): 'Helsinki-NLP/opus-mt-to-en', ('to', 'es'): 'Helsinki-NLP/opus-mt-to-es', ('to', 'fr'): 'Helsinki-NLP/opus-mt-to-fr', ('to', 'sv'): 'Helsinki-NLP/opus-mt-to-sv', ('toi', 'en'): 'Helsinki-NLP/opus-mt-toi-en', ('toi', 'es'): 'Helsinki-NLP/opus-mt-toi-es', ('toi', 'fi'): 'Helsinki-NLP/opus-mt-toi-fi', ('toi', 'fr'): 'Helsinki-NLP/opus-mt-toi-fr', ('toi', 'sv'): 'Helsinki-NLP/opus-mt-toi-sv', ('tpi', 'en'): 'Helsinki-NLP/opus-mt-tpi-en', ('tpi', 'sv'): 'Helsinki-NLP/opus-mt-tpi-sv', ('tr', 'ar'): 'Helsinki-NLP/opus-mt-tr-ar', ('tr', 'az'): 'Helsinki-NLP/opus-mt-tr-az', ('tr', 'en'): 'Helsinki-NLP/opus-mt-tr-en', ('tr', 'eo'): 'Helsinki-NLP/opus-mt-tr-eo', ('tr', 'es'): 'Helsinki-NLP/opus-mt-tr-es', ('tr', 'fr'): 'Helsinki-NLP/opus-mt-tr-fr', ('tr', 'lt'): 'Helsinki-NLP/opus-mt-tr-lt', ('tr', 'sv'): 'Helsinki-NLP/opus-mt-tr-sv', ('tr', 'uk'): 'Helsinki-NLP/opus-mt-tr-uk', ('trk', 'en'): 'Helsinki-NLP/opus-mt-trk-en', ('ts', 'en'): 'Helsinki-NLP/opus-mt-ts-en', ('ts', 'es'): 'Helsinki-NLP/opus-mt-ts-es', ('ts', 'fi'): 'Helsinki-NLP/opus-mt-ts-fi', ('ts', 'fr'): 'Helsinki-NLP/opus-mt-ts-fr', ('ts', 'sv'): 'Helsinki-NLP/opus-mt-ts-sv', ('tum', 'en'): 'Helsinki-NLP/opus-mt-tum-en', ('tum', 'es'): 'Helsinki-NLP/opus-mt-tum-es', ('tum', 'fr'): 'Helsinki-NLP/opus-mt-tum-fr', ('tum', 'sv'): 'Helsinki-NLP/opus-mt-tum-sv', ('tvl', 'en'): 'Helsinki-NLP/opus-mt-tvl-en', ('tvl', 'es'): 'Helsinki-NLP/opus-mt-tvl-es', ('tvl', 'fi'): 'Helsinki-NLP/opus-mt-tvl-fi', ('tvl', 'fr'): 'Helsinki-NLP/opus-mt-tvl-fr', ('tvl', 'sv'): 'Helsinki-NLP/opus-mt-tvl-sv', ('tw', 'es'): 'Helsinki-NLP/opus-mt-tw-es', ('tw', 'fi'): 'Helsinki-NLP/opus-mt-tw-fi', ('tw', 'fr'): 'Helsinki-NLP/opus-mt-tw-fr', ('tw', 'sv'): 'Helsinki-NLP/opus-mt-tw-sv', ('ty', 'es'): 'Helsinki-NLP/opus-mt-ty-es', ('ty', 'fi'): 'Helsinki-NLP/opus-mt-ty-fi', ('ty', 'fr'): 'Helsinki-NLP/opus-mt-ty-fr', ('ty', 'sv'): 'Helsinki-NLP/opus-mt-ty-sv', ('tzo', 'es'): 'Helsinki-NLP/opus-mt-tzo-es', ('uk', 'bg'): 'Helsinki-NLP/opus-mt-uk-bg', ('uk', 'ca'): 'Helsinki-NLP/opus-mt-uk-ca', ('uk', 'cs'): 'Helsinki-NLP/opus-mt-uk-cs', ('uk', 'de'): 'Helsinki-NLP/opus-mt-uk-de', ('uk', 'en'): 'Helsinki-NLP/opus-mt-uk-en', ('uk', 'es'): 'Helsinki-NLP/opus-mt-uk-es', ('uk', 'fi'): 'Helsinki-NLP/opus-mt-uk-fi', ('uk', 'fr'): 'Helsinki-NLP/opus-mt-uk-fr', ('uk', 'he'): 'Helsinki-NLP/opus-mt-uk-he', ('uk', 'hu'): 'Helsinki-NLP/opus-mt-uk-hu', ('uk', 'it'): 'Helsinki-NLP/opus-mt-uk-it', ('uk', 'nl'): 'Helsinki-NLP/opus-mt-uk-nl', ('uk', 'no'): 'Helsinki-NLP/opus-mt-uk-no', ('uk', 'pl'): 'Helsinki-NLP/opus-mt-uk-pl', ('uk', 'pt'): 'Helsinki-NLP/opus-mt-uk-pt', ('uk', 'ru'): 'Helsinki-NLP/opus-mt-uk-ru', ('uk', 'sh'): 'Helsinki-NLP/opus-mt-uk-sh', ('uk', 'sl'): 'Helsinki-NLP/opus-mt-uk-sl', ('uk', 'sv'): 'Helsinki-NLP/opus-mt-uk-sv', ('uk', 'tr'): 'Helsinki-NLP/opus-mt-uk-tr', ('umb', 'en'): 'Helsinki-NLP/opus-mt-umb-en', ('ur', 'en'): 'Helsinki-NLP/opus-mt-ur-en', ('urj', 'en'): 'Helsinki-NLP/opus-mt-urj-en', ('urj', 'urj'): 'Helsinki-NLP/opus-mt-urj-urj', ('ve', 'en'): 'Helsinki-NLP/opus-mt-ve-en', ('ve', 'es'): 'Helsinki-NLP/opus-mt-ve-es', ('vi', 'de'): 'Helsinki-NLP/opus-mt-vi-de', ('vi', 'en'): 'Helsinki-NLP/opus-mt-vi-en', ('vi', 'eo'): 'Helsinki-NLP/opus-mt-vi-eo', ('vi', 'es'): 'Helsinki-NLP/opus-mt-vi-es', ('vi', 'fr'): 'Helsinki-NLP/opus-mt-vi-fr', ('vi', 'it'): 'Helsinki-NLP/opus-mt-vi-it', ('vi', 'ru'): 'Helsinki-NLP/opus-mt-vi-ru', ('vsl', 'es'): 'Helsinki-NLP/opus-mt-vsl-es', ('wa', 'en'): 'Helsinki-NLP/opus-mt-wa-en', ('wal', 'en'): 'Helsinki-NLP/opus-mt-wal-en', ('war', 'en'): 'Helsinki-NLP/opus-mt-war-en', ('war', 'es'): 'Helsinki-NLP/opus-mt-war-es', ('war', 'fi'): 'Helsinki-NLP/opus-mt-war-fi', ('war', 'fr'): 'Helsinki-NLP/opus-mt-war-fr', ('war', 'sv'): 'Helsinki-NLP/opus-mt-war-sv', ('wls', 'en'): 'Helsinki-NLP/opus-mt-wls-en', ('wls', 'fr'): 'Helsinki-NLP/opus-mt-wls-fr', ('wls', 'sv'): 'Helsinki-NLP/opus-mt-wls-sv', ('xh', 'en'): 'Helsinki-NLP/opus-mt-xh-en', ('xh', 'es'): 'Helsinki-NLP/opus-mt-xh-es', ('xh', 'fr'): 'Helsinki-NLP/opus-mt-xh-fr', ('xh', 'sv'): 'Helsinki-NLP/opus-mt-xh-sv', ('yap', 'en'): 'Helsinki-NLP/opus-mt-yap-en', ('yap', 'fr'): 'Helsinki-NLP/opus-mt-yap-fr', ('yap', 'sv'): 'Helsinki-NLP/opus-mt-yap-sv', ('yo', 'en'): 'Helsinki-NLP/opus-mt-yo-en', ('yo', 'es'): 'Helsinki-NLP/opus-mt-yo-es', ('yo', 'fi'): 'Helsinki-NLP/opus-mt-yo-fi', ('yo', 'fr'): 'Helsinki-NLP/opus-mt-yo-fr', ('yo', 'sv'): 'Helsinki-NLP/opus-mt-yo-sv', ('zai', 'es'): 'Helsinki-NLP/opus-mt-zai-es', ('zh', 'bg'): 'Helsinki-NLP/opus-mt-zh-bg', ('zh', 'de'): 'Helsinki-NLP/opus-mt-zh-de', ('zh', 'en'): 'Helsinki-NLP/opus-mt-zh-en', ('zh', 'fi'): 'Helsinki-NLP/opus-mt-zh-fi', ('zh', 'he'): 'Helsinki-NLP/opus-mt-zh-he', ('zh', 'it'): 'Helsinki-NLP/opus-mt-zh-it', ('zh', 'ms'): 'Helsinki-NLP/opus-mt-zh-ms', ('zh', 'nl'): 'Helsinki-NLP/opus-mt-zh-nl', ('zh', 'sv'): 'Helsinki-NLP/opus-mt-zh-sv', ('zh', 'uk'): 'Helsinki-NLP/opus-mt-zh-uk', ('zh', 'vi'): 'Helsinki-NLP/opus-mt-zh-vi', ('zle', 'en'): 'Helsinki-NLP/opus-mt-zle-en', ('zle', 'zle'): 'Helsinki-NLP/opus-mt-zle-zle', ('zls', 'en'): 'Helsinki-NLP/opus-mt-zls-en', ('zls', 'zls'): 'Helsinki-NLP/opus-mt-zls-zls', ('zlw', 'en'): 'Helsinki-NLP/opus-mt-zlw-en', ('zlw', 'fiu'): 'Helsinki-NLP/opus-mt-zlw-fiu', ('zlw', 'zlw'): 'Helsinki-NLP/opus-mt-zlw-zlw', ('zne', 'es'): 'Helsinki-NLP/opus-mt-zne-es', ('zne', 'fi'): 'Helsinki-NLP/opus-mt-zne-fi', ('zne', 'fr'): 'Helsinki-NLP/opus-mt-zne-fr', ('zne', 'sv'): 'Helsinki-NLP/opus-mt-zne-sv'}
-import spacy
-from sentence_transformers import SentenceTransformer
-from data_tooling.pii_processing.ontology.ontology_manager import OntologyManager
 import gzip
+import re, regex
+import itertools
+try:
+  if stopwords is None:
+    from stopwords import stopwords
+except:
+  try:
+    from stopwords import stopwords
+  except:
+    stopwords = {}
+try:
+  if badwords is None:
+    from badwords import badwords
+except:
+  try:
+    from badwords import badwords
+  except:
+    badwords = {}
+from faker import Faker
+from faker.providers import person, company, geo, address, ssn
+try:
+  import neuralcoref
+except:
+  neuralcoref = None
+  pass
 
 def try_decode(text):
    try: 
      return text.decode().strip()
    except: 
      return None
-    
+
 import qg_pipeline
 from transformers import pipeline, AutoModelForSeq2SeqLM, AutoTokenizer
 labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().cuda()
 qg = qg_pipeline.pipeline("multitask-qa-qg")
 
-ontology_manager = None#OntologyManager(target_lang='en') #target_lang=target_lang
-translation_pipelines = {}
-ner_model_name2pipelines = {} 
 
 def _get_oscar_urls(language, shuffled="unshuffled", deduplicated="deduplicated"):
   _BASE_DATA_URL_FORMAT_STR = ("https://s3.amazonaws.com/datasets.huggingface.co/oscar/1.0/{shuffled}/{deduplicated}/{language}/")
@@ -71,35 +83,246 @@ def _download_urls(urls):
     if not os.path.exists(url.split("/")[-1]):
       os.system(f"wget {url}")
 
+
+
+trannum = str.maketrans("0123456789", "1111111111")
+
+#use english firstnames for now
+bantu_surnames = ["Dlamini", "Gumede", "Hadebe", "Ilunga", "Kamau", "Khoza", "Lubega", "M'Bala", "Mabaso", "Mabika",
+                  "Mabizela", "Mabunda", "Mabuza", "Macharia", "Madima", "Madondo", "Mahlangu", "Maidza", "Makhanya",
+                  "Malewezi", "Mamba", "Mandanda", "Mandlate", "Mangwana", "Manjate", "Maponyane", "Mapunda", "Maraire",
+                  "Masango", "Maseko", "Masemola", "Masengo", "Mashabane", "Masire", "Masondo", "Masuku", "Mataka",
+                  "Matovu", "Mbala", "Mbatha", "Mbugua", "Mchunu", "Mkhize", "Mofokeng", "Mokonyane", "Mutombo",
+                  "Ncube", "Ndagire", "Ndhlovu", "Ndikumana", "Ndiritu", "Ndlovu", "Ndzinisa", "Ngcobo", "Nkomo",
+                  "Nkosi", "Nkurunziza", "Radebe", "Tshabalala", "Tshivhumbe", "Vila"]
+#male and female
+vietnamese_firstnames = ["Anh", "Dung", "Hanh", "Hoa", "Hong", "Khanh", "Lan", "Liem", "Nhung", "Duy", "Xuan"]
+vietnamese_surnames = ["Nguyễn","Trần","Lê","Phạm","Hoàng","Huỳnh","Phan","Vũ","Võ", "Đặng","Bùi", "Đỗ", "Hồ", "Ngô", "Dương", "Lý"]
+
+#use english firstnames for now
+bengali_surnames  = ["Banerjee", "Bagchi", "Bhaduri", "Bhattacharjee", "Chakraborty", "Chatterjee", "Ganguly", "Goswami", "Ghoshal", "Lahiri", "Maitra", "Mukherjee", "Sanyal", "Chakraborty", "Bhattacharya", "Baidya", "Sengupta", "Dasgupta", "Duttagupta", "Gupta", "Sen-Sharma", "Basu", "Bose", "Dutta", "Ghosh", "Choudhury", "Guha", "Gain", "Mitra", "Singh", "Sinha", "Sen", "Pal", "De", "Dey", "Deb", "Dev", "Jana", "Palit", "Chanda", "Chandra", "Das", "Dam", "Kar", "Nandi", "Sarkar", "Nag", "Som"]
+
+#male and female
+urdu_firstnames = ["Azhar", "Benazir", "Farahnaz", "Maliha", "Minoo", "Romana", "Sania", "Azhar", "Burhan", "Changezi", "Faizan", "Fasih", "Fuad", "Hassim", "Jan", "Shoaib"]
+urdu_surnames = ["Abid", "Ahmad", "Akbar", "Akmal", "Alam", "Ayaz", "Bohra", "Bucha", "Bukhari", "Buksh", "Bux", "Chandpuri", "Changezi", "Emani", "Farrukhabadi", "Farrukhi", "Fazail", "Hassim", "Hilaly", "Hussaini ", "Brahmin", "Lucknawi", "Ludhianvi", "Matloob", "Omar", "Vaishya", "Rahimtoola", "Shafiq", "Shoaib", "Siddiqui", "Siddiqui", "Tikka", "Yasser", ]
+
+#basque and catalan - use Spanish names
+
 class TextAugment:
 
   m2m_model = None
   m2m_tokenizer = None 
   en_spacy_nlp = None 
-  en_stopwords = set(stopwords_ac_dc['en'])
+  en_stopwords = set(stopwords['en'])
+  faker_en_list  = None
   labse = None
-
-  #TODO, copy in the code from https://github.com/bigscience-workshop/data_tooling/blob/master/ac_dc/anonymization.py
-  rulebase = {"en": [([
-      ("AGE", re.compile("\S+ years old|\S+\-years\-old|\S+ year old|\S+\-year\-old"), None, None, None),
-      ("STREET_ADDRESS", re.compile(
-          '\d{1,4} [\w\s]{1,20} (?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?(?=\s|$)'), None, None, None),
-      ("STREET_ADDRESS", re.compile('P\.? ?O\.? Box \d+'), None, None, None),
-      ("GOVT_ID", re.compile(
-          '(?!000|666|333)0*(?:[0-6][0-9][0-9]|[0-7][0-6][0-9]|[0-7][0-7][0-2])[- ](?!00)[0-9]{2}[- ](?!0000)[0-9]{4}'), None, None, None),
-      ("DISEASE", re.compile("diabetes|cancer|HIV|AIDS|Alzheimer's|Alzheimer|heart disease"), None, None, None),
-      ("NORP", re.compile("upper class|middle class|working class|lower class"), None, None, None),
-      ], 1),
-    ],
-   "vi": []
+  
+  #from https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py which is under the MIT License
+  # see also for ICD https://stackoverflow.com/questions/5590862/icd9-regex-pattern - but this could be totally wrong!
+  # we do regex in this order in order to not capture ner inside domain names and email addresses.
+  regex_rulebase = {
+    "NORP": {
+      "en": [(re.compile(r"upper class|middle class|working class|lower class", re.IGNORECASE), None),],
+    },
+    "AGE": {
+      "en": [
+          (
+              re.compile(
+                  r"\S+ years old|\S+\-years\-old|\S+ year old|\S+\-year\-old|born [ ][\d][\d]+[\\ /.][\d][\d][\\ /.][\d][\d]+|died [ ][\d][\d]+[\\ /.][\d][\d][\\ /.][\d][\d]+", re.IGNORECASE
+              ),
+              None,
+          )
+      ],
+      "zh": [(regex.compile(r"\d{1,3}歲|岁"), None)],
+    },
+    # Some of this code from https://github.com/bigscience-workshop/data_tooling/blob/master/ac_dc/anonymization.py which is under the Apache 2 license
+    "ADDRESS": {
+      "en": [
+              #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
+              (
+                  re.compile(
+                      r"\d{1,4} [\w\s]{1,20} (?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?(?=\s|$).*\b\d{5}(?:[-\s]\d{4})?\b|\d{1,4} [\w\s]{1,20} (?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?(?=\s|$)", re.IGNORECASE
+                  ),
+                  None,
+              ),
+              (
+                  re.compile(r"P\.? ?O\.? Box \d+"), None
+              )
+      ],
+    
+      "zh": [
+          (
+              regex.compile(
+                  r"((\p{Han}{1,3}(自治区|省))?\p{Han}{1,4}((?<!集)市|县|州)\p{Han}{1,10}[路|街|道|巷](\d{1,3}[弄|街|巷])?\d{1,4}号)"
+              ),
+              None,
+          ),
+          (
+              regex.compile(
+                  r"(?<zipcode>(^\d{5}|^\d{3})?)(?<city>\D+[縣市])(?<district>\D+?(市區|鎮區|鎮市|[鄉鎮市區]))(?<others>.+)"
+              ),
+              None,
+          ),
+      ],
+    },
+    "DISEASE": {
+      "en": [(re.compile("diabetes|cancer|HIV|AIDS|Alzheimer's|Alzheimer|heart disease", re.IGNORECASE), None)],
+    }, 
+    # many of the id_regex are from Presidio which is licensed under the MIT License
+    # https://github.com/microsoft/presidio/blob/main/presidio-analyzer/presidio_analyzer/predefined_recognizers/aba_routing_recognizer.py 
+    # https://github.com/microsoft/presidio/blob/main/presidio-analyzer/presidio_analyzer/predefined_recognizers/au_abn_recognizer.py
+    # https://github.com/microsoft/presidio/blob/main/presidio-analyzer/presidio_analyzer/predefined_recognizers/us_passport_recognizer.py
+    # https://github.com/microsoft/presidio/blob/main/presidio-analyzer/presidio_analyzer/predefined_recognizers/medical_license_recognizer.py
+    # https://github.com/microsoft/presidio/blob/main/presidio-analyzer/presidio_analyzer/predefined_recognizers/es_nif_recognizer.py 
+    "ID": {
+      "en": [
+              (
+                re.compile(r"\b[0123678]\d{3}-\d{4}-\d\b"),
+                (
+                    "aba",
+                    "routing",
+                    "abarouting",
+                    "association",
+                    "bankrouting",
+                ),
+              ),
+              (
+                  re.compile(r"(\b[0-9]{9}\b)"),
+                  (
+                      "us",
+                      "united",
+                      "states",
+                      "passport",
+                      "passport#",
+                      "travel",
+                      "document",
+                  ),
+              ),
+              (
+                  re.compile(r"[a-zA-Z]{2}\d{7}|[a-zA-Z]{1}9\d{7}"),
+                  ("medical", "certificate", "DEA"),
+              ),
+              (re.compile(r"\d{3}\s\d{3}\s\d{3}"), None),
+              (
+                  re.compile(
+                      r"GB\s?\d{6}\s?\w|GB\d{3}\s\d{3}\s\d{2}\s\d{3}|GBGD\d{3}|GBHA\d{3}}|GB\d{3} \d{4} \d{2}(?: \d{3})?|GB(?:GD|HA)\d{3}"
+                  ),
+                  None,
+              ),
+              (re.compile(r"IE\d[1-9]\d{5}\d[1-9]|IE\d{7}[1-9][1-9]?"), None),
+              (re.compile(r"[1-9]\d{10}"), None),
+              (
+                  re.compile(
+                      r"\d{2}-\d{7}-\d|\d{11}|\d{2}-\d{9}-\d|\d{4}-\d{4}-\d{4}|\d{4}-\d{7}-\d"
+                  ),
+                  None,
+              ),
+              (
+                  re.compile(r"\b\d{2}\s\d{3}\s\d{3}\s\d{3}\b|\b\d{11}\b"),
+                  ("australian business number", "abn"),
+              ),
+      ],
+      "id":[
+              (
+                  re.compile(
+                      r"\d{6}([04][1-9]|[1256][0-9]|[37][01])(0[1-9]|1[0-2])\d{6}"
+                  ),
+                  None,
+              )
+      ],
+      "es": [
+              (re.compile(r"(?:ES)?\d{6-8}-?[A-Z]"), None),
+              (
+                  re.compile(r"\b[0-9]?[0-9]{7}[-]?[A-Z]\b"),
+                  ("documento nacional de identidad", "DNI", "NIF", "identificación"),
+              ),
+              (re.compile(r"[1-9]\d?\d{6}|8\d{8}|9\d{8}|10\d{8}|11\d{8}|12\d{8}|"), None)
+      ],
+      "pt": [(re.compile(r"\d{3}\.d{3}\.d{3}-\d{2}|\d{11}"), None),
+             (re.compile(r"PT\d{9}"), None),
+      ],
+      "zh": [
+          (
+              regex.compile(
+                  r"(?:[16][1-5]|2[1-3]|3[1-7]|4[1-6]|5[0-4])\d{4}(?:19|20)\d{2}(?:(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|02(?:0[1-9]|[12][0-9]))\d{3}[\dXx]"
+              ),
+              None,
+          ),
+          (
+              regex.compile(
+                  r"(^[EeKkGgDdSsPpHh]\d{8}$)|(^(([Ee][a-fA-F])|([DdSsPp][Ee])|([Kk][Jj])|([Mm][Aa])|(1[45]))\d{7}$)"
+              ),
+              None,
+          ),
+          (
+              regex.compile(
+                  r"((\d{4}(| )\d{4}(| )\d{4}$)|([a-zA-Z][1-2]{1}[0-9]{8})|([0-3]{1}\d{8}))"
+              ),
+              None,
+          ),
+          (
+              regex.compile('^(?:[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领 A-Z]{1}[A-HJ-NP-Z]{1}(?:(?:[0-9]{5}[DF])|(?:[DF](?:[A-HJ-NP-Z0-9])[0-9]{4})))|(?:[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领 A-Z]{1}[A-Z]{1}[A-HJ-NP-Z0-9]{4}[A-HJ-NP-Z0-9 挂学警港澳]{1})$'), 
+              None
+          ),
+          (
+              regex.compile('\b[A-Z]{3}-\d{4}\b'), 
+              None,
+          ),
+          (
+              regex.compile(
+                  r"(0?\d{2,4}-[1-9]\d{6,7})|({\+86|086}-| ?1[3-9]\d{9} , ([\+0]?86)?[\-\s]?1[3-9]\d{9})"
+              ),
+              None,
+          ),
+          (
+              regex.compile(
+                  r"((\d{4}(| )\d{4}(| )\d{4}$)|([a-zA-Z][1-2]{1}[0-9]{8})|([0-3]{1}\d{8}))((02|03|037|04|049|05|06|07|08|089|082|0826|0836|886 2|886 3|886 37|886 4|886 49|886 5|886 6|886 7|886 8|886 89|886 82|886 826|886 836|886 9|886-2|886-3|886-37|886-4|886-49|886-5|886-6|886-7|886-8|886-89|886-82|886-826|886-836)(| |-)\d{4}(| |-)\d{4}$)|((09|886 9|886-9)(| |-)\d{2}(|-)\d{2}(|-)\d{1}(|-)\d{3})"
+              ),
+              None,
+          ),
+      ],
+      "default": [
+              #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py ssn
+              (
+                  re.compile(
+                     '(?!000|666|333)0*(?:[0-6][0-9][0-9]|[0-7][0-6][0-9]|[0-7][0-7][0-2])[- ](?!00)[0-9]{2}[- ](?!0000)[0-9]{4}'
+                  ),
+                  None,
+              ),
+              # https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py phone with exts
+              (
+                  re.compile('((?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*(?:[2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|(?:[2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?(?:[2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?(?:[0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(?:\d+)?))', re.IGNORECASE),
+                  None
+              ),
+              # phone
+              (
+                  re.compile('''((?:(?<![\d-])(?:\+?\d{1,3}[-.\s*]?)?(?:\(?\d{3}\)?[-.\s*]?)?\d{3}[-.\s*]?\d{4}(?![\d-]))|(?:(?<![\d-])(?:(?:\(\+?\d{2}\))|(?:\+?\d{2}))\s*\d{2}\s*\d{3}\s*\d{4}(?![\d-])))'''),
+                  None,
+              ),
+              #email
+              (re.compile("([a-z0-9!#$%&'*+\/=?^_`{|.}~-]+@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)", re.IGNORECASE), None),
+              #credit card
+              (re.compile('((?:(?:\\d{4}[- ]?){3}\\d{4}|\\d{15,16}))(?![\\d])'), None), 
+              #ip
+              (re.compile('(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)', re.IGNORECASE), None), 
+              #ipv6
+              (re.compile('((?:(?:\\d{4}[- ]?){3}\\d{4}|\\d{15,16}))(?![\\d])'), None),
+              #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
+              (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None), 
+              # generic government id. consider a more complicated string with \w+ at the beginning or end
+              (re.compile(r"\d{8}|\d{9}|\d{10}|\d{11}"), None), 
+      ],
+    },   
   }
 
+
   # see https://www.researchgate.net/publication/259179064_Comparing_Methods_for_Detecting_Child_Exploitation_Content_Online for common CSAM words
-  # http://antipaedo.lip6.fr/T12/keywords_cnrs.pdf - for top 20 from table 7 and 8 of the paper, plus other , ignoring stopwords like "tuesday"
+  # http://antipaedo.lip6.fr/T12/keywords_cnrs.pdf - for top 20 from table 7 and 8 of the paper, plus other similar words , ignoring stopwords like "tuesday"
   # WARNING: Translations are probably not accurate. TODO to fix.
   # we are only doing our current covered langauges. TODO, do for all languages.
   banned_words = {
       'ar': {"فتاة صغيرة" , "فتاة صغيرة" , "فتى صغير", "مراهق" , "لولي" , "لولا" , "لوليتا" , "لولي" , "لولي" , "لوليتاغوي" , "فتاة" , "صبي" ,"طفل" , "حمام" },
+      'ur': {'نوجوان لڑکی', 'چھوٹی لڑکی', 'چھوٹا لڑکا', 'نوجوان لڑکا','نوعمر','لولی','لولا','لولیتا','لولی','لولی','لولیتاگو','لڑکی','لڑکا','بچہ','بچہ','غسل', 'غسل', 'غسل'},
       'bn': {'ছোট মেয়ে', 'ছোট মেয়ে', 'ছোট ছেলে', 'কিশোর', 'ললি', 'লোলা', 'ললিতা', 'ললি', 'লোলি', 'ললিটাগুই', 'মেয়ে', 'ছেলে' , 'শিশু', 'স্নান',},
       'hi': {'युवा लड़की', 'छोटी लड़की', 'छोटा लड़का', 'किशोर', 'लॉली', 'लोला', 'लोलिता', 'लल्ली', 'लोली', 'लोलितागुय', 'लड़की', 'लड़का' , 'बच्चा', 'स्नान',},
       'eu': {'neska gaztea', 'neska txikia', 'mutil txikia', 'nerabea', 'neska', 'mutil' , 'haurra', 'bainua',},
@@ -123,7 +346,7 @@ class TextAugment:
                   'babyshivid', 'shiori', 'tvg', 'chiharu','kidzilla', 'izzy', 'rika', 'kdquality', 'cbaby', 'nablot', 'lso',  'kinderficker', \
                   'yo',  'yr',  }
   }
-  # note that we do not have a transformer model for catalan, but spacy covers catalan and we use transfer learning from Davlan/xlm-roberta-base-ner-hrl
+  # note that we do not have a transformer model for catalan, but  we use transfer learning from Davlan/xlm-roberta-base-ner-hrl. We could also use spacy's catalan model
   hf_ner_model_map = {
       "sn": [["Davlan/xlm-roberta-large-masakhaner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
       "st": [["Davlan/xlm-roberta-large-masakhaner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
@@ -138,14 +361,18 @@ class TextAugment:
       "es": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
       "eu": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
       "ca": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      "pt": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]], #there is a
+      "pt": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]], 
       "fr": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
+      #"zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0], ["zh_model", XLMRobertaForTokenClassification, 0.9 ]],
       "zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
       'vi': [["lhkhiem28/COVID-19-Named-Entity-Recognition-for-Vietnamese", RobertaForTokenClassification, 1.0]],#["jplu/tf-xlm-r-ner-40-lang", None ], 
       'hi': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
       'ur': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
       'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0]], 
       'bn': [["sagorsarker/mbert-bengali-ner", BertForTokenClassification, 1.0]],
+
+      # NOT PART OF OUR LANGUAGE SET. EXPERIMENTAL
+      'he': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
       'hr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
       'bs': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
       'sr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
@@ -161,27 +388,45 @@ class TextAugment:
       }
   translation_pipelines = {}
   ner_model_name2pipelines = {}  
-  strip_chars = " ,،、{}[]|()\"'“”《》«»"
+  strip_chars = " ,،、{}[]|()\"'“”《》«»?!:;?…"
   punc_char = ".?!:;?。…"
   special_char = " ,{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø•�」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'"
   junk = set(",{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø•�」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'")
   #don't add a space for junk chars
   ontology_manager = None
-  max_stoword_len_zh = max([len(a) for a in stopwords_ac_dc.get('zh')])
-  max_stoword_len_ko = max([len(a) for a in stopwords_ac_dc.get('ko')])
-  max_stoword_len_ja = max([len(a) for a in stopwords_ac_dc.get('ja')])
-  qg = None
-    
+  max_stoword_len_zh = max([0]+[len(a) for a in stopwords.get('zh', [])])
+  max_stoword_len_ko = max([0]+[len(a) for a in stopwords.get('ko', [])])
+  max_stoword_len_ja = max([0]+[len(a) for a in stopwords.get('ja', [])])
+  stopwords_en = set(stopwords.get('en',[]))
+
+
   def __init__(self):
-    TextAugment.labse = labse 
-    TextAugment.ontology_manager = ontology_manager
-    TextAugment.translation_pipelines = translation_pipelines
-    TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
-    TextAugment.qg = qg
-    if False: # use the below for production usage. the above is for testing. 
+
+    try:
+      TextAugment.labse = labse 
+      TextAugment.ontology_manager = ontology_manager
+      TextAugment.translation_pipelines = translation_pipelines
+      TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
+      TextAugment.en_spacy_nlp = en_spacy_nlp
+      TextAugment.faker_en_list = faker_en_list
+      
+    except: # use the below for production usage. the above is for testing. 
       if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
+      try:
+        coref = neuralcoref.NeuralCoref(TextAugment.en_spacy_nlp.vocab)
+        TextAugment.en_spacy_nlp.add_pipe(coref, name='neuralcoref')
+        #we could potentially add new items to the vocabulary to improve coref.
+      except:
+        pass
       if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().cuda()
-      if TextAugment.ontology_manager is None: TextAugment.ontology_manager = OntologyManager(src_lang='en') #src_lang=src_lang
+      if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
+      if TextAugment.faker_en_list is None:
+        TextAugment.faker_en_list  = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
+        for faker_en in faker_en_list:
+          faker_en.add_provider(person)
+          faker_en.add_provider(ssn)
+          faker_en.add_provider(address)
+          faker_en.add_provider(company)
     print ("finished load")
 
   def check_good_sentence(self, s, src_lang, stopwords, stopword_ratio_cutoff=0.06, bannedwords=None, badwords=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
@@ -256,110 +501,6 @@ class TextAugment:
         return True
     return lang == src_lang
 
-  def generate_questions(self, batch, default_answers=[]):
-    answers = {}
-
-    i= 0
-    allqa = []
-    for chunk in batch:
-      text = chunk['text']
-      answers1={}
-      #ti = time.time()
-      text = text.replace("U.S.","US").replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" , ", ", ") # replace(" He ", " Lincoln ").replace(" he ", " Lincoln ").replace(" him ", " Lincoln ")
-      aHash = self.qg(text) # , default_answers=default_answers)
-      allqa.append(aHash)
-      default_answers = list(set([a['answer'] for a in aHash]+default_answers))
-      print (aHash)
-      #for aHash1 in aHash:
-      #  extraction = vis.parse(list(dep_parser(aHash1['question']).sents)[0], aHash1['answer'])
-      #  print (extraction.arg1, '*', extraction.rel, '*', extraction.arg2)
-
-      for aHash1 in aHash:
-        if answers.get(aHash1['answer'].lower()) or answers1.get(aHash1['answer'].lower()):
-          continue
-        if len(aHash1['answer'].split()) > 10:
-          aHash1['answer'] = " ".join(aHash1['answer'].split()[:10])
-        i+=1
-        quest=aHash1['question'].lower().strip("?").replace("'s",  " 's").replace("  ", " ").split()
-        label=""
-        #TODO, use spacy_en to get NER and only fall back to "who", "when", "where" to determine ner if we find nothing
-        if quest[0] == "who" and aHash1['answer'][-1] =='s':
-          label="organization_"+str(i)
-          if "'s" in quest:
-            for j in range(len(quest)):
-              if j > 0 and quest[j-1]=="'s":
-                label = quest[j]+"_"+str(i)
-                break
-          for a in aHash1['answer'].lower().split():
-            if a not in stopwords_hash:
-              answers[a] = label
-        elif quest[0] == "who":
-          label="person_"+str(i)
-          if "'s" in quest:
-            for j in range(len(quest)):
-              if j > 0 and quest[j-1]=="'s":
-                label = quest[j]+"_"+str(i)
-                break
-          for a in aHash1['answer'].lower().split():
-            if a not in stopwords_hash:
-              answers[a] = label
-        elif quest[0] == "where":
-          label="location_"+str(i)
-        elif quest[0] == "when":
-          label="date_or_time_"+str(i)
-        elif quest[0] == "why":
-          label="reason_"+str(i)
-        elif quest[0] == "how" and quest[1] in ("much", "many"):
-          label="quantity_"+str(i)
-        elif quest[0] == "how":
-          label="method_"+str(i)
-        elif quest[0] in ("which", "what") and quest[1] not in stopwords_hash:
-          label=quest[1]+"_"+str(i)
-        elif "'s" in quest:
-          for j in range(len(quest)):
-            if j > 0 and quest[j-1]=="'s":
-              label = quest[j]+"_"+str(i)
-              break
-        if label:
-          answers[aHash1['answer'].lower()] = label
-
-
-        #for b in a['answer'].lower().split():
-        #  answers[b] = label
-      print (answers)
-
-    for aHash in allqa:
-      answers1={}
-      for aHash1 in aHash:
-        if answers1.get(aHash1['answer'].lower()):
-          continue
-        quest = " "+aHash1['question'].lower().strip("?").replace("'s",  " 's").replace("  ", " ")+" "
-        q_type =  quest[0]
-        agent = []
-        answer_keys = list(answers.keys())
-        answer_keys.sort(key=lambda k: len(k), reverse=True)
-        for a in answer_keys:
-          if " "+a+" " in quest:
-              quest = quest.replace(" "+a+" ", " "+answers[a]+" ")
-          elif " "+a+", " in quest:
-              quest = quest.replace(" "+a+", ", " "+answers[a]+", ")
-        quest = quest.split()
-        #print (quest)
-        qtype = []
-        if answers.get(aHash1['answer'].lower()):
-          if answers.get(aHash1['answer'].lower()).split("_")[0] == "person":
-            qtype = ["is", "who"]
-        if not qtype and quest[0] in ("when", "where", "why", "how"): #, "which"
-          qtype=[quest[0]]
-          if quest[0]=="how" and quest[1] in ("much", "many"):
-            qtype = qtype + [quest[1]]
-
-        #label=[q for q in quest if (q not in ("much", "many",) and not stopwords_hash.get(q) and q not in answers)]#+qtype
-        label=[q for q in quest if (q[0] not in "0123456789") and (q not in ("the", "a", "an"))]
-        if len(label) > 10:
-            label=label[:10]
-        answers1[aHash1['answer'].lower()] = " ".join(label)
-      print (answers1)
 
   @staticmethod
   def get_aligned_text(sent1, sent2, src_lang):
@@ -454,17 +595,96 @@ class TextAugment:
     for i in range(0, len(lst), n):
         yield lst[i: i + n]
 
-  def hf_ner(self, hf_pipeline, src_lang, docs, chunks, stopwords=None, weight=1.5):
+
+
+  def apply_regex_ner(self, src_lang, docs, context_window = 20, weight = 1.0, text_key=None, ner_key=None):
+    """
+    apply regexes from the rulebase. if there is a context, check if the context is met in the context_window. 
+    """
+    if ner_key is None:
+      ner_key = f'{src_lang}_ner'
+    if text_key is None:
+      text_key = f'{src_lang}_text'
+    for doc in docs.values():
+      ner = doc[ner_key] = doc.get(ner_key, {})
+      sentence = doc[text_key]
+      if ner is None: ner = {}
+      if src_lang in ("zh", "ko", "ja"):
+          sentence_set = set(sentence.lower())
+      else:
+          sentence_set = set(sentence.lower().split(" "))
+      idx = 0
+      all_ner = []
+      original_sentence = sentence
+      for tag, regex_group in self.regex_rulebase.items():
+          for regex_context in regex_group.get(src_lang, []) + regex_group.get("default", []):
+              if True:
+                  regex, context = regex_context
+                  found_context = False
+                  if context:
+                      for c1 in context:
+                        c1 = c1.lower()
+                        for c2 in c1.split():
+                          if c2 in sentence_set:
+                              found_context = True
+                              break
+                        if found_context: break
+                      if not found_context:
+                          continue
+                  for ent in regex.findall(sentence):
+                      if not isinstance(ent, str):
+                          continue
+                      sentence2 = original_sentence
+                      delta = 0
+                      while True:
+                        if ent not in sentence2:
+                          break
+                        else:
+                          i = sentence2.index(ent)
+                          j = i + len(ent)
+                          if found_context:
+                              len_sentence = len(sentence2)
+                              left = sentence2[max(0, i - context_window) : i].lower()
+                              right = sentence2[j : min(len_sentence, j + context_window)].lower()
+                              found_context = False
+                              for c in context:
+                                c = c.lower()
+                                if c in left or c in right:
+                                    found_context = True
+                                    break
+                              if not found_context:
+                                  continue
+                              #ner[ent.strip()] = tag
+                          sentence2 = sentence2[i+len(ent):]
+                          all_ner.append((ent, delta+i, delta+j, tag))
+                          delta += j
+                          idx += 1
+      for mention_tag in all_ner:
+        ent, start, end, tag = mention_tag
+        key = (ent, start, end)
+        aHash = ner.get(key, {})
+        aHash[tag] = aHash.get(tag, 0) + weight * (1.0 + len(ent)/100) # extra weight?
+        ner[key] = aHash
+      doc[ner_key] = ner 
+    print (docs)
+    return docs
+
+  def hf_ner(self, hf_pipeline, src_lang, docs, chunks, stopwords=None, weight=1.5, text_key=None, ner_key=None, offset_key=None):
     """
     run the text through a Huggingface ner pipeline. 
     any tags found by this method will be weighted by the weight param
     TODO: use the predicted value of the logits to further weight prediction
+    NOTE: we don't use results_arr = hf_pipeline([chunk[text_key] for chunk in chunks], grouped_entities=True)
+    because grouped_entities does not properly group all entities as we do it below.
     """
     if stopwords is None:
-      stopwords = set(ac_dc_stopwords.get(src_lang, []))
-    offset_key=f'{src_lang}_offset'
-    text_key=f'{src_lang}_text'
-    ner_key=f'{src_lang}_ner'
+      stopwords = set(stopwords.get(src_lang, []))
+    if offset_key is None:
+      offset_key = f'{src_lang}_offset'
+    if ner_key is None:
+      ner_key = f'{src_lang}_ner'
+    if text_key is None:
+      text_key = f'{src_lang}_text'
     results_arr = hf_pipeline([chunk[text_key] for chunk in chunks])
     results_arr2 = []
     offset = 0
@@ -479,7 +699,7 @@ class TextAugment:
         results_arr2.append([])
         continue
       results2 = []
-      if results[0]['start'] is not None:
+      if results[0]['start'] is not None: #TODO, test for the case where all the 'start' are '0'.
         results.sort(key=lambda a: a['start'])
       else:
         results.sort(key=lambda a: a['index'])
@@ -538,17 +758,18 @@ class TextAugment:
             _, label = ner_result['entity'].split('-')
           else:
             label = ner_result['entity']
-          if label in ('STREET_ADDRESS',): label = 'STREET_ADDRESS'
+          label = label.upper()
+          if label in ('ADDRESS', 'STREET_ADDRESS'): label = 'ADDRESS'
           elif label in ('PUBLIC_FIGURE',): label = 'PUBLIC_FIGURE'
           elif label in ('NAME', 'PER', 'PERSON'): label = 'PERSON'
-          elif label in ('LOCATION', 'LOC', 'GPE'): label = 'GPE'
+          elif label in ('LOCATION', 'LOC', 'GPE'): label = 'LOC'
           elif label in ('ORGANIZATION', 'ORG'): label = 'ORG'
           elif label in ('AGE',): label = 'AGE'
           elif label in ('NORP',): label = 'NORP'
           elif label in ('BIO', 'SYMPTOM_AND_DISEASE', 'DISEASE' ): label = 'DISEASE'
-          elif label in ('PATIENT_ID', 'GOVT_ID' ): label = 'GOVT_ID'
-          elif label in ('USER_ID', ): label = 'USER_ID'
-          elif label in ('MISC', ) and '@' in ner_result['word']: label = 'USER_ID'
+          elif label in ('PATIENT_ID', 'GOVT_ID' ): label = 'ID'
+          elif label in ('USER_ID', 'ID'): label = 'ID'
+          elif label in ('MISC', ) and '@' in ner_result['word']: label = 'ID'
           else: label = 'MISC'
           if prev_label is not None:
               if not ner_result['entity'].startswith('B-') and label == prev_label and (prev_word[1] >= start - 5):
@@ -585,20 +806,298 @@ class TextAugment:
                 aHash[prev_label] = aHash.get(prev_label, 0) + weight * (1.0 + len(ner_word)/100)
                 ner[mention] = aHash
 
-  def spacy_ner(self, docs, nlp, stopwords, spacy_weight, src_lang, extra_weight=1.0):
-        """ 
-        Use the spacy models to create mentions w/ NER
-        """
+  def add_chunks_span(self, chunks, new_mention, old_mention, label, coref, chunk2ner, mention2ref, ref2mention):
+    """ add a span to the chunks sequence and update the various ref and NER hashes """
+    if old_mention in chunk2ner:
+      del chunk2ner[old_mention]
+    if label:
+      chunk2ner[new_mention] = label
+    if old_mention in mention2ref:
+      old_ref = mention2ref[old_mention]
+      ref2mention[old_ref].remove(old_mention)
+      if not ref2mention[old_ref]:
+        del ref2mention[old_ref]
+      del mention2ref[old_mention]
+    if new_mention in mention2ref and coref != mention2ref[new_mention]:
+      old_ref = mention2ref[new_mention]
+      ref2mention[old_ref].remove(new_mention)
+      if not ref2mention[old_ref]:
+        del ref2mention[old_ref]
+      del mention2ref[new_mention]
+    if coref:
+      mention2ref[new_mention] = coref
+      lst = ref2mention.get(coref, [])
+      if new_mention not in lst:
+        ref2mention[coref] = lst + [new_mention]
+    chunks.append(new_mention)
+
+  def del_ner_coref(self, old_mention, chunk2ner, mention2ref, ref2mention):
+    """ remove an old_mention from the various NER and ref hashes """
+    if old_mention in chunk2ner:
+      del chunk2ner[old_mention]
+    if old_mention in mention2ref:
+      old_ref = mention2ref[old_mention]
+      ref2mention[old_ref].remove(old_mention)
+      if not ref2mention[old_ref]:
+        del ref2mention[old_ref]
+      del mention2ref[old_mention]
+
+  def spacy_ner_coref(self, docs, nlp, stopwords, spacy_weight, src_lang, extra_weight=1.0, text_key=None, ner_key=None, connector="_", pronouns=("who", "whom", "whose", "our", "ours", "you", "your", "my", "i", "me", "mine", "he", "she", "his", "her", "him", "hers", "it", "its", "they", "their", "theirs", "them", "we")):
+    """ 
+    Use the spacy English model to create chunks for English text
+    and gather NER and coreference information
+    """
+    if not nlp:
+      return
+    if stopwords is None:
+      stopwords = set(stopwords.get(src_lang, []))
+    offset_key=f'{src_lang}_offset'
+    if ner_key is None:
+      ner_key = f'{src_lang}_ner'
+    if text_key is None:
+      text_key = f'{src_lang}_text'
+    mention2ref_key = f'{src_lang}_mention2ref'
+    ref2mention_key = f'{src_lang}_ref2mention'
+    for dat in docs.values():
+      chunk2ner = {}
+      ref2mention = dat[ref2mention_key] =  dat.get(ref2mention_key,{})
+      mention2ref = dat[mention2ref_key] =  dat.get(mention2ref_key,{})
+      ner =  dat[ner_key] =  dat.get(ner_key,{})
+      text = dat[text_key]
+      doc = nlp(text)
+      entities = list(doc.ents)
+      # spacy is not as high accuracy as transformers, but we use the spacey neuralcoref model so we can get pronoun coreference groups
+      # to be able to do proper gender swapping. 
+
+      #store away NOUNs for potential label and coref reference
+      #rule for promoting a noun span into one considered for further processing:
+      # - length of the number of words > 2 or length of span > 2 and the span is all uppercase (for abbreviations)
+      # coref candidates:
+      # - create an abbreviation from noun phrases as a candidate coref.
+      # - use either the last two words of a span as a candidate coref, or
+      # - use the abbreviation as a candidate coref
+      for entity in list(doc.noun_chunks) + list(doc.ents):
+        chunk2ner[(entity.text, entity.start, entity.end)]= "NOUN"
+        mention_lower = entity.text.lower()
+        textArr = mention_lower.split()
+        if len(textArr) > 2:
+          short_span = " ".join(textArr[-2:])
+          ref2mention[short_span] = ref2mention.get(short_span, []) + [(entity.text, entity.start, entity.end)]
+          non_stopwords = [a for a in textArr if a not in self.stopwords_en]
+          if len(non_stopwords) > 2:
+            abrev = "".join([a[0] for a in non_stopwords])
+            ref2mention[abrev] = ref2mention.get(abrev, []) + [(entity.text, entity.start, entity.end)]
+        elif (len(entity.text) >=2 and entity.text == entity.text.upper()):
+          ref2mention[entity.text.lower()] = ref2mention.get(entity.text.lower(), []) + [(entity.text, entity.start, entity.end)]
+
+      #store away coref NOUNs for potential label and coref reference
+      #same rule as above for promoting a noun span into one considered for further processing.
+      for cl in list(doc._.coref_clusters):
+        mentions = [(entity.text, entity.start, entity.end) for entity in cl.mentions]
+        mentions.sort(key=lambda e: len(e[0]), reverse=True)
+        textArr = mentions[0][0].lower().split()
+        for key in mentions:
+          chunk2ner[key]= "NOUN"
+        for mention in mentions:
+          mention_lower = mention[0].lower()
+          textArr = mention_lower.split()
+          if mention_lower not in self.stopwords_en:
+            if len(textArr) > 1:
+              short_span = " ".join(textArr[-2:])
+            else:
+              short_span = textArr[0]
+            ref2mention[short_span] = ref2mention.get(short_span, []) + mentions
+            non_stopwords = [a for a in textArr if a not in self.stopwords_en]
+            if len(non_stopwords) > 2:
+              abrev = "".join([a[0] for a in non_stopwords])
+              ref2mention[abrev] = ref2mention.get(abrev, []) + mentions
+
+      #cleanup the mention2ref, favoring large clusters with coref labels that are longer
+      seen = {}
+      corefs = [(a, list(set(b))) for a, b in ref2mention.items()]
+      corefs.sort(key=lambda a: a[0].count(" ")+len(a[1]), reverse=True)
+      for coref, spans in corefs:
+        new_spans = []
+        spans = list(set(spans))
+        spans.sort(key=lambda a: a[1]+(1.0/(1.0+a[2]-a[1])))
+        spans2 = []
+        for span in spans:
+          if spans2 and spans2[-1][1] >= span[1]:
+            continue
+          spans2.append(span)
+        for span in spans2:
+          if span in seen: continue
+          seen[span] = 1
+          new_spans.append(span)
+        del ref2mention[coref]
+        if new_spans:
+          new_coref = [s[0] for s in new_spans]
+          new_coref.sort(key=lambda a: len(a), reverse=True)
+          ref2mention[new_coref[0].lower()] = list(set(list(ref2mention.get(new_coref[0].lower(), [])) + new_spans))
+
+      mention2ref.clear()
+      for a, b1 in ref2mention.items():
+        for b in b1:
+          mention2ref[b] = a
+
+      # expand coref information by using the most common coref label in a cluster
+      if True:
+        for cl in list(doc._.coref_clusters):
+          mentions = [(entity.text, entity.start, entity.end) for entity in cl.mentions]
+          all_mentions = list(set(itertools.chain(*[ref2mention[mention2ref[mention]] for mention in mentions if mention in mention2ref])))
+          corefs = [mention2ref[mention] for mention in mentions if mention in mention2ref]
+          if corefs:
+            coref = Counter(corefs).most_common()[0][0]
+          else:
+            coref = cl.main.text.lower()
+          for mention in all_mentions:
+            if mention not in chunk2ner:
+              chunk2ner[mention] = 'NOUN'
+            old_ref = mention2ref.get(mention)
+            if old_ref and mention in ref2mention[old_ref]:
+              ref2mention[old_ref].remove(mention)
+              if not ref2mention[old_ref]:
+                del ref2mention[old_ref]
+            mention2ref[mention] = coref
+            if mention not in ref2mention[coref]:
+              ref2mention[coref].append(mention)
+
+      #expand ner labels based on coref matches 
+      for entity in list(doc.ents):
+        mention = (entity.text, entity.start, entity.end)
+        chunk2ner[mention]= entity.label_  
+        if mention in mention2ref:
+          coref = mention2ref[mention]
+          for mention in ref2mention[coref]:
+            chunk2ner[mention] = entity.label_  
+
+      # overwrite all ner labels in the coref cluster to PERSON if there is a person pronoun
+      if True:
+        for cl in list(doc._.coref_clusters):
+          cluster_text_list = set([m.text.lower() for m in cl.mentions])
+          # I don't use "us" because that is sometimes the U.S.
+          # TODO: fix to check for upper case only US as an exception
+          if "you" in cluster_text_list or "your"  in cluster_text_list  or "yours"  in cluster_text_list  or  "we" in cluster_text_list  or 'i' in cluster_text_list  or 'my' in cluster_text_list  or 'mine' in cluster_text_list or 'me' in cluster_text_list or 'he' in cluster_text_list or "she" in cluster_text_list or "his" in cluster_text_list or "her" in cluster_text_list or "him" in cluster_text_list or "hers" in cluster_text_list:
+            label = "PERSON"
+            for m in cl.mentions:
+              chunk2ner[(m.text, m.start, m.end)] = label
+
+      # propogate the ner label to everything in the same coref group
+      for coref, seq in ref2mention.items():
+        labels = [chunk2ner[mention]  for mention in seq if mention in chunk2ner and chunk2ner[mention] != 'NOUN']
+        if labels:
+          label = Counter(labels).most_common()[0][0]
+          for mention in seq:
+            if mention in chunk2ner and  not (label == 'PERSON' or chunk2ner[mention] == 'PUBLIC_FIGURE'): chunk2ner[mention] = label
+
+      #sort the chunks into order
+      chunks = list(chunk2ner.items())
+      chunks.sort(key=lambda a: a[0][1]+(1.0/(1.0+a[0][2]-a[0][1])))
+      chunks2 = []
+
+      #clear duplicates and subsumed mentions 
+      for mention, label in chunks:
+        if not chunks2 or (chunks2[-1][2] <= mention[1]):
+          if not chunks2 or chunks2[-1][2] < mention[1]: 
+            self.add_chunks_span(chunks2, (doc[0 if not chunks2 else chunks2[-1][2]: mention[1]].text, 0 if not chunks2 else chunks2[-1][2], mention[1]), \
+                                 None, None, None, chunk2ner, mention2ref, ref2mention)
+          self.add_chunks_span(chunks2, mention, None, label, mention2ref.get(mention), chunk2ner, mention2ref, ref2mention)
+        elif chunks2[-1][2] > mention[1] and chunks2[-1][1] <= mention[1]:
+          if chunk2ner.get(chunks2[-1]) not in (None, '', 'NOUN'):
+            self.del_ner_coref(mention, chunk2ner, mention2ref, ref2mention)
+            continue
+          elif label in  (None, '', 'NOUN'):
+            self.del_ner_coref(mention, chunk2ner, mention2ref, ref2mention)
+            continue
+          old_mention = chunks2.pop()
+          oldSpan = old_mention[0]
+          oldLabel = chunk2ner.get(old_mention)
+          oldAnaphore = mention2ref.get(old_mention)
+          sArr = oldSpan.split(mention[0], 1)
+          self.del_ner_coref(old_mention, chunk2ner, mention2ref, ref2mention)
+          s0 = sArr[0].strip()
+          if s0:
+            self.add_chunks_span(chunks2, (s0, old_mention[1], mention[1]), None, \
+                                 oldLabel if s0 in pronouns or (len(s0) > 1 and s0 not in self.stopwords_en) else None, oldAnaphore  if s0 in pronouns or (len(s0) > 1 and s0 not in self.stopwords_en) else None, \
+                                 chunk2ner, mention2ref, ref2mention)
+          self.add_chunks_span(chunks2,  mention, None, label, oldAnaphore if not mention2ref.get(mention) else mention2ref.get(mention), chunk2ner, mention2ref, ref2mention)
+          if len(sArr) > 1:
+            s1 = sArr[1].strip()
+            if s1:
+              self.add_chunks_span(chunks2, (s1, mention[2], old_mention[2]), None,  \
+                                   oldLabel if s1 in pronouns or (len(s1) > 1 and s1 not in self.stopwords_en) else None, oldAnaphore  if s1 in pronouns or (len(s1) > 1 and s1 not in self.stopwords_en) else None, \
+                                   chunk2ner, mention2ref, ref2mention)
+      len_doc = len(doc)
+      if chunks2[-1][2] < len_doc:
+        self.add_chunks_span(chunks2, (doc[chunks2[-1][2]:].text, chunks2[-1][2], len_doc), None, None, None, chunk2ner, mention2ref, ref2mention)
+
+      #reset the indexes for chunks to be per character index.
+      i = 0
+      for spanIdx, mention in enumerate(chunks2):
+          label = chunk2ner.get(mention)
+          if label in ('WORK_OF_ART', 'NOUN', None): continue
+          if label in ('GPE', 'FAC'): label = 'LOC'
+          if label in ('PERSON', 'PUBLIC_FUGRE'):
+            coref = ref2mention.get(mention2ref.get(mention), [])
+            if "he" in coref or "He" in coref or "him" in coref or "Him" in coref or "his" in coref or "His" in coref or "Mr." in coref or "Mr" in coref or "mr" in coref or "mr." in coref:
+              gender = "he"
+            elif "she" in coref or "She" in coref or "her" in coref or "Her" in coref or "hers" in coref or "Hers" in coref or "Miss" in coref or "miss" in coref or  "Mrs." in coref or "Mrs" in coref or "mrs" in coref or "mrs." in coref or "Ms." in coref or "Ms" in coref or "ms" in coref or "ms." in coref:
+              gender = "she"
+            else:
+              gender = random.choice(["she", "he", "they"])
+            #TODO - save gender away so we can do better name anonymization
+
+          ner_word = mention[0]
+          if ner_word and ner_word.lower() not in stopwords:
+              if not self.cjk_detect(ner_word):
+                if ner_word not in text: continue
+                i += text[i:].index(ner_word)
+                ner_word = text[i:].split(" ", 1)[0]
+              ner_word = ner_word.strip(self.strip_chars)
+              if ner_word.lower() not in stopwords:
+                mention = (ner_word, i, i+len(ner_word))
+                aHash = ner.get(mention, {})
+                aHash[label] = aHash.get(label, 0) + spacy_weight * (1.0 + len(ner_word)/100) * extra_weight
+                ner[mention] = aHash
+      """
+        self.del_ner_coref(mention, chunk2ner, mention2ref, ref2mention)
+        new_word = mention[0]
+        len_new_word = len(new_word)
+        self.add_chunks_span(chunks, (new_word, 0 if not chunks else chunks[-1][2]+1,  len_new_word if not chunks else chunks[-1][2]+1+len_new_word), None, label, coref, chunk2ner, mention2ref, ref2mention)
+      text = " ".join([c[0] for c in chunks])
+      #print (chunk2ner)
+      #print (mention2ref)
+      print (ref2mention)
+      for mention, tag in chunk2ner.items():
+        if tag in ('WORK_OF_ART', 'NOUN'): continue
+        if tag in ('GPE', 'FAC'): tag = 'LOC'
+        aHash = ner.get(mention, {})
+        ner_word= mention[0]
+        aHash[tag] = aHash.get(tag, 0) +  spacy_weight * (1.0 + len(ner_word)/100) * extra_weight
+        ner[mention] = aHash
+      """
+      print (ner)
+    return docs #text, chunks, chunk2ner, mention2ref, ref2mention
+
+  def spacy_ner(self, docs, nlp, stopwords, spacy_weight, src_lang, extra_weight=1.0, text_key=None, ner_key=None):
+      """ 
+      Use the spacy models to create mentions w/ NER
+      """
+      if neuralcoref is not None:
+        return self.spacy_ner_coref(docs, nlp, stopwords, spacy_weight, src_lang, extra_weight=extra_weight, text_key=text_key, ner_key=ner_key)
+      else:
         if not nlp:
           return
         if stopwords is None:
-          stopwords = set(ac_dc_stopwords.get(src_lang, []))
+          stopwords = set(stopwords.get(src_lang, []))
         offset_key=f'{src_lang}_offset'
-        text_key=f'{src_lang}_text'
-        ner_key=f'{src_lang}_ner'
-        for doc in docs.values():
-          ner =  doc[ner_key] =  doc.get(ner_key,{})
-          text = doc[text_key]
+        if ner_key is None:
+          ner_key = f'{src_lang}_ner'
+        if text_key is None:
+          text_key = f'{src_lang}_text'
+        for dat in docs.values():
+          ner =  dat[ner_key] =  dat.get(ner_key,{})
+          text = dat[text_key]
           doc = nlp(text)
           entities = list(doc.ents)
           ents = [(entity.text, entity.label_ if (entity.label_ in ('PERSON', 'GPE', 'ORG', 'NORP') and 'http:' not in entity.text) else 'MISC') for entity in entities]
@@ -618,7 +1117,7 @@ class TextAugment:
                 ner[mention] = aHash
 
   def trim_to_prefer_person(self, docs, chunks, prob=100):
-      # downsample to mostly docs with mentions of people, govt_id and email
+      # downsample to mostly docs with mentions of people, id/email
       # if there were no ner set, then don't downsample the doc    
       len_docs = len(docs)
       do_ids = []
@@ -631,12 +1130,12 @@ class TextAugment:
           if doc.get('has_person'):
             do_ids.append(_id)
             break
-          if key.endswith('_ner'):
+          if "_ner" in key:
             if not found_ner:
               found_ner = doc[key] != {}
             ner =  doc[key] 
             for aHash in ner.values():
-              if 'PUBLIC_FIGURE' in aHash or 'PERSON' in aHash or 'GOVT_ID' in aHash or 'USER_ID' in aHash: 
+              if type(aHash) is dict and 'PUBLIC_FIGURE' in aHash or 'PERSON' in aHash or 'ID' in aHash: 
                 doc['has_person'] = True
                 do_ids.append(_id)
                 break
@@ -653,6 +1152,48 @@ class TextAugment:
       return docs2, chunks2
 
 
+  def collapse_ner(self, docs, ner_key, text_key):
+    for doc in docs.values():
+      text = doc.get(text_key, "")
+      chunk2ner = doc.get(ner_key, {})
+      chunks = list(chunk2ner.items())
+      chunks.sort(key=lambda a: a[0][1]+(1.0/(1.0+a[0][2]-a[0][1])))
+      chunks2 = []
+      
+      for mention, labelsHash in chunks:
+        mention = list(mention)
+        if not chunks2:
+          chunks2.append([mention[0], mention[1], mention[2], labelsHash])
+        # completely or mostly subsumed
+        elif chunks2[-1][2] > mention[2] or chunks2[-1][2] - mention[1] > 3:
+          prev_ent, prev_start, prev_end, prev_labelsHash = chunks2[-1]
+          for tag in labelsHash:
+            prev_labelsHash[tag]  = prev_labelsHash.get(tag, 0) + labelsHash.get(tag, 0)
+          chunks2[-1][2] = mention[2]
+          print (chunks2[-1], text)
+          chunks2[-1][0] = text[chunks2[-1][1]:chunks2[-1][2]]
+        elif chunks2[-1][2] < mention[1]:
+          chunks2.append([mention[0], mention[1], mention[2], labelsHash])
+        # partially subsumed
+        else:
+          if mention[2] - mention[1] > chunks2[-1][2] - chunks2[-1][1]:
+              chunks2[-1][2] = mention[1] -1
+              chunks2[-1][0] = text[chunks2[-1][1]:chunks2[-1][2]]
+          else:
+              mention[1] = chunks2[-1][2] + 1
+              mention[0] = text[mention[1]:mention[2]]
+          chunks2.append([mention[0], mention[1], mention[2], labelsHash])
+
+      ner = {}
+      for ent, start, end, labelsHash in chunks2:
+        ent = ent.strip(self.strip_chars)
+        if ent:
+          mention = (ent, start, start + len(ent))
+          ner[mention] = labelsHash
+      doc[ner_key] = ner
+    return docs
+
+  #TODO - refactor this method into parts
   def process_ner_chunks_with_trans(self, 
                           src_lang, 
                           docs, 
@@ -662,6 +1203,8 @@ class TextAugment:
                           do_hf_ner = True,
                           do_ontology = True,
                           do_backtrans=False,
+                          do_augment=False,
+                          do_anonymization=False,
                           do_regex = True,
                           do_cleanup=True,
                           batch_size = 5, 
@@ -669,21 +1212,51 @@ class TextAugment:
                           ontology_weight=0.9,
                           spacy_weight=1.25,
                           hf_ner_weight=1.0,
+                          regex_weight=2.0,
                           backtrans_weight=0.9,
-                          do_postprocessing_after_backtrans=False,
-                          do_docs_trim=False):
+                          do_docs_trim=False,
+                          aug_scope={'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
+                          anon_scope={'PERSON', 'ID'},):
+    if do_augment and do_backtrans:
+      assert False, "Only augment or backtrans can be performed at a time, not both"
+    if do_augment and do_anonymization:
+      assert False, "Only augment or anonymization can be performed at a time, not both"
     if target_lang is None:
         target_lang = src_lang
+    if (do_augment or do_anonymization) and target_lang != src_lang:
+      if target_lang not in ("eu", "ca") and target_lang not in faker_map:
+        faker_target_lang = random.choice(self.faker_en_list)
+      else: 
+        faker_lang_list = faker_map["es" if target_lang in ("eu", "ca") else target_lang]                      
+        faker_target_lang = Faker(random.choice(faker_lang_list))
+        faker_target_lang.add_provider(person)
+        faker_target_lang.add_provider(ssn)
+        faker_target_lang.add_provider(address)
+        faker_target_lang.add_provider(company)
+  
+      if src_lang not in ("eu", "ca") and src_lang not in faker_map:
+        faker_src_lang = random.choice(self.faker_en_list)
+      else: 
+        faker_lang_list = faker_map["es" if src_lang in ("eu", "ca") else src_lang]                      
+        faker_src_lang = Faker(random.choice(faker_lang_list))
+        faker_src_lang.add_provider(person)
+        faker_src_lang.add_provider(ssn)
+        faker_src_lang.add_provider(address)
+        faker_src_lang.add_provider(company)
 
+      faker_en = random.choice(self.faker_en_list)
 
-    stopwords1 = set(stopwords_ac_dc[src_lang])
-    stopwords2 = set(stopwords_ac_dc[target_lang])
+    else:
+      faker_target_lang = None
+      faker_en = None
+    stopwords1 = set(stopwords[src_lang])
+    stopwords2 = set(stopwords[target_lang])
 
     #init spacy pipeline
     spacy_nlp = None
     if do_spacy:
       if target_lang == 'en':
-        spacy_nlp = spacy.load('en_core_web_sm')
+        spacy_nlp = self.en_spacy_nlp
       elif target_lang == 'zh':
         try:
           spacy_nlp = spacy.load('zh_core_web_sm')
@@ -721,6 +1294,18 @@ class TextAugment:
         ner_pipelines.append((self.ner_model_name2pipelines[model_name], hf_ner_weight2))
     target_is_cjk = target_lang in ('zh', 'ko', 'ja')
     src_is_cjk = src_lang in ('zh', 'ko', 'ja')
+    if do_augment:
+      target_text_key = f'{target_lang}_text_aug'
+      target_ner_key =  f'{target_lang}_ner_aug'
+      target_offset_key = f'{target_lang}_offset_aug'
+      target_src_sim_key = f'{src_lang}_2_{target_lang}_sim_aug'
+    else:
+      target_text_key = f'{target_lang}_text'
+      target_ner_key = f'{target_lang}_ner'
+      target_offset_key = f'{target_lang}_offset'
+      target_src_sim_key = f'{src_lang}_2_{target_lang}_sim'
+
+    # do operations in the target_lang
     if target_lang == src_lang:
       backtrans_weight = 1.0
       do_backtrans = False
@@ -728,15 +1313,13 @@ class TextAugment:
     elif target_lang != src_lang:
         #translate from src_lang to target_lang and do ner in target_lang.  translation also acts as an error check and additional ner. 
         # we check to see if the already tagged items in src lang should have scores for tags increased or are common words in target lang and should not be tagged. 
-        # we also add new labels for items that are already tagged in src_lang.
-
-        
+        # we also add new labels for items that are already tagged in src_lang.        
         if src_is_cjk:
             sep = ""
         else:
             sep = " "
 
-        if src_is_cjk:
+        if src_is_cjk or target_is_cjk:
             lbracket = "[["
             rbracket = "]]"
         else:
@@ -751,7 +1334,7 @@ class TextAugment:
           offset_end = offset + len(text)
           if f'{src_lang}_items' not in doc:
             doc[f'{src_lang}_items'] = list(doc.get(f'{src_lang}_ner', {}).keys())
-            doc[f'{src_lang}_items'].sort(key=lambda a: a[1])
+            doc[f'{src_lang}_items'].sort(key=lambda a: a[1]) # sort by order in sentence
           i = 0
           for idx, key in enumerate(doc[f'{src_lang}_items']):
             if key[1] < offset:
@@ -768,12 +1351,12 @@ class TextAugment:
                 j = text.index(key[0], i)
                 text = text[:j]+(text[j:].replace(key[0], f"  **{idx}**  ", 1))
                 i = j
-          chunk[f'{src_lang}_tmpl_text'] = text
+          chunk[f'{src_lang}_tmp_text'] = text
 
         src_items_sorted = list(enumerate(doc[f'{src_lang}_items']))
-        src_items_sorted.sort(key=lambda a: len(a[1][0]))
+        src_items_sorted.sort(key=lambda a: len(a[1][0]), reverse=True)
         for chunk in chunks:
-          text = chunk[f'{src_lang}_tmpl_text']
+          text = chunk[f'{src_lang}_tmp_text']
           _id = chunk['id']
           doc = docs[_id]
           for idx, key in src_items_sorted:
@@ -781,18 +1364,85 @@ class TextAugment:
               text = text.replace(" "+key[0]+" ", f"  **{idx}**  ")
             else:
               text = text.replace(key[0], f" **{idx}** ")
-          chunk[f'{src_lang}_tmpl_text'] = text
+          chunk[f'{src_lang}_tmp_text'] = text
 
+        for doc in docs.values():
+          # do augmentation in src_lang, and then translate to target_lang. 
+          if do_augment and faker_target_lang is not None and faker_en is not None:
+            context = doc[f'{src_lang}_aug_context'] = doc.get(f'{src_lang}_aug_context', {})
+            ner = doc.get(f'{src_lang}_ner', {})
+            src_items_sorted = list(enumerate(doc[f'{src_lang}_items']))
+            src_items_sorted.sort(key=lambda a: len(a[1][0]), reverse=True)
+
+            for idx, key in src_items_sorted:
+              if key not in ner: continue
+              ent = key[0]
+              tag = ner[key]
+              if ent in context: continue
+              #TODO - do proper gender based aug and gender swap
+              if 'PERSON' in aug_scope and tag == 'PERSON':
+                context[ent] = context.get(ent, faker_en.first_name() + " " + random.choice(bantu_surnames) if " " in ent and target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
+                                      random.choice(bantu_surnames) if target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
+                                      random.choice(vietnamese_surnames) + " " + random.choice(vietnamese_firstnames) if " " in ent and target_lang =="vi" else \
+                                      random.choice(vietnamese_surnames) if  target_lang == "vi" else \
+                                      faker_en.first_name() + " " + random.choice(bengali_surnames) if " " in ent and target_lang =="bn" else \
+                                      random.choice(bengali_surnames) if target_lang == "bn" else \
+                                      random.choice(urdu_firstnames)  + " " + random.choice(urdu_surnames) if " " in ent and target_lang =="ur" else \
+                                      random.choice(urdu_surnames) if target_lang == "ur" else \
+                                      faker_target_lang.name() if " " in ent else \
+                                      faker_target_lang.first_name() )
+                
+              if 'LOC' in aug_scope and tag == 'LOC':
+                context[ent] = context.get(ent, faker_en.country() if  target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
+                                      faker_target_lang.state() if target_lang != 'zh' else \
+                                      faker_target_lang.province() if  target_lang == 'zh' else 
+                                      ent)
+              if 'ORG' in aug_scope and tag == 'ORG':
+                try:
+                  context[ent] = context.get(ent, faker_target_lang.company())
+                except:
+                  context[ent] = context.get(ent, faker_en.company())
+
+              if 'ID' in aug_scope and tag == 'ID':
+                context[ent] = context.get(ent, str(random.randrange(10000000,999999999)) if target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu")  else \
+                                      faker_target_lang.ssn())
+                
+              if 'ADDRESS' in aug_scope and tag == 'ADDRESS':
+                context[ent] = context.get(ent, faker_en.address() if target_lang not in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
+                                      faker_target_lang.address() )
+              
+              if tag in  ('PESON', 'ORG') and tag in aug_scope :
+                src_first, src_last = None, None
+                target_first, target_last = None, None
+                if src_lang in ("ja", "ko", "zh") and len(ent) > 1:
+                  src_first, src_last = ent[0], ent[-1]
+                elif " " in ent:
+                  src_first, src_last =  ent.split()[0], ent.split()[-1]
+                if target_lang in ("ja", "ko", "zh"):
+                  target_first, target_last = context[ent][0], context[ent][-1]
+                elif " " in context[ent]:
+                  target_first, target_last = context[ent].split()[0], context[ent].split()[-1]
+                if src_first and (src_lang  in ("ja", "ko", "zh") or len(src_first) > 3) and src_first not in context:
+                  context[src_first] = target_first
+                if src_last and (src_lang  in ("ja", "ko", "zh") or len(src_last) > 3) and src_last not in context:
+                  context[src_last] = target_last
+            print (context)
+        
         for chunk in chunks:
-          text = chunk[f'{src_lang}_tmpl_text']
+          context = doc[f'{src_lang}_aug_context'] = doc.get(f'{src_lang}_aug_context', {})
+          text = chunk[f'{src_lang}_tmp_text']
           _id = chunk['id']
           doc = docs[_id]
           for idx, key in enumerate(doc[f'{src_lang}_items']):
-            text = text.replace(f" **{idx}** ", f" {idx} {lbracket} {key[0]} {rbracket}")
-          chunk[f'{src_lang}_tmpl_text'] = text.replace("  ", " ")
+            if do_augment:
+              ent = context.get(key[0], key[0])
+            else:
+              ent = key[0]
+            text = text.replace(f" **{idx}** ", f" {idx} {lbracket} {ent} {rbracket}")
+          chunk[f'{src_lang}_tmp_text'] = text.replace("  ", " ")
    
         #print ('*****', chunks2)
-        chunks2 = [chunk[f'{src_lang}_tmpl_text'] for chunk in chunks]
+        chunks2 = [chunk[f'{src_lang}_tmp_text'] for chunk in chunks]
         text2 = self.do_translations(chunks2, src_lang=src_lang, target_lang=target_lang, batch_size=batch_size)
         for chunk, trans_text in zip(chunks, text2):
           #langid check
@@ -801,29 +1451,29 @@ class TextAugment:
           except:
             lang = target_lang
           if lang == target_lang:
-            chunk[f'{target_lang}_text'] = trans_text.lstrip(" .").replace(rbracket, "]").replace(lbracket, "[").replace("}", ")").replace("{", "(")
+            chunk[target_text_key] = trans_text.lstrip(" .").replace(rbracket, "]").replace(lbracket, "[").replace("}", ")").replace("{", "(")
           else:
-            chunk[f'{target_lang}_text'] = " . . . "
+            chunk[target_text_key] = " . . . "
 
         all_embed = self.labse.encode(chunks2, convert_to_tensor=True)
-        all_trans_embed = self.labse.encode([chunk[f'{target_lang}_text'] for chunk in chunks], convert_to_tensor=True)
+        all_trans_embed = self.labse.encode([chunk[target_text_key] for chunk in chunks], convert_to_tensor=True)
         similarity = cosine_similarity(all_embed, all_trans_embed, dim=1)
         for chunk, sim_score in zip(chunks, similarity):
-          trans_text = chunk[f'{target_lang}_text']
+          trans_text = chunk[target_text_key]
           sim_score = sim_score.item()
-          print (sim_score, '**', trans_text, '**', chunk[f'{src_lang}_tmpl_text'])
+          print (sim_score, '**', trans_text, '**', chunk[f'{src_lang}_tmp_text'])
           _id = chunk['id']
           doc = docs[_id]
-          if sim_score < 0.75:
-            trans_text = chunk[f'{target_lang}_text'] = " . . . "
-            if doc.get(f'{target_lang}_text', ""):
-              chunk[f'{target_lang}_offset'] = len(doc.get(f'{target_lang}_text', "")) + 1
+          if (do_augment and sim_score < 0.5) or (not do_augment and sim_score < 0.75):
+            trans_text = chunk[target_text_key] = " . . . "
+            if doc.get(target_text_key, ""):
+              chunk[target_offset_key] = len(doc.get(target_text_key, "")) + 1
             else:
-              chunk[f'{target_lang}_offset'] = 0
-            doc[f'{target_lang}_text'] = (doc.get(f'{target_lang}_text', "") + " " + trans_text).strip()
-            chunk[f'{src_lang}_2_{target_lang}_sim'] = 0.0
+              chunk[target_offset_key] = 0
+            doc[target_text_key] = (doc.get(target_text_key, "") + " " + trans_text).strip()
+            chunk[target_src_sim_key] = 0.0
             continue
-          chunk[f'{src_lang}_2_{target_lang}_sim'] = sim_score
+          chunk[target_src_sim_key] = sim_score
           len_items = len(doc[f'{src_lang}_items'])
           doc[f'{target_lang}_2_{src_lang}_ner'] = doc.get(f'{target_lang}_2_{src_lang}_ner', {})
           while "[" in trans_text:
@@ -860,22 +1510,22 @@ class TextAugment:
             else: # except:
               pass
             trans_text = before + " " + ent + " " + after
-          trans_text = chunk[f'{target_lang}_text'] = trans_text.replace("  ", "").strip() 
-          if doc.get(f'{target_lang}_text', ""):
-            chunk[f'{target_lang}_offset'] = len(doc.get(f'{target_lang}_text', "")) + 1
+          trans_text = chunk[target_text_key] = trans_text.replace("  ", " ").strip() 
+          if doc.get(target_text_key, ""):
+            chunk[target_offset_key] = len(doc.get(target_text_key, "")) + 1
           else:
-            chunk[f'{target_lang}_offset'] = 0
-          doc[f'{target_lang}_text'] = (doc.get(f'{target_lang}_text', "") + " " + trans_text).strip()
+            chunk[target_offset_key] = 0
+          doc[target_text_key] = (doc.get(target_text_key, "") + " " + trans_text).strip()
     
     if do_regex:
-      pass #TBD
+      docs = self.apply_regex_ner(target_lang, docs=docs, weight=regex_weight, text_key=target_text_key, ner_key=target_ner_key)
 
-    if do_ontology:
-        # ontology - context independent - there are some bugs in disease detection which needs to be fixed
+    if False: # do_ontology and self.ontology_manager is not None:
+        # ontology - context independent - there are some bugs in disease detection which needs to be fixed so we will skip for now
         for doc in docs.values():
-          doc[f'{target_lang}_ner'] = ner = doc.get(f'{target_lang}_ner', {})
+          doc[target_ner_key] = ner = doc.get(target_ner_key, {})
           if target_lang == 'en':
-            chunk2ner = self.ontology_manager.tokenize(doc[f'{target_lang}_text'])['chunk2ner']
+            chunk2ner = self.ontology_manager.tokenize(doc[target_text_key])['chunk2ner']
             onto_items = []
             for c, label in chunk2ner.items():
               ner_word  = c[0].replace(" ", "").replace("_", "").replace("_", "") if self.cjk_detect(c[0]) else c[0].replace("_", " ").replace("_", " ").rstrip(self.strip_chars)
@@ -890,33 +1540,33 @@ class TextAugment:
     if do_spacy:
         if spacy_nlp:
           # spacy
-          self.spacy_ner(docs, spacy_nlp, stopwords2, spacy_weight, target_lang, extra_weight=backtrans_weight)
+          self.spacy_ner(docs, spacy_nlp, stopwords2, spacy_weight, target_lang, extra_weight=backtrans_weight, text_key=target_text_key, ner_key=target_ner_key)
 
     if do_hf_ner:
         # transformer
         for ner_pipeline, hf_ner_weight2 in ner_pipelines:
           for a_batch in self.batch(chunks, batch_size):
-            self.hf_ner(ner_pipeline, target_lang, docs, a_batch, stopwords=stopwords2, weight=hf_ner_weight*backtrans_weight*hf_ner_weight2)
+            self.hf_ner(ner_pipeline, target_lang, docs, a_batch, stopwords=stopwords2, weight=hf_ner_weight*backtrans_weight*hf_ner_weight2, text_key=target_text_key, ner_key=target_ner_key, offset_key=target_offset_key)
     
     if do_cleanup:
-        #do some cleanups. we don't want any ner that are just short numbers, stopwords or single characters.
+        #do some cleanups. we don't want any ner that are just short numbers (but what about govt id?), stopwords or single characters.
         for _id, doc in docs.items():
-          ner =  doc[f'{target_lang}_ner'] 
-          for key in list(doc[f'{target_lang}_ner'].keys()):
+          ner =  doc[target_ner_key] 
+          for key in list(doc[target_ner_key].keys()):
             ner_word = key[0]
             try:
               if len(ner_word) < 4 and float(ner_word):
-                print ("deleting ", ner_word)
-                del doc[f'{target_lang}_ner'][key]
+                #print ("deleting ", ner_word)
+                del doc[target_ner_key][key]
                 continue
             except:
               pass
             if ner_word.lower() in stopwords2 or (not self.cjk_detect(ner_word) and len(ner_word) <= 1):
-              print ("deleting ", ner_word)
-              del doc[f'{target_lang}_ner'][key]
+              #print ("deleting ", ner_word)
+              del doc[target_ner_key][key]
 
     #increase weight of src ner items if the target translations indicate it's an NER
-    if target_lang != src_lang:
+    if target_lang != src_lang and not do_augment:
           for doc in docs.values():
             ner =  doc[f'{target_lang}_ner'] 
             target2src_ner = doc.get(f'{target_lang}_2_{src_lang}_ner', {})
@@ -944,8 +1594,12 @@ class TextAugment:
 
     if do_docs_trim:
       docs, chunks = self.trim_to_prefer_person(docs, chunks)
+    
+    docs = self.collapse_ner(docs, target_ner_key, target_text_key)
+    
+    if do_backtrans and target_lang != src_lang and not do_augment:
+        #TBD: we could run the augmented text back to the original sentence create additional augmented data.
 
-    if do_backtrans and target_lang != src_lang:
         #backtrans from src_lang to target_lang back to src_lang allows us to catch more NER using target lang NER tools.
         #then we tag in target_lang those items we haven't already found, and tranlsate back to match the original text.
         #NOTE: We do not modify the original text, but only use backtrans to do NER tagging and other analysis. 
@@ -984,12 +1638,12 @@ class TextAugment:
                 j = text.index(key[0], i)
                 text = text[:j]+(text[j:].replace(key[0], f"  **{idx}**  ", 1))
                 i = j
-          chunk[f'{target_lang}_tmpl_text'] = text
+          chunk[f'{target_lang}_tmp_text'] = text
 
         target_items_sorted = list(enumerate(doc[f'{target_lang}_items']))
-        target_items_sorted.sort(key=lambda a: len(a[1][0]))
+        target_items_sorted.sort(key=lambda a: len(a[1][0]), reverse=True)
         for chunk in chunks:
-          text = chunk[f'{target_lang}_tmpl_text']
+          text = chunk[f'{target_lang}_tmp_text']
           _id = chunk['id']
           doc = docs[_id]
           for idx, key in target_items_sorted:
@@ -997,17 +1651,17 @@ class TextAugment:
               text = text.replace(" "+key[0]+" ", f"  **{idx}**  ")
             else:
               text = text.replace(key[0], f" **{idx}** ")
-          chunk[f'{target_lang}_tmpl_text'] = text
+          chunk[f'{target_lang}_tmp_text'] = text
 
         for chunk in chunks:
-          text = chunk[f'{target_lang}_text']
+          text = chunk[f'{target_lang}_tmp_text']
           _id = chunk['id']
           doc = docs[_id]
           for idx, key in enumerate(doc[f'{target_lang}_items']):
             text = text.replace(f" **{idx}** ", f" {idx} {lbracket} {key[0]} {rbracket}")
-          chunk[f'{target_lang}_tmpl_text'] = text.replace("  ", " ")
+          chunk[f'{target_lang}_tmp_text'] = text.replace("  ", " ")
 
-        backtrans_text = self.do_translations([chunk[f'{target_lang}_tmpl_text'] for chunk in chunks], src_lang=target_lang, target_lang=src_lang, batch_size=batch_size)
+        backtrans_text = self.do_translations([chunk[f'{target_lang}_tmp_text'] for chunk in chunks], src_lang=target_lang, target_lang=src_lang, batch_size=batch_size)
         for chunk, trans_text in zip(chunks, backtrans_text):
           #langid check
           try:
@@ -1018,6 +1672,7 @@ class TextAugment:
             chunk[f'{src_lang}_text_backtrans_from_{target_lang}'] = trans_text.lstrip(" .").replace(rbracket, "]").replace(lbracket, "[").replace("}", ")").replace("{", "(")
           else:
             chunk[f'{src_lang}_text_backtrans_from_{target_lang}'] = " . . . "
+        
         #TODO: do similiarty test?
         for chunk, trans_text in zip(chunks, backtrans_text):
           _id = chunk['id']
@@ -1095,7 +1750,7 @@ class TextAugment:
                     mention = (ner_word, offset + start, offset + start + len_nerword)
                     aHash = ner.get(mention, {})
                     for label in ner[key]:
-                      print (f'found new mention from {target_lang}', mention, label)
+                      #print (f'found new mention from {target_lang}', mention, label)
                       aHash[label] = aHash.get(label, 0) + ner[key][label]
                     ner[mention] = aHash
                 idx = None
@@ -1126,9 +1781,6 @@ class TextAugment:
             for key2 in aHash1:
               aHash2[key2] = aHash2.get(key2, 0.0) + aHash1[key2]
 
-        if do_postprocessing_after_backtrans:
-          pass
-    
         if do_cleanup:
           #do some cleanups. we don't want any ner that are just short numbers, stopwords or single characters.
           for _id, doc in docs.items():
@@ -1146,6 +1798,92 @@ class TextAugment:
                 print ("deleting ", ner_word)
                 del doc[f'{src_lang}_ner'][key]
 
+    docs = self.collapse_ner(docs, target_ner_key, target_text_key)
+    
+    #anonymization is very similar to augmentation, except we operate in the src_lang space, and don't require translation. 
+    #we will replace the words directly from {src_lang}_text to {src_lang}_text_anon. we assume all ner process has been completed at this point. 
+    #anonymization will create a new {src_lang}_text_anon and {src_lang}_ner_anon field.
+    #anohter way to do anonymimzation is to pass the anonymized text through backtrans. TBD?
+    context = {}
+    if do_anonymization and faker_src_lang is not None and faker_en is not None:
+      for doc in docs.values():
+          context = doc[f'{src_lang}_anon_context'] = doc.get(f'{src_lang}_anon_context', {})
+          if f'{src_lang}_items' not in doc:
+            doc[f'{src_lang}_items'] = list(doc.get(f'{src_lang}_ner', {}).keys())
+            doc[f'{src_lang}_items'].sort(key=lambda a: a[1], reverse=True)
+
+          ner = doc.get(f'{src_lang}_ner', {})
+          idx_items = list(enumerate(doc[f'{src_lang}_items']))
+          idx_items.sort(key=lambda a: len(a[1][0]))
+
+          for idx, key in idx_items:
+            if key not in ner: continue
+            ent = key[0]
+            tag = ner[key]
+            if ent in context: continue
+            #TODO - do proper gender based aug and gender swap
+            if 'PERSON' in aug_scope and tag == 'PERSON':
+              context[ent] = context.get(ent, faker_en.first_name() + " " + random.choice(bantu_surnames) if " " in ent and src_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
+                                     random.choice(bantu_surnames) if src_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
+                                     random.choice(vietnamese_surnames) + " " + random.choice(vietnamese_firstnames) if " " in ent and src_lang =="vi" else \
+                                     random.choice(vietnamese_surnames) if  src_lang == "vi" else \
+                                     faker_en.first_name() + " " + random.choice(bengali_surnames) if " " in ent and src_lang =="bn" else \
+                                     random.choice(bengali_surnames) if src_lang == "bn" else \
+                                     random.choice(urdu_firstnames)  + " " + random.choice(urdu_surnames) if " " in ent and src_lang =="ur" else \
+                                     random.choice(urdu_surnames) if src_lang == "ur" else \
+                                     faker_src_lang.name() if " " in ent else \
+                                     faker_src_lang.first_name() )
+              
+            if 'LOC' in aug_scope and tag == 'LOC':
+              context[ent] = context.get(ent, faker_en.country() if  src_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
+                                     faker_src_lang.state() if src_lang != 'zh' else \
+                                     faker_src_lang.province() if  src_lang == 'zh' else 
+                                     ent)
+            if 'ORG' in aug_scope and tag == 'ORG':
+              try:
+                context[ent] = context.get(ent, faker_src_lang.company())
+              except:
+                context[ent] = context.get(ent, faker_en.company())
+
+            if 'ID' in aug_scope and tag == 'ID':
+              context[ent] = context.get(ent, str(random.randrange(10000000,999999999)) if src_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu")  else \
+                                     faker_src_lang.ssn())
+              
+            if 'ADDRESS' in aug_scope and tag == 'ADDRESS':
+              context[ent] = context.get(ent, faker_en.address() if src_lang not in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
+                                     faker_src_lang.address() )
+              
+            if tag in  ('PESON', 'ORG') and tag in aug_scope :
+              src_first, src_last = None, None
+              target_first, target_last = None, None
+              if src_lang in ("ja", "ko", "zh") and len(ent) > 1:
+                src_first, src_last = ent[0], ent[-1]
+              elif " " in ent:
+                src_first, src_last =  ent.split()[0], ent.split()[-1]
+              if src_lang in ("ja", "ko", "zh"):
+                target_first, target_last = context[ent][0], context[ent][-1]
+              elif " " in context[ent]:
+                target_first, target_last = context[ent].split()[0], context[ent].split()[-1]
+              if src_first and (src_lang  in ("ja", "ko", "zh") or len(src_first) > 3) and src_first not in context:
+                context[src_first] = target_first
+              if src_last and (src_lang  in ("ja", "ko", "zh") or len(src_last) > 3) and src_last not in context:
+                context[src_last] = target_last
+          print (context)
+      for chunk in chunks:
+          #TODO - finish this code
+          context = doc[f'{src_lang}_anon_context'] = doc.get(f'{src_lang}_anon_context', {})
+          text = chunk[f'{src_lang}_text']
+          _id = chunk['id']
+          doc = docs[_id]
+          for idx, key in enumerate(doc[f'{src_lang}_items']):
+            if do_augment:
+              ent = context.get(key[0], key[0])
+            else:
+              ent = key[0]
+            text = text.replace(f" **{idx}** ", f" {idx} {lbracket} {ent} {rbracket}")
+          chunk[f'{src_lang}_text_anon'] = text.replace("  ", " ")
+          #create {src_lang}_ner_anon
+    
     return docs, chunks
 
   def process_ner(self, 
@@ -1156,6 +1894,9 @@ class TextAugment:
               do_hf_ner = True,
               do_ontology = True,
               do_backtrans=False,
+              do_augment=False,
+              do_anonymization=False,
+              augment_lang="es",
               do_cleanup=True,
               do_regex = True,
               batch_size = 5, 
@@ -1163,16 +1904,26 @@ class TextAugment:
               ontology_weight=0.9,
               spacy_weight=1.25,
               hf_ner_weight=1.5,
+              regex_weight=2.0,
               backtrans_weight=0.9,
               do_docs_trim=True,
-              do_postprocessing_after_backtrans=False,
               cutoff=None,
-              target_lang='en'):
+              target_lang='en', 
+              domain="",
+              aug_scope={'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
+              anon_scope={'PERSON', 'ID'}):
+      """
+      This is the main routine to perform crosslingual NER for a src_lang document with no NER models. 
+      It uses a cross lingual NER model that is 'close enough', and also uses backtranslation (target_lang English) to do further NER, and then map back to src_lang.
+      It can also create crosslingual augmented data to create additional data for training.
+      This routine can also be used to do anonymization of the original src_lang text at the end of the NER pipeline. 
+      """
       src_is_cjk = src_lang in ('zh', 'ko', 'ja')
       if src_is_cjk:
         sep = ""
       else:
         sep = " "
+
       if text is None and docs is None:
         try:
           domain = 'oscar_registry'
@@ -1204,9 +1955,8 @@ class TextAugment:
       for doc in docs:
         doc[f'{src_lang}_text'] = doc['text']
         del doc['text']
-        
-      badwords1 = set([s for s in badwords_ac_dc.get(src_lang, []) if len(s) < 5])
-      stopwords1 = set(stopwords_ac_dc.get(src_lang, []))
+      badwords1 = set([s for s in badwords.get(src_lang, []) if len(s) < 5])
+      stopwords1 = set(stopwords.get(src_lang, []))
       docs = [doc for doc in docs if self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, badwords=badwords1)]
       print ('trimmed junk', (len_docs-len(docs))/len_docs)
       len_d = len(docs)
@@ -1271,30 +2021,33 @@ class TextAugment:
       for doc in docs.values():
         doc[f'{src_lang}_ner'] = doc.get(f'{src_lang}_ner', {})
         
-      #do ner processing in src_lang
+      #do ner processing in src_lang with potential anonymization
       docs2, chunks2 = self.process_ner_chunks_with_trans(
                           src_lang, 
                           docs, 
                           chunks, 
+                          target_lang=src_lang,
                           do_spacy = do_spacy,
                           do_hf_ner = do_hf_ner,
                           do_ontology = do_ontology,
                           do_backtrans=False,
+                          do_augment=False,
+                          do_anonymization=do_anonymization if target_lang == src_lang else False,
                           do_regex = do_regex,
                           do_cleanup=do_cleanup,
                           batch_size = batch_size, 
                           ontology_weight=ontology_weight,
                           spacy_weight=spacy_weight,
                           hf_ner_weight=hf_ner_weight,
+                          regex_weight=regex_weight,
                           backtrans_weight=backtrans_weight,
-                          do_postprocessing_after_backtrans=False,
                           do_docs_trim=do_docs_trim)
       if do_docs_trim:
         do_docs_trim = len(docs2) == len(docs)
       docs, chunks = docs2, chunks2
       
       if target_lang != src_lang:
-        #do ner processing in target language with optional backtrans
+        #do ner processing in target language with optional backtrans and anonymization
         docs2, chunks2 = self.process_ner_chunks_with_trans(
                             src_lang, 
                             docs, 
@@ -1304,14 +2057,42 @@ class TextAugment:
                             do_hf_ner = do_hf_ner,
                             do_ontology = do_ontology,
                             do_backtrans=do_backtrans,
+                            do_augment=False,
+                            do_anonymization=do_anonymization,
+                            do_regex = do_regex,
+                            do_cleanup = do_cleanup,
+                            batch_size = batch_size, 
+                            ontology_weight=ontology_weight,
+                            spacy_weight=spacy_weight,
+                            hf_ner_weight=hf_ner_weight,
+                            regex_weight=regex_weight,
+                            backtrans_weight=backtrans_weight,
+                            do_docs_trim=do_docs_trim)
+        docs, chunks = docs2, chunks2
+
+      assert not do_augment or augment_lang not in (src_lang, target_lang), "augmented langauge should be different than src_lang and target_lang"
+
+      if do_augment:
+        #do data augmentation by adding a new text field with fake names, etc. in augment_lang
+        docs2, chunks2 = self.process_ner_chunks_with_trans(
+                            src_lang, 
+                            docs, 
+                            chunks, 
+                            target_lang = augment_lang,
+                            do_spacy = do_spacy,
+                            do_hf_ner = do_hf_ner,
+                            do_ontology = do_ontology,
+                            do_backtrans=False,
+                            do_augment=do_augment,
+                            do_anonymization=False,
                             do_regex = do_regex,
                             do_cleanup=do_cleanup,
                             batch_size = batch_size, 
                             ontology_weight=ontology_weight,
                             spacy_weight=spacy_weight,
                             hf_ner_weight=hf_ner_weight,
+                            regex_weight=regex_weight,
                             backtrans_weight=backtrans_weight,
-                            do_postprocessing_after_backtrans=True,
                             do_docs_trim=do_docs_trim)
         docs, chunks = docs2, chunks2
       return docs, chunks
