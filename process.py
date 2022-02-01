@@ -2287,4 +2287,5 @@ if __name__ == "__main__":
     docs = load_all_pii(f) 
   if src_lang is not None:
     processor = TextAugment()
-    processor.process_ner(src_lang=src_lang, target_lang=target_lang,  do_regex=True, do_spacy=True, do_backtrans=True, cutoff=cutoff, docs=docs)
+    docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang,  do_regex=True, do_spacy=True, do_backtrans=True, cutoff=cutoff, docs=docs)
+    print (docs)
