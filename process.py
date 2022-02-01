@@ -2272,18 +2272,19 @@ def load_all_pii(infile="./zh_pii.jsonl"):
   return [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
 
 if __name__ == "__main__":  
-  src_lang = 'zh'
+  src_lang = None
   target_lang = 'en'
   cutoff = 30
   docs = None
-  if "-s" in sys.argv:
-    src_lang = sys.argv[sys.argv.index("-s")+1]
-  if "-t" in sys.argv:
-    target_lang = sys.argv[sys.argv.index("-t")+1]
-  if "-c" in sys.argv:
-    cutoff = int(sys.argv[sys.argv.index("-c")+1])
-  if "-f" in sys.argv:
-    f = int(sys.argv[sys.argv.index("-f")+1])
+  if "-src_lang" in sys.argv:
+    src_lang = sys.argv[sys.argv.index("-src_lang")+1]
+  if "-target_lang" in sys.argv:
+    target_lang = sys.argv[sys.argv.index("-target_lang")+1]
+  if "-cutoff" in sys.argv:
+    cutoff = int(sys.argv[sys.argv.index("-cutoff")+1])
+  if "-file" in sys.argv:
+    f = int(sys.argv[sys.argv.index("-file")+1])
     docs = load_all_pii(f) 
-  processor = TextAugment()
-  processor.process_ner(src_lang=src_lang, target_lang=target_lang,  do_regex=True, do_spacy=True, do_backtrans=True, cutoff=cutoff, docs=docs)
+  if src_lang is not None:
+    processor = TextAugment()
+    processor.process_ner(src_lang=src_lang, target_lang=target_lang,  do_regex=True, do_spacy=True, do_backtrans=True, cutoff=cutoff, docs=docs)
