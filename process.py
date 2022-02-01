@@ -2283,7 +2283,7 @@ if __name__ == "__main__":
   if "-cutoff" in sys.argv:
     cutoff = int(sys.argv[sys.argv.index("-cutoff")+1])
   if "-file" in sys.argv:
-    f = int(sys.argv[sys.argv.index("-file")+1])
+    f = sys.argv[sys.argv.index("-file")+1]
     docs = load_all_pii(f) 
   if src_lang is not None:
     processor = TextAugment()
