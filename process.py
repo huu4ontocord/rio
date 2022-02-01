@@ -2289,3 +2289,6 @@ if __name__ == "__main__":
     processor = TextAugment()
     docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang,  do_regex=True, do_spacy=True, do_backtrans=True, cutoff=cutoff, docs=docs)
     print (docs)
+    with open('out.jsonl', 'w', encoding='utf-8') as file:
+      for doc in docs.values():
+        file.write(f'{doc}\n')
