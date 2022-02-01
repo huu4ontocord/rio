@@ -183,7 +183,7 @@ class TextAugment:
   en_spacy_nlp = None 
   faker_en_list  = None
   labse = None
-  qg  None
+  qg  = None
   translation_pipelines = {}
   ner_model_name2pipelines = {}  
 
