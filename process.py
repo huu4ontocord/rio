@@ -2117,10 +2117,14 @@ class TextAugment:
         docs = docs[:cutoff]
       #print (docs)
       len_docs = len(docs)
+      _id = 0
       # use the 'text' field as the current working src_lang_text field unless there is one already
       for doc in docs:
+        if 'id' in doc:
+          _id = max(_id, int(doc['id']))
         if f'{src_lang}_text' in doc: continue
         doc[f'{src_lang}_text'] = doc['text']
+
         #del doc['text'] # we don't delete 'text'. we will overwrite 'text'
       flagged_words1 = set([s for s in flagged_words.get(src_lang, []) if len(s) < 5])
       stopwords1 = set(stopwords.get(src_lang, []))
@@ -2131,15 +2135,14 @@ class TextAugment:
       
       counter = {}
       chunks = []
-      _id = -1
       for doc in docs:
-        _id += 1
-        if 'id' not in doc:
+        if 'id' not in doc or int(doc['id']) < 0:
           doc['id'] = str(_id)
+          _id += 1
         doc[f'{src_lang}_text'] = doc[f'{src_lang}_text'].replace("[", "(").replace("]", ")") # we use [] as special chars
-        doc['lang'] = src_lang
-        doc['domain'] = domain
-        doc['chunks'] = [] 
+        doc['lang'] = doc.get('lang', src_lang)
+        doc['domain'] = doc['domain'] if doc.get('domain') is not None else domain
+        doc['chunks'] = doc.get('chunks', [])
         offset = 0
         if src_is_cjk:
           textarr = doc[f'{src_lang}_text']
