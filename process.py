@@ -1426,9 +1426,15 @@ class TextAugment:
         except:
           pass
       elif target_lang == 'pt':
-        spacy_nlp = spacy.load('pt_core_news_sm')
+        try:
+          spacy_nlp = spacy.load('pt_core_news_sm')
+        except:
+          pass
       elif target_lang == 'fr':
-        spacy_nlp = spacy.load('fr_core_news_sm')
+        try:
+          spacy_nlp = spacy.load('fr_core_news_sm')
+        except:
+          pass
       elif target_lang == 'ca':
         try:
           spacy_nlp = spacy.load('ca_core_news_sm')
@@ -2123,13 +2129,18 @@ class TextAugment:
         if 'id' in doc:
           _id = max(_id, int(doc['id']))
         if f'{src_lang}_text' in doc: continue
-        doc[f'{src_lang}_text'] = doc['text']
+        if 'text' in doc:
+          doc[f'{src_lang}_text'] = doc['text']
+        else:
+          print ('problem**', doc)
+          doc['text'] = doc[f'{src_lang}_text'] = ' . . . '
 
         #del doc['text'] # we don't delete 'text'. we will overwrite 'text'
       flagged_words1 = set([s for s in flagged_words.get(src_lang, []) if len(s) < 5])
       stopwords1 = set(stopwords.get(src_lang, []))
-      docs = [doc for doc in docs if self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, flagged_words=flagged_words1)]
-      print ('trimmed junk', (len_docs-len(docs))/len_docs)
+      if do_docs_trim:
+        docs = [doc for doc in docs if self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, flagged_words=flagged_words1)]
+        print ('trimmed junk', (len_docs-len(docs))/len_docs)
       len_d = len(docs)
       #flagged_words2 = set([s for s in flagged_words_ac_dc.get(target_lang, []) if len(s) < 5])
       
