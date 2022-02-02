@@ -2060,6 +2060,7 @@ class TextAugment:
               do_backtrans=False,
               do_augment=False,
               do_anonymization=False,
+              copy_anon_to_text=True, # if we do_anonymize, we will copy {src_lang}_text_anon -> text
               augment_lang="es",
               do_cleanup=True,
               do_regex = True,
@@ -2120,7 +2121,7 @@ class TextAugment:
       for doc in docs:
         if f'{src_lang}_text' in doc: continue
         doc[f'{src_lang}_text'] = doc['text']
-        del doc['text']
+        #del doc['text'] # we don't delete 'text'. we will overwrite 'text'
       flagged_words1 = set([s for s in flagged_words.get(src_lang, []) if len(s) < 5])
       stopwords1 = set(stopwords.get(src_lang, []))
       docs = [doc for doc in docs if self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, flagged_words=flagged_words1)]
@@ -2235,6 +2236,11 @@ class TextAugment:
                             backtrans_weight=backtrans_weight,
                             do_docs_trim=do_docs_trim)
         docs, chunks = docs2, chunks2
+
+      if copy_anon_to_text and do_anonymization:
+        for doc in docs.values():
+          if f'{src_lang}_text_anon' in doc:
+            doc['text'] = doc[f'{src_lang}_text_anon']
 
       assert not do_augment or augment_lang not in (src_lang, target_lang), "augmented langauge should be different than src_lang and target_lang"
 
