@@ -2116,7 +2116,9 @@ class TextAugment:
         docs = docs[:cutoff]
       #print (docs)
       len_docs = len(docs)
+      # use the 'text' field as the current working src_lang_text field unless there is one already
       for doc in docs:
+        if f'{src_lang}_text' in doc: continue
         doc[f'{src_lang}_text'] = doc['text']
         del doc['text']
       flagged_words1 = set([s for s in flagged_words.get(src_lang, []) if len(s) < 5])
@@ -2282,6 +2284,8 @@ if __name__ == "__main__":
     target_lang = sys.argv[sys.argv.index("-target_lang")+1]
   if "-cutoff" in sys.argv:
     cutoff = int(sys.argv[sys.argv.index("-cutoff")+1])
+  if cutoff == -1:
+    cutoff = None
   if "-file" in sys.argv:
     f = sys.argv[sys.argv.index("-file")+1]
     docs = load_all_pii(f) 
