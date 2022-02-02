@@ -35,7 +35,7 @@ import torch
 from sentence_transformers import SentenceTransformer
 import sys
 try:
-  if stopwords is None:
+  if not stopwords:
     from stopwords import stopwords
 except:
   try:
@@ -43,7 +43,7 @@ except:
   except:
     stopwords = {}
 try:
-  if english_flagged_words is None:
+  if not english_flagged_words:
     from flagged_words import *
 except:
   try:
@@ -467,7 +467,7 @@ class TextAugment:
   max_stoword_len_ko = max([0]+[len(a) for a in stopwords.get('ko', [])])
   max_stoword_len_ja = max([0]+[len(a) for a in stopwords.get('ja', [])])
   stopwords_en = set(stopwords.get('en',[]))
-  stopwords_en= set(stopwords['en'])
+
 
   def __init__(self):
 
@@ -571,7 +571,7 @@ class TextAugment:
         return True
     return lang == src_lang
 
-  #WIP - we use this method to extract people, place and thing, and potentially age/date
+  #WIP - we can use this q/a q/g method to extract people, place and thing, and potentially age/date
   def generate_questions(self, batch, default_answers=[]):
     answers = {}
 
@@ -607,7 +607,7 @@ class TextAugment:
                 label = quest[j]+"_"+str(i)
                 break
           for a in aHash1['answer'].lower().split():
-            if a not in stopwords_hash:
+            if a not in self.stopwords_en:
               answers[a] = label
         elif quest[0] == "who":
           label="person_"+str(i)
@@ -617,7 +617,7 @@ class TextAugment:
                 label = quest[j]+"_"+str(i)
                 break
           for a in aHash1['answer'].lower().split():
-            if a not in stopwords_hash:
+            if a not in self.stopwords_en:
               answers[a] = label
         elif quest[0] == "where":
           label="location_"+str(i)
@@ -629,7 +629,7 @@ class TextAugment:
           label="quantity_"+str(i)
         elif quest[0] == "how":
           label="method_"+str(i)
-        elif quest[0] in ("which", "what") and quest[1] not in stopwords_hash:
+        elif quest[0] in ("which", "what") and quest[1] not in self.stopwords_en:
           label=quest[1]+"_"+str(i)
         elif "'s" in quest:
           for j in range(len(quest)):
@@ -670,7 +670,7 @@ class TextAugment:
           if quest[0]=="how" and quest[1] in ("much", "many"):
             qtype = qtype + [quest[1]]
 
-        #label=[q for q in quest if (q not in ("much", "many",) and not stopwords_hash.get(q) and q not in answers)]#+qtype
+        #label=[q for q in quest if (q not in ("much", "many",) and not self.stopwords_en.get(q) and q not in answers)]#+qtype
         label=[q for q in quest if (q[0] not in "0123456789") and (q not in ("the", "a", "an"))]
         if len(label) > 10:
             label=label[:10]
@@ -1546,10 +1546,10 @@ class TextAugment:
             for idx, key in src_items_sorted:
               if key not in ner: continue
               ent = key[0]
-              tag = ner[key]
+              tag = max(Counter(ner[key]))
               if ent in context: continue
               #TODO - do proper gender based aug and gender swap
-              if 'PERSON' in aug_scope and tag == 'PERSON':
+              if 'PERSON' in aug_scope and tag == 'PERSON' and ent not in context:
                 context[ent] = context.get(ent, faker_en.first_name() + " " + random.choice(bantu_surnames) if " " in ent and target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
                                       random.choice(bantu_surnames) if target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
                                       random.choice(vietnamese_surnames) + " " + random.choice(vietnamese_firstnames) if " " in ent and target_lang =="vi" else \
@@ -1561,22 +1561,22 @@ class TextAugment:
                                       faker_target_lang.name() if " " in ent else \
                                       faker_target_lang.first_name() )
                 
-              if 'LOC' in aug_scope and tag == 'LOC':
+              if 'LOC' in aug_scope and tag == 'LOC' and ent not in context:
                 context[ent] = context.get(ent, faker_en.country() if  target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
                                       faker_target_lang.state() if target_lang != 'zh' else \
                                       faker_target_lang.province() if  target_lang == 'zh' else 
                                       ent)
-              if 'ORG' in aug_scope and tag == 'ORG':
+              if 'ORG' in aug_scope and tag == 'ORG' and ent not in context:
                 try:
                   context[ent] = context.get(ent, faker_target_lang.company())
                 except:
                   context[ent] = context.get(ent, faker_en.company())
 
-              if 'ID' in aug_scope and tag == 'ID':
+              if 'ID' in aug_scope and tag == 'ID' and ent not in context:
                 context[ent] = context.get(ent, str(random.randrange(10000000,999999999)) if target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu")  else \
                                       faker_target_lang.ssn())
                 
-              if 'ADDRESS' in aug_scope and tag == 'ADDRESS':
+              if 'ADDRESS' in aug_scope and tag == 'ADDRESS' and ent not in context:
                 context[ent] = context.get(ent, faker_en.address() if target_lang not in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
                                       faker_target_lang.address() )
               
@@ -1920,7 +1920,7 @@ class TextAugment:
                     mention = (ner_word, offset + start, offset + start + len_nerword)
                     aHash = ner.get(mention, {})
                     for label in ner[key]:
-                      #print (f'found new mention from {target_lang}', mention, label)
+                      print (f'found new mention from {target_lang}', mention, label)
                       aHash[label] = aHash.get(label, 0) + ner[key][label]
                     ner[mention] = aHash
                 idx = None
@@ -1968,8 +1968,11 @@ class TextAugment:
                 print ("deleting ", ner_word)
                 del doc[f'{src_lang}_ner'][key]
 
+
+    #TODO - fix collapse_ner so that loc->address, person->public_figure when there are overlaps, date/id->id
     docs = self.collapse_ner(docs, target_ner_key, target_text_key)
-    
+    docs = self.collapse_ner(docs, f"{src_lang}_ner", f"{src_lang}_text")
+
     #anonymization is very similar to augmentation, except we operate in the src_lang space, and don't require translation. 
     #we will replace the words directly from {src_lang}_text to {src_lang}_text_anon. we assume all ner process has been completed at this point. 
     #anonymization will create a new {src_lang}_text_anon and {src_lang}_ner_anon field.
@@ -1989,10 +1992,10 @@ class TextAugment:
           for idx, key in idx_items:
             if key not in ner: continue
             ent = key[0]
-            tag = ner[key]
+            tag = max(Counter(ner[key]))
             if ent in context: continue
             #TODO - do proper gender based aug and gender swap
-            if 'PERSON' in aug_scope and tag == 'PERSON':
+            if 'PERSON' in aug_scope and tag == 'PERSON' and ent not in context:
               context[ent] = context.get(ent, faker_en.first_name() + " " + random.choice(bantu_surnames) if " " in ent and src_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
                                      random.choice(bantu_surnames) if src_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
                                      random.choice(vietnamese_surnames) + " " + random.choice(vietnamese_firstnames) if " " in ent and src_lang =="vi" else \
@@ -2004,22 +2007,22 @@ class TextAugment:
                                      faker_src_lang.name() if " " in ent else \
                                      faker_src_lang.first_name() )
               
-            if 'LOC' in aug_scope and tag == 'LOC':
+            if 'LOC' in aug_scope and tag == 'LOC' and ent not in context:
               context[ent] = context.get(ent, faker_en.country() if  src_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
                                      faker_src_lang.state() if src_lang != 'zh' else \
                                      faker_src_lang.province() if  src_lang == 'zh' else 
                                      ent)
-            if 'ORG' in aug_scope and tag == 'ORG':
+            if 'ORG' in aug_scope and tag == 'ORG' and ent not in context:
               try:
                 context[ent] = context.get(ent, faker_src_lang.company())
               except:
                 context[ent] = context.get(ent, faker_en.company())
 
-            if 'ID' in aug_scope and tag == 'ID':
+            if 'ID' in aug_scope and tag == 'ID' and ent not in context:
               context[ent] = context.get(ent, str(random.randrange(10000000,999999999)) if src_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu")  else \
                                      faker_src_lang.ssn())
               
-            if 'ADDRESS' in aug_scope and tag == 'ADDRESS':
+            if 'ADDRESS' in aug_scope and tag == 'ADDRESS' and ent not in context:
               context[ent] = context.get(ent, faker_en.address() if src_lang not in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
                                      faker_src_lang.address() )
               
@@ -2084,7 +2087,7 @@ class TextAugment:
               aug_scope={'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
               anon_scope={'PERSON', 'ID'}):
       """
-      This is the main routine to perform crosslingual NER for a src_lang document with no NER models. 
+      This is the main routine to perform crosslingual NER for a src_lang document with potentially no NER models. 
       It uses a cross lingual NER model that is 'close enough', and also uses backtranslation (target_lang English) to do further NER, and then map back to src_lang.
       It can also create crosslingual augmented data to create additional data for training.
       This routine can also be used to do anonymization of the original src_lang text at the end of the NER pipeline. 
@@ -2298,12 +2301,15 @@ if __name__ == "__main__":
   target_lang = 'en'
   cutoff = 30
   docs = None
+  batch_size = 5
   if "-src_lang" in sys.argv:
     src_lang = sys.argv[sys.argv.index("-src_lang")+1]
   if "-target_lang" in sys.argv:
     target_lang = sys.argv[sys.argv.index("-target_lang")+1]
   if "-cutoff" in sys.argv:
     cutoff = int(sys.argv[sys.argv.index("-cutoff")+1])
+  if "-batch_size" in sys.argv:
+    batch_size = int(sys.argv[sys.argv.index("-batch_size")+1])
   if cutoff == -1:
     cutoff = None
   if "-file" in sys.argv:
@@ -2311,7 +2317,7 @@ if __name__ == "__main__":
     docs = load_all_pii(f) 
   if src_lang is not None:
     processor = TextAugment()
-    docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang,  do_regex=True, do_spacy=True, do_backtrans=True, cutoff=cutoff, docs=docs)
+    docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True, do_backtrans=True, cutoff=cutoff, batch_size=batch_size, docs=docs)
     print (docs)
     with open('out.jsonl', 'w', encoding='utf-8') as file:
       for doc in docs.values():
