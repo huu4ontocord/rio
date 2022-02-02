@@ -1205,7 +1205,7 @@ class TextAugment:
                                    oldLabel if s1 in pronouns or (len(s1) > 1 and s1 not in self.stopwords_en) else None, oldAnaphore  if s1 in pronouns or (len(s1) > 1 and s1 not in self.stopwords_en) else None, \
                                    chunk2ner, mention2ref, ref2mention)
       len_doc = len(doc)
-      if chunks2[-1][2] < len_doc:
+      if chunks2 and chunks2[-1][2] < len_doc:
         self.add_chunks_span(chunks2, (doc[chunks2[-1][2]:].text, chunks2[-1][2], len_doc), None, None, None, chunk2ner, mention2ref, ref2mention)
 
       #reset the indexes for chunks to be per character index.
