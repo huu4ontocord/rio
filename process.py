@@ -807,7 +807,7 @@ class TextAugment:
                       if not found_context:
                           continue
                   for ent in regex.findall(sentence):
-                      if not isinstance(ent, str):
+                      if not isinstance(ent, str) or not ent:
                           continue
                       sentence2 = original_sentence
                       delta = 0
@@ -828,7 +828,8 @@ class TextAugment:
                                     found_context = True
                                     break
                               if not found_context:
-                                  continue
+                                sentence2 = sentence2[i+len(ent):]
+                                continue
                               #ner[ent.strip()] = tag
                           sentence2 = sentence2[i+len(ent):]
                           all_ner.append((ent, delta+i, delta+j, tag))
