@@ -25,7 +25,8 @@ class QGPipeline:
         ans_model: PreTrainedModel,
         ans_tokenizer: PreTrainedTokenizer,
         qg_format: str,
-        use_cuda: bool
+        use_cuda: bool,
+        default_answers = None,
     ):
         self.model = model
         self.tokenizer = tokenizer
@@ -34,7 +35,7 @@ class QGPipeline:
         self.ans_tokenizer = ans_tokenizer
 
         self.qg_format = qg_format
-
+        self.default_answers = default_answers
         self.device = "cuda" if torch.cuda.is_available() and use_cuda else "cpu"
         self.model.to(self.device)
 
@@ -48,26 +49,48 @@ class QGPipeline:
         else:
             self.model_type = "bart"
 
-    def __call__(self, inputs: str):
+    def __call__(self, inputs: str, **generate_kwargs):
         self.model.eval()
         self.ans_model.eval()
+        ret = []
         with torch.no_grad():
-          inputs = " ".join(inputs.split())
-          sents, answers = self._extract_answers(inputs)
-          flat_answers = list(itertools.chain(*answers))
           
-          if len(flat_answers) == 0:
-            return []
-          answers = [flat_answers]*len(answers)
-          if self.qg_format == "prepend":
-              qg_examples = self._prepare_inputs_for_qg_from_answers_prepend(inputs, answers)
-          else:
-              qg_examples = self._prepare_inputs_for_qg_from_answers_hl(sents, answers)
-          
-          qg_inputs = [example['source_text'] for example in qg_examples]
-          questions = self._generate_questions(qg_inputs)
-          output = [{'answer': example['answer'], 'question': que} for example, que in zip(qg_examples, questions)]
-        return output
+          if type(inputs) is str:
+            inputs = [inputs]
+          default_answers=[]
+          if 'default_answers' in generate_kwargs:
+            default_answers = generate_kwargs['default_answers']
+            if type(default_answers[0]) is str:
+              default_answers = [default_answers] * len(inputs)
+          if len(default_answers) < len(inputs):
+            default_answers.extend([[]]*(len(inputs)-len(default_answers)))
+          #TODO - we could do in batches that is approximately N words to maximize GPU usage
+          for input, default_answer in zip(inputs, default_answers):
+            qg_examples = []
+            input = " ".join(input.split())
+            sents, answers = self._extract_answers(input)
+            if self.default_answers:
+              answers.append(self.default_answers)
+            if default_answer:
+              answers.append(default_answer)
+            flat_answers = list(itertools.chain(*answers))
+            
+            if len(flat_answers) == 0:
+              ret.append([])
+              continue
+            answers = [flat_answers]*len(sents) # multi-way q/a
+            if self.qg_format == "prepend":
+                qg_examples.extend(self._prepare_inputs_for_qg_from_answers_prepend(inputs, answers))
+            else:
+                qg_examples.extend(self._prepare_inputs_for_qg_from_answers_hl(sents, answers))
+            if  qg_examples:
+              qg_inputs = [example['source_text'] for example in qg_examples]
+              questions = self._generate_questions(qg_inputs)
+              output = list(set([(example['answer'], que) for example, que in zip(qg_examples, questions)]))
+              ret.append([{'answer': answer, 'question': que} for answer, que in output])
+            else:
+              ret.append([])
+        return ret
     
     def _generate_questions(self, inputs):
         inputs = self._tokenize(inputs, padding=True, truncation=True)
@@ -85,12 +108,13 @@ class QGPipeline:
     def _extract_answers(self, context):
         sents, inputs = self._prepare_inputs_for_ans_extraction(context)
         inputs = self._tokenize(inputs, padding=True, truncation=True)
-
-        outs = self.ans_model.generate(
-            input_ids=inputs['input_ids'].to(self.device), 
-            attention_mask=inputs['attention_mask'].to(self.device), 
-            max_length=32,
-        )
+        self.ans_model.eval()
+        with torch.no_grad():
+          outs = self.ans_model.generate(
+              input_ids=inputs['input_ids'].to(self.device), 
+              attention_mask=inputs['attention_mask'].to(self.device), 
+              max_length=32,
+          )
         
         dec = [self.ans_tokenizer.decode(ids, skip_special_tokens=False) for ids in outs]
         answers = [item.replace("<pad>","").replace("  ", " ").strip().split('<sep>') for item in dec]
@@ -174,13 +198,13 @@ class MultiTaskQAQGPipeline(QGPipeline):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
     
-    def __call__(self, inputs: Union[Dict, str]):
-        if type(inputs) is str:
+    def __call__(self, inputs: Union[Dict, str], **generate_kwargs):
+        if type(inputs) in (list, str):
             # do qg
-            return super().__call__(inputs)
+            return super().__call__(inputs, **generate_kwargs)
         else:
             # do qa
-            return self._extract_answer(inputs["question"], inputs["context"])
+            return self._extract_answer(inputs["question"], inputs["context"], **generate_kwargs)
     
     def _prepare_inputs_for_qa(self, question, context):
         source_text = f"question: {question}  context: {context}"
@@ -362,10 +386,13 @@ def pipeline(
             # load default ans model
             ans_model = targeted_task["default"]["ans_model"]
             ans_tokenizer = AutoTokenizer.from_pretrained(ans_model)
-            ans_model = AutoModelForSeq2SeqLM.from_pretrained(ans_model)
+            if models_same:
+              ans_model = model
+            else:
+              ans_model = AutoModelForSeq2SeqLM.from_pretrained(ans_model).half().to("cuda" if use_cuda else "cpu")
         else:
             # Try to infer tokenizer from model or config name (if provided as str)
-            if same_models:
+            if models_same:
               ans_tokenizer = tokenizer
             elif ans_tokenizer is None:
                 if isinstance(ans_model, str):
