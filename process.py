@@ -473,7 +473,7 @@ class TextAugment:
 
 
   def __init__(self, single_process=1, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None):
-    self.device = "cuda" if torch.cuda.is_available() and use_cuda else "cpu"
+    self.device = "cuda" if torch.cuda.is_available() else "cpu"
     if single_process:
       self.initializer(labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg)
 
