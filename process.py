@@ -447,7 +447,7 @@ class TextAugment:
       'bn': [["sagorsarker/mbert-bengali-ner", BertForTokenClassification, 1.0]],
 
       # NOT PART OF OUR LANGUAGE SET. EXPERIMENTAL
-      'he': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
+      #'he': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
       'hr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
       'bs': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
       'sr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
