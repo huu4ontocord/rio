@@ -439,8 +439,10 @@ class TextAugment:
       #"zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0], ["zh_model", XLMRobertaForTokenClassification, 0.9 ]],
       "zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
       'vi': [["lhkhiem28/COVID-19-Named-Entity-Recognition-for-Vietnamese", RobertaForTokenClassification, 1.0]],#["jplu/tf-xlm-r-ner-40-lang", None ], 
-      'hi': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
-      'ur': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
+      "hi": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      "ur": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      #'hi': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
+      #'ur': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
       'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0]], 
       'bn': [["sagorsarker/mbert-bengali-ner", BertForTokenClassification, 1.0]],
 
