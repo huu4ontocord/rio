@@ -753,7 +753,7 @@ class TextAugment:
           except:
             break
           if self.m2m_model is None:
-            self.m2m_model = M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().cuda()
+            self.m2m_model = M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
           gen = self.m2m_model.generate(**batch, forced_bos_token_id=target_lang_bos_token, no_repeat_ngram_size=4, ) #
           outputs = self.m2m_tokenizer.batch_decode(gen, skip_special_tokens=True)
           translations.extend(outputs)
@@ -766,7 +766,7 @@ class TextAugment:
     mt_pipeline = None
     if model_name is not None and model_name not in self.translation_pipelines:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = MarianMTModel.from_pretrained(model_name).half().eval().cuda()
+        model = MarianMTModel.from_pretrained(model_name).half().eval().to(self.device)
         mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=0)
         self.translation_pipelines[model_name] = mt_pipeline
         if not mt_pipeline:
