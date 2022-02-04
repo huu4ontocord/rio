@@ -767,7 +767,7 @@ class TextAugment:
     if model_name is not None and model_name not in self.translation_pipelines:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = MarianMTModel.from_pretrained(model_name).half().eval().to(self.device)
-        mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else None)
+        mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else 1)
         self.translation_pipelines[model_name] = mt_pipeline
         if not mt_pipeline:
           raise RuntimeError("no translation pipeline") # we could do multi-step translation where there are no pairs
@@ -1661,14 +1661,14 @@ class TextAugment:
           try:
             model = model_cls.from_pretrained(model_name).half().eval().cuda()
             tokenizer = AutoTokenizer.from_pretrained(model_name)
-            ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else None)
+            ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else 1)
             self.ner_model_name2pipelines[model_name] = ner_pipeline
           except:
             try:
-              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=0 if self.device == 'cuda' else None)
+              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=0 if self.device == 'cuda' else 1)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
             except:
-              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), framework="tf", device=0 if self.device == 'cuda' else None)
+              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), framework="tf", device=0 if self.device == 'cuda' else 1)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
         ner_pipelines.append((self.ner_model_name2pipelines[model_name], hf_ner_weight2))
     target_is_cjk = target_lang in ('zh', 'ko', 'ja')
