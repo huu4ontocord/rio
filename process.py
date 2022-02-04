@@ -469,30 +469,28 @@ class TextAugment:
   stopwords_en = set(stopwords.get('en',[]))
 
 
-  def __init__(self):
-
+  def __init__(self, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None):
+      
+    if labse is not None: TextAugment.labse = labse 
+    if ontology_manager is not None: TextAugment.ontology_manager = ontology_manager
+    if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
+    if ner_model_name2pipelines is not None: TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
+    if en_spacy_nlp is not None: TextAugment.en_spacy_nlp = en_spacy_nlp
+    if faker_en_list is not None: TextAugment.faker_en_list = faker_en_list
+    if qg is not None: TextAugment.qg = qg
+    if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
     try:
-      TextAugment.labse = labse 
-      TextAugment.ontology_manager = ontology_manager
-      TextAugment.translation_pipelines = translation_pipelines
-      TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
-      TextAugment.en_spacy_nlp = en_spacy_nlp
-      TextAugment.faker_en_list = faker_en_list
-      TextAugment.qg = qg
-    except: # use the below for production usage. the above is for testing. 
-      if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
-      try:
         coref = neuralcoref.NeuralCoref(TextAugment.en_spacy_nlp.vocab)
         TextAugment.en_spacy_nlp.add_pipe(coref, name='neuralcoref')
         #we could potentially add new items to the vocabulary to improve coref.
-      except:
+    except:
         pass
-      if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg") # TODO make sure it's running in half mode
-      if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().cuda()
-      if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
-      if TextAugment.faker_en_list is None:
-        TextAugment.faker_en_list  = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
-        for faker_en in faker_en_list:
+    if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg") # TODO make sure it's running in half mode
+    if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().cuda()
+    if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
+    if TextAugment.faker_en_list is None:
+      TextAugment.faker_en_list  = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
+      for faker_en in faker_en_list:
           faker_en.add_provider(person)
           faker_en.add_provider(ssn)
           faker_en.add_provider(address)
