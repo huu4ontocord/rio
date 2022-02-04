@@ -477,7 +477,7 @@ class TextAugment:
     if single_process:
       self.initializer(labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg)
 
-  def initializer(self):
+  def initializer(self, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None):
     if labse is not None: TextAugment.labse = labse 
     if ontology_manager is not None: TextAugment.ontology_manager = ontology_manager
     if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
