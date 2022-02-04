@@ -344,6 +344,7 @@ def pipeline(
     use_cuda: Optional[bool] = True,
     **kwargs,
 ):
+    use_cuda = torch.cuda.is_available() and use_cuda
     # Retrieve the task
     if task not in SUPPORTED_TASKS:
         raise KeyError("Unknown task {}, available tasks are {}".format(task, list(SUPPORTED_TASKS.keys())))
