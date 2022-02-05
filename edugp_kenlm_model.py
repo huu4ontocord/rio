@@ -115,7 +115,6 @@ class KenlmModel:
         doc = self.tokenizer.do(doc)
         doc_log_score, doc_length = 0, 0
         for line in doc.split("\n"):
-            line = self.normalize(line)
             log_score = self.model.score(line)
             length = len(line.split()) + 1
             doc_log_score += log_score
