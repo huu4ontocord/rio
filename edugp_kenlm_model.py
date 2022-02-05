@@ -3,7 +3,7 @@ import os
 import re
 import unicodedata
 from typing import Dict
-
+import unidecode
 import kenlm
 import sentencepiece
 from huggingface_hub import cached_download, hf_hub_url
@@ -115,6 +115,7 @@ class KenlmModel:
         doc = self.tokenizer.do(doc)
         doc_log_score, doc_length = 0, 0
         for line in doc.split("\n"):
+            line = self.normalize(line)
             log_score = self.model.score(line)
             length = len(line.split()) + 1
             doc_log_score += log_score
