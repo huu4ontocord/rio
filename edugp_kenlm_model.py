@@ -3,7 +3,7 @@ import os
 import re
 import unicodedata
 from typing import Dict
-import unidecode
+
 import kenlm
 import sentencepiece
 from huggingface_hub import cached_download, hf_hub_url
