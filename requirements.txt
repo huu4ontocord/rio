@@ -10,3 +10,4 @@ sentencepiece
 fsspec 
 tqdm 
 sentence-transformers
+nltk
