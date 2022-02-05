@@ -30,6 +30,7 @@ import langid
 import json
 import os
 import gzip
+import argparse
 import re, regex
 import itertools
 import torch
@@ -1565,6 +1566,22 @@ class TextAugment:
     return docs, chunks
 
 
+  def serialize_ner_items(self, docs, ner_keys):
+        # serialize ner keys
+        ner_keys = [k + '_ner' for k in ner_keys if '_ner' not in k]
+        serialize_docs = list(docs.values())
+        for doc in serialize_docs:
+            for ner_key in ner_keys:
+                ner_items = doc[ner_key]
+                serialize_items = []
+                for (text, start, end), ner_value in ner_items.items():
+                    ner_value = [{'label': label, "score": score} for label, score in ner_value.items()]
+                    ner_dict = {'text': text, 'start': start, 'end': end, 'ner_values': ner_value}
+                    serialize_items.append(ner_dict)
+                doc[ner_key] = serialize_items
+
+        return serialize_docs
+
   #TODO - refactor this method into parts
   def process_ner_chunks_with_trans(self, 
                           src_lang, 
@@ -2349,34 +2366,28 @@ def load_py_from_str(s, default=None):
 def load_all_pii(infile="./zh_pii.jsonl"):
   return [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
 
-if __name__ == "__main__":  
-  src_lang = None
-  target_lang = 'en'
-  cutoff = 30
-  docs = None
-  batch_size = 5
-  num_workers = 1
-  if "-src_lang" in sys.argv:
-    src_lang = sys.argv[sys.argv.index("-src_lang")+1]
-  if "-target_lang" in sys.argv:
-    target_lang = sys.argv[sys.argv.index("-target_lang")+1]
-  if "-cutoff" in sys.argv:
-    cutoff = int(sys.argv[sys.argv.index("-cutoff")+1])
-  if "-num_workers"in sys.argv:
-    num_workers = int(sys.argv[sys.argv.index("-num_workers")+1])
-  if "-batch_size" in sys.argv:
-    batch_size = int(sys.argv[sys.argv.index("-batch_size")+1])
-  if cutoff == -1:
-    cutoff = None
-  if "-file" in sys.argv:
-    f = sys.argv[sys.argv.index("-file")+1]
-    docs = load_all_pii(f) 
+parser = argparse.ArgumentParser(description='Process PII text')
+parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Language', required=True)
+parser.add_argument('-target_lang', dest='target_lang', type=str, help='Target Language', default="en")
+parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
+parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
+parser.add_argument('-f', dest='f', type=str, help='file to load', default=None)
+args = parser.parse_args()
 
-  #TODO - do multiprocessing
-  if src_lang is not None:
-    processor = TextAugment(single_process=True)
-    docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True, do_backtrans=True, cutoff=cutoff, batch_size=batch_size, docs=docs)
-    print (docs)
+if __name__ == "__main__":
+    src_lang = args.src_lang
+    target_lang = args.target_lang
+    cutoff = args.cutoff
+    batch_size = args.batch_size
+    f = args.f
+    docs = load_all_pii(f) if f else None
+
+    processor = TextAugment()
+    docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
+                                         do_backtrans=True, cutoff=cutoff, batch_size=batch_size, docs=docs)
+    docs = processor.serialize_ner_items(docs, ner_keys=[src_lang, target_lang])
+
     with open('out.jsonl', 'w', encoding='utf-8') as file:
-      for doc in docs.values():
-        file.write(f'{doc}\n')
+        for doc in docs:
+            file.write(f'{doc}\n')
+
