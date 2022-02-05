@@ -1,5 +1,5 @@
 # Intro
-Muliwai (pronounced: mu-lee-why, meaning river in Hawaiian) is a library for text pre-processing, augmentation, synthesis and generalization
+Muliwai (pronounced: mu-lee-why, meaning river in Hawaiian) is a library for text pre-processing, augmentation, anonymization, synthesis and generalization. It is intended to be used to process text datasets for training NLP models.
 
 # Installing
 ```
