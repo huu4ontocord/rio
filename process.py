@@ -36,7 +36,9 @@ import itertools
 import torch
 from sentence_transformers import SentenceTransformer
 import multiprocessing
-
+from edugp_kenlm_model import *
+from huggingface_hub import hf_hub_url, cached_download
+    
 import sys
 try:
   if not stopwords:
@@ -57,7 +59,7 @@ except:
     flagged_words = {}
 
 from faker import Faker
-from faker.providers import person, company, geo, address, ssn
+from faker.providers import person, company, geo, address, ssn, internet
 import qg_pipeline
 
 from mariam_mt import mariam_mt
@@ -181,9 +183,18 @@ urdu_surnames = ["Abid", "Ahmad", "Akbar", "Akmal", "Alam", "Ayaz", "Bohra", "Bu
 
 #basque and catalan - use Spanish names
 
+m2m100_lang = {
+    ('en', 'yo'): "davlan/m2m100_418M-eng-yor-mt",
+    ('yo', 'en'): "davlan/m2m100_418M-yor-en-mt",
+    ('en', 'zu'): "masakhane/m2m100_418M-en-zu-mt",
+    ('zu', 'en'): "masakhane/m2m100_418M-zu-en-mt",
+    ('*', '*') : "facebook/m2m100_418M"
+    }
+
 class TextAugment:
-  # TO MAKE THIS MORE PARRALLELIZABLE - Make the below instance variables instead of class variables
+  # TO MAKE THIS MORE PARRALLELIZABLE - Make the below instance variables instead of class variables??
   m2m_model = None
+  m2m_model_name = ""
   m2m_tokenizer = None 
   en_spacy_nlp = None 
   faker_en_list  = None
@@ -191,6 +202,7 @@ class TextAugment:
   qg  = None
   translation_pipelines = {}
   ner_model_name2pipelines = {}  
+  kenlm_model = None
 
   #from https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py which is under the MIT License
   # see also for ICD https://stackoverflow.com/questions/5590862/icd9-regex-pattern - but this could be totally wrong!
@@ -440,15 +452,13 @@ class TextAugment:
       #"zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0], ["zh_model", XLMRobertaForTokenClassification, 0.9 ]],
       "zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
       'vi': [["lhkhiem28/COVID-19-Named-Entity-Recognition-for-Vietnamese", RobertaForTokenClassification, 1.0]],#["jplu/tf-xlm-r-ner-40-lang", None ], 
-      "hi": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      "ur": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      #'hi': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
-      #'ur': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
+      'hi': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
+      'ur': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
       'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0]], 
       'bn': [["sagorsarker/mbert-bengali-ner", BertForTokenClassification, 1.0]],
 
       # NOT PART OF OUR LANGUAGE SET. EXPERIMENTAL
-      #'he': [["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
+      'he': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
       'hr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
       'bs': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
       'sr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
@@ -463,6 +473,31 @@ class TextAugment:
       'is': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
       }
 
+  #TODO figure out actual numbers. Also, add languge specific models
+  public_figure_kenlm_cutoff_map = {('en', 'en'): 1500,
+                                    ('yo', 'en'): 1500,
+                                    ('zu', 'en'): 1500,
+                                    ('sn', 'en'): 1500,
+                                    ('st', 'en'): 1500,
+                                    ('ny', 'en'): 1500,
+                                    ('xh', 'en'): 1500,
+                                    ('sw', 'en'): 1500,
+                                    ('ig', 'en'): 1500,
+                                    ('ar', 'en'): 1500,
+                                    ('en', 'en'): 1500,
+                                    ('es', 'en'): 1500,
+                                    ('eu', 'en'): 1500,
+                                    ('ca', 'en'): 1500,
+                                    ('pt', 'en'): 1500,
+                                    ('fr', 'en'): 1500,
+                                    ('zh', 'en'): 1500,
+                                    ('vi', 'en'): 1500,
+                                    ('hi', 'en'): 1500,
+                                    ('ur', 'en'): 1500,
+                                    ('id', 'en'): 1500,
+                                    ('bn', 'en'): 1500,
+                                    }
+
   strip_chars = " ,،、{}[]|()\"'“”《》«»?!:;?。…．"
   punc_char = ".?!:;?。…．"
   special_char = " ,{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø•�」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'"
@@ -475,12 +510,12 @@ class TextAugment:
   stopwords_en = set(stopwords.get('en',[]))
 
 
-  def __init__(self, single_process=1, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None):
+  def __init__(self, single_process=1, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
     self.device = "cuda" if torch.cuda.is_available() else "cpu"
     if single_process:
-      self.initializer(labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg)
+      self.initializer(labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
 
-  def initializer(self, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None):
+  def initializer(self, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
     if labse is not None: TextAugment.labse = labse 
     if ontology_manager is not None: TextAugment.ontology_manager = ontology_manager
     if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
@@ -488,6 +523,8 @@ class TextAugment:
     if en_spacy_nlp is not None: TextAugment.en_spacy_nlp = en_spacy_nlp
     if faker_en_list is not None: TextAugment.faker_en_list = faker_en_list
     if qg is not None: TextAugment.qg = qg
+    if kenlm_model is not None: TextAugment.kenlm_model = kenlm_model
+
     if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
     try:
         coref = neuralcoref.NeuralCoref(TextAugment.en_spacy_nlp.vocab)
@@ -498,14 +535,30 @@ class TextAugment:
     if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg") # TODO make sure it's running in half mode
     if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().to(self.device)
     if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
+    if TextAugment.kenlm_model is None: 
+      #TODO - save to temp dirS
+      os.system("mkdir -p ./wikipedia")
+      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
+      file = cached_download(file_url)
+      os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
+      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
+      file = cached_download(file_url)
+      os.system(f"ln -s {file} ./wikipedia/en.sp.model")
+      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
+      file = cached_download(file_url)
+      os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
+      TextAugment.kenlm_model = KenlmModel("wikipedia", "en")
     if TextAugment.faker_en_list is None:
       TextAugment.faker_en_list  = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
       for faker_en in faker_en_list:
           faker_en.add_provider(person)
           faker_en.add_provider(ssn)
           faker_en.add_provider(address)
+          faker_en.add_provider(geo)
+          faker_en.add_provider(internet)
           faker_en.add_provider(company)
     print ("finished load")
+    #TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
 
   def check_good_sentence(self, s, src_lang, stopwords, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
     #basic dejunk
@@ -580,7 +633,7 @@ class TextAugment:
     return lang == src_lang
 
   #WIP - we can use this q/a q/g method to extract people, place and thing, and potentially age/date AND to get a relationship between a person and a PII info
-  def generate_questions_answers_rel(self, docs, chunks, src_lang, default_answers=[], text_key=None, ner_key=None, rel_key=None):
+  def generate_questions_answers_rel(self, docs, chunks, src_lang, default_answers=[], text_key=None, ner_key=None, rel_key=None, signal='qg_rel'):
     answers = {}
 
     if ner_key is None:
@@ -694,10 +747,10 @@ class TextAugment:
         answers1[aHash1['answer'].lower()] = " ".join(label)
       print ('qg', answers1)
       chunk['question_answers'] = answers1
-
+      #TODO - add into ner_key
 
   @staticmethod
-  def get_aligned_text(sent1, sent2, src_lang):
+  def get_aligned_text(sent1, sent2, src_lang, prefer_split_char="]"):
     """
     Given two sentences, find blocks of text that match and that don't match.
     return the blocks, and a matching score.
@@ -724,9 +777,30 @@ class TextAugment:
     #print (blocks)
     for blockI in range(len(blocks)):
       if blockI > 0 or (blockI==0 and (blocks[blockI][0] != 0 or blocks[blockI][1] != 0)):
-        if blocks2 and blocks2[-1][2] == 0:
-          blocks2[-1][0] += sep.join(sent1[prevEndA:blocks[blockI][0]])
-          blocks2[-1][1] += sep.join(sent2[prevEndB:blocks[blockI][1]])
+        blocks3 = []
+        if True:
+          a, b = sep.join(sent1[prevEndA:blocks[blockI][0]]), sep.join(sent2[prevEndB:blocks[blockI][1]])          
+          if "]" in b:
+            blocks3 = []
+            a_arr = a.split(" ") if src_lang not in ("zh", "ja", "ki") else a
+            len_a_arr = len(a_arr)
+            b_cnt = b.count(prefer_split_char) + (1 if b.endswith(prefer_split_char) or b.endswith(prefer_split_char+" ") else 0)
+            a_step = int(len(a)/b_cnt)
+            print (len(a), b_cnt)
+            a_arr2 = []
+            if a_step <= 0:
+              a_arr2.extend([a]+['']*len(a))
+            else:
+              for rng in range(0, len_a_arr, a_step):
+                a_arr2.append((" " if src_lang not in ("zh", "ja", "ki") else "").join(a_arr[rng:min(len_a_arr, rng+a_step)]))
+            for a1, b1 in zip(a_arr2, b.split("]")):
+                if src_lang not in ("zh", "ja", "ki"):
+                  a1 = a1+" "
+                b1 = b1+prefer_split_char
+                blocks3.append([a1, b1, 0])
+              
+        if blocks3:
+          blocks2.extend(blocks3)
         else:
           blocks2.append([sep.join(sent1[prevEndA:blocks[blockI][0]]), sep.join(sent2[prevEndB:blocks[blockI][1]]), 0])
         nonMatchLen += max(blocks[blockI][0] - prevEndA, blocks[blockI][1] - prevEndB)
@@ -735,10 +809,6 @@ class TextAugment:
         prevEndA = blocks[blockI][0]+blocks[blockI][2]
         prevEndB = blocks[blockI][1]+blocks[blockI][2]
         matchLen += blocks[blockI][2]
-        if blocks2[-1][0] == ' ':
-          blocks2.pop()
-          blocks2[-1][0] += " "
-          blocks2[-1][1] += " "
     score = float(matchLen+1)/float(nonMatchLen+1)
     return (blocks2, score+score)
 
@@ -770,10 +840,10 @@ class TextAugment:
     if model_name is not None and model_name not in self.translation_pipelines:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = MarianMTModel.from_pretrained(model_name).half().eval().to(self.device)
-        mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else 1)
+        mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else None)
         self.translation_pipelines[model_name] = mt_pipeline
-        if not mt_pipeline:
-          raise RuntimeError("no translation pipeline") # we could do multi-step translation where there are no pairs
+    if not mt_pipeline:
+        raise RuntimeError("no translation pipeline") # we could do multi-step translation where there are no pairs
     mt_pipeline = self.translation_pipelines[model_name]
     for src_text_list in tqdm(self.batch(texts, batch_size)):
         outputs = [t['translation_text'] for t in mt_pipeline(src_text_list)]
@@ -800,7 +870,7 @@ class TextAugment:
     for i in range(0, len(lst), n):
         yield lst[i: i + n]
 
-  def apply_regex_ner(self, src_lang, docs, context_window = 20, weight = 1.0, text_key=None, ner_key=None):
+  def apply_regex_ner(self, src_lang, docs, context_window = 20, weight = 1.0, text_key=None, ner_key=None, signal='regex'):
     """
     apply regexes from the rulebase. if there is a context, check if the context is met in the context_window. 
     """
@@ -867,14 +937,14 @@ class TextAugment:
         ent, start, end, tag = mention_tag
         key = (ent, start, end)
         aHash = ner.get(key, {})
-        aHash[tag] = aHash.get(tag, 0) + weight * (1.0 + len(ent)/100) # extra weight?
+        aHash[(tag, signal)] = aHash.get((tag, signal), 0) + weight * (1.0 + len(ent)/100) # extra weight?
         ner[key] = aHash
       doc[ner_key] = ner 
     print (docs)
     return docs
 
 
-  def hf_ner(self, hf_pipeline, src_lang, docs, chunks, stopwords=None, weight=1.5, text_key=None, ner_key=None, offset_key=None):
+  def hf_ner(self, hf_pipeline, src_lang, docs, chunks, stopwords=None, weight=1.5, text_key=None, ner_key=None, offset_key=None, signal='hf'):
     """
     run the text through a Huggingface ner pipeline. 
     any tags found by this method will be weighted by the weight param
@@ -1047,7 +1117,7 @@ class TextAugment:
         del ref2mention[old_ref]
       del mention2ref[old_mention]
 
-  def spacy_ner_coref(self, docs, nlp, stopwords, spacy_weight, src_lang, extra_weight=1.0, text_key=None, ner_key=None, connector="_", pronouns=("who", "whom", "whose", "our", "ours", "you", "your", "my", "i", "me", "mine", "he", "she", "his", "her", "him", "hers", "it", "its", "they", "their", "theirs", "them", "we")):
+  def spacy_ner_coref(self, docs, nlp, stopwords, spacy_weight, src_lang, extra_weight=1.0, signal='neuralcoref', text_key=None, ner_key=None, connector="_", pronouns=("who", "whom", "whose", "our", "ours", "you", "your", "my", "i", "me", "mine", "he", "she", "his", "her", "him", "hers", "it", "its", "they", "their", "theirs", "them", "we")):
     """ 
     Use the spacy English model to create chunks for English text
     and gather NER and coreference information
@@ -1255,7 +1325,7 @@ class TextAugment:
               if ner_word.lower() not in stopwords:
                 mention2 = (ner_word, i, i+len(ner_word))
                 aHash = ner.get(mention2, {})
-                aHash[label] = aHash.get(label, 0) + spacy_weight * (1.0 + len(ner_word)/100) * extra_weight
+                aHash[(label, signal)] = aHash.get((label, signal), 0) + spacy_weight * (1.0 + len(ner_word)/100) * extra_weight
                 ner[mention2] = aHash
                 if label in ('PERSON', 'PUBLIC_FIGURE'):
                   coref = ref2mention.get(mention2ref.get(mention), [])
@@ -1270,12 +1340,12 @@ class TextAugment:
       print (ner)
     return docs #text, chunks, chunk2ner, mention2ref, ref2mention
 
-  def spacy_ner(self, docs, nlp, stopwords, spacy_weight, src_lang, extra_weight=1.0, text_key=None, ner_key=None):
+  def spacy_ner(self, docs, nlp, stopwords, spacy_weight, src_lang, extra_weight=1.0, text_key=None, ner_key=None, signal='spacy'):
       """ 
       Use the spacy models to create mentions w/ NER
       """
       if neuralcoref is not None:
-        return self.spacy_ner_coref(docs, nlp, stopwords, spacy_weight, src_lang, extra_weight=extra_weight, text_key=text_key, ner_key=ner_key)
+        return self.spacy_ner_coref(docs, nlp, stopwords, spacy_weight, src_lang, extra_weight=extra_weight, text_key=text_key, ner_key=ner_key, signal=signal)
       else:
         if not nlp:
           return
@@ -1305,7 +1375,8 @@ class TextAugment:
               if ner_word.lower() not in stopwords:
                 mention = (ner_word, i, i+len(ner_word))
                 aHash = ner.get(mention, {})
-                aHash[label] = aHash.get(label, 0) + spacy_weight * (1.0 + len(ner_word)/100) * extra_weight
+                
+                aHash[(label, singal)] = aHash.get((label, singal), 0) + spacy_weight * (1.0 + len(ner_word)/100) * extra_weight
                 ner[mention] = aHash
 
   def trim_to_prefer_person(self, docs, chunks, prob=100):
@@ -1345,11 +1416,30 @@ class TextAugment:
       return docs2, chunks2
 
 
-  #TODO - fix collapse_ner so that loc->address, person->public_figure when there are overlaps, date/id->id
-  #TODO - if an ent is long find other mentions of the same entity in the document and tag as the same tags.
-  def collapse_ner(self, docs, ner_key, text_key):
+
+  def collapse_ner(self, docs, ner_key, collapse_ner_key, text_key, stopwords, do_cleanup=True):
     for doc in docs.values():
       text = doc.get(text_key, "")
+
+      if do_cleanup:
+        #do some cleanups. we don't want any ner that are just short numbers (but what about govt id?), stopwords or single characters.
+        for _id, doc in docs.items():
+          ner =  doc[ner_key] 
+          for key in list(doc[ner_key].keys()):
+            ner_word = key[0]
+            try:
+              if len(ner_word) < 4 and float(ner_word):
+                #print ("deleting ", ner_word)
+                del doc[ner_key][key]
+                continue
+            except:
+              pass
+            if ner_word.lower() in stopwords or (not self.cjk_detect(ner_word) and len(ner_word) <= 1):
+              #print ("deleting ", ner_word)
+              del doc[ner_key][key]
+
+      #TODO - generalize long ner to rest of the sentences if not already tagged
+
       chunk2ner = doc.get(ner_key, {})
       chunks = list(chunk2ner.items())
       chunks.sort(key=lambda a: a[0][1]+(1.0/(1.0+a[0][2]-a[0][1])))
@@ -1360,7 +1450,7 @@ class TextAugment:
         if not chunks2:
           chunks2.append([mention[0], mention[1], mention[2], labelsHash])
         # completely or mostly subsumed
-        elif chunks2[-1][2] > mention[2] or chunks2[-1][2] - mention[1] > 3:
+        elif chunks2[-1][2] >= mention[2] or chunks2[-1][2] - mention[1] > 3:
           prev_ent, prev_start, prev_end, prev_labelsHash = chunks2[-1]
           for tag in labelsHash:
             prev_labelsHash[tag]  = prev_labelsHash.get(tag, 0) + labelsHash.get(tag, 0)
@@ -1384,8 +1474,32 @@ class TextAugment:
         ent = ent.strip(self.strip_chars)
         if ent:
           mention = (ent, start, start + len(ent))
-          ner[mention] = labelsHash
-      doc[ner_key] = ner
+          labelsHash2 = {}
+          for key, val in labelsHash.items():
+            if type(key) is tuple:
+              key = key[0]
+            labelsHash2[key] = labelsHash2.get(key, 0) + val
+          #do hypo collapse so that loc->address, person->public_figure when there are overlaps, date/id->id
+          if 'PERSON' in labelsHash2 and 'PUBLIC_FIGURE' in labelsHash2:
+            labelsHash2['PUBLIC_FIGURE'] = labelsHash2['PUBLIC_FIGURE'] + labelsHash2['PERSON']
+            del labelsHash2['PERSON']
+          if 'LOC' in labelsHash2 and 'ADDRESS' in labelsHash2:
+            labelsHash2['ADDRESS'] = labelsHash2['ADDRESS'] + labelsHash2['LOC']
+            del labelsHash2['LOC']
+          if 'DATE' in labelsHash2 and 'AGE' in labelsHash2:
+            labelsHash2['AGE'] = labelsHash2['AGE'] + labelsHash2['DATE']
+            del labelsHash2['DATE']
+          if 'DATE' in labelsHash2 and 'ID' in labelsHash2:
+            labelsHash2['ID'] = labelsHash2['ID'] + labelsHash2['DATE']
+            del labelsHash2['DATE']
+          if 'CARDINAL' in labelsHash2 and 'ID' in labelsHash2:
+            labelsHash2['ID'] = labelsHash2['ID'] + labelsHash2['CARDINAL']
+            del labelsHash2['CARDINAL']
+          
+          ner[mention] = labelsHash2
+      doc[collapse_ner_key] = ner
+
+
     return docs
 
   def create_augment_anon_mapper(self, docs, chunks, src_lang, faker_target_lang, faker_en, aug_scope={'ID', 'PERSON'}, target_lang=None, \
@@ -1434,7 +1548,10 @@ class TextAugment:
                   context[ent] = context.get(ent, faker_en.company())
 
               if 'ID' in aug_scope and tag == 'ID' and ent not in context:
-                context[ent] = context.get(ent, str(random.randrange(10000000,999999999)) if target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu")  else \
+                if '@' in ent:
+                  context[ent] = context.get(ent, faker_target_lang.email())
+                else:
+                  context[ent] = context.get(ent, str(random.randrange(10000000,999999999)) if target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu")  else \
                                       faker_target_lang.ssn())
                 
               if 'ADDRESS' in aug_scope and tag == 'ADDRESS' and ent not in context:
@@ -1461,7 +1578,7 @@ class TextAugment:
   def replace_items_in_chunks(self, docs, chunks, src_lang, target_lang=None, lbracket="[", rbracket="]", replace_with_bracket=True, do_augment=False, \
                                                    context_key=None, ner_key=None, items_key=None, text_key=None, replace_text_key=None, offset_key=None):
         if target_lang is None: target_lang = src_lang
-        if ner_key is None: ner_key = f'{src_lang}_ner'
+        if ner_key is None: ner_key = f'{src_lang}_collapse_ner'
         if context_key is None: context_key = f'{src_lang}_aug_context'
         if items_key is None: items_key = f'{src_lang}_items'
         if text_key is None: text_key = f'{src_lang}_text'
@@ -1553,7 +1670,7 @@ class TextAugment:
     if target_lang is None: target_lang = src_lang
 
     self.create_augment_anon_mapper(docs, chunks, src_lang, faker_src_lang, faker_en, aug_scope=anon_scope, target_lang=src_lang, \
-                                          items_key=f'{src_lang}_items', context_key=f'{src_lang}_anon_context', ner_key=f'{src_lang}_ner')
+                                          items_key=f'{src_lang}_items', context_key=f'{src_lang}_anon_context', ner_key=f'{src_lang}_collapse_ner')
     
     docs, chunks = self.replace_items_in_chunks(docs, chunks, src_lang, replace_with_bracket=False, do_augment=True, \
                                                                          context_key=f'{src_lang}_non_context', \
@@ -1565,8 +1682,7 @@ class TextAugment:
 
     return docs, chunks
 
-
-  def serialize_ner_items(self, docs, ner_keys):
+ def serialize_ner_items(self, docs, ner_keys):
         # serialize ner keys
         ner_keys = [k + '_ner' for k in ner_keys if '_ner' not in k]
         serialize_docs = list(docs.values())
@@ -1598,12 +1714,13 @@ class TextAugment:
                           do_cleanup=True,
                           batch_size = 5, 
                           batch_window=70,
-                          ontology_weight=0.9,
-                          spacy_weight=1.25,
-                          hf_ner_weight=1.0,
-                          regex_weight=2.0,
+                          ontology_weight=0.85,
+                          spacy_weight=1.00,
+                          hf_ner_weight=1.25,
+                          regex_weight=1.5,
                           backtrans_weight=0.9,
                           do_docs_trim=False, 
+                          do_kenlm = True,
                           do_qa_qg_rel=False,
                           aug_scope={'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
                           anon_scope={'PERSON', 'ID'},):
@@ -1622,6 +1739,8 @@ class TextAugment:
         faker_target_lang.add_provider(person)
         faker_target_lang.add_provider(ssn)
         faker_target_lang.add_provider(address)
+        faker_target_lang.add_provider(geo)
+        faker_target_lang.add_provider(internet)
         faker_target_lang.add_provider(company)
   
       if src_lang not in ("eu", "ca") and src_lang not in faker_map:
@@ -1632,6 +1751,8 @@ class TextAugment:
         faker_src_lang.add_provider(person)
         faker_src_lang.add_provider(ssn)
         faker_src_lang.add_provider(address)
+        faker_src_lang.add_provider(geo)
+        faker_src_lang.add_provider(internet)
         faker_src_lang.add_provider(company)
 
       faker_en = random.choice(self.faker_en_list)
@@ -1680,28 +1801,34 @@ class TextAugment:
           try:
             model = model_cls.from_pretrained(model_name).half().eval().cuda()
             tokenizer = AutoTokenizer.from_pretrained(model_name)
-            ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else 1)
+            ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else None)
             self.ner_model_name2pipelines[model_name] = ner_pipeline
           except:
             try:
-              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=0 if self.device == 'cuda' else 1)
+              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=0 if self.device == 'cuda' else None)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
             except:
               ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), framework="tf", device=0 if self.device == 'cuda' else 1)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
-        ner_pipelines.append((self.ner_model_name2pipelines[model_name], hf_ner_weight2))
+        ner_pipelines.append((model_name, self.ner_model_name2pipelines[model_name], hf_ner_weight2))
     target_is_cjk = target_lang in ('zh', 'ko', 'ja')
     src_is_cjk = src_lang in ('zh', 'ko', 'ja')
     if do_augment:
       target_text_key = f'{target_lang}_text_aug'
       target_ner_key =  f'{target_lang}_ner_aug'
+      target_collapse_ner_key =  f'{target_lang}_collapse_ner_aug'
       target_offset_key = f'{target_lang}_offset_aug'
       target_src_sim_key = f'{src_lang}_2_{target_lang}_sim_aug'
     else:
       target_text_key = f'{target_lang}_text'
       target_ner_key = f'{target_lang}_ner'
+      target_collapse_ner_key = f'{target_lang}_collapse_ner'
       target_offset_key = f'{target_lang}_offset'
       target_src_sim_key = f'{src_lang}_2_{target_lang}_sim'
+    
+    public_figure_kenlm_cutoff = self.public_figure_kenlm_cutoff_map.get((src_lang, target_lang), 1500)
+
+    docs = self.collapse_ner(docs, ner_key = f'{src_lang}_ner', collapse_ner_key = f'{src_lang}_collapse_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1, do_cleanup=do_cleanup)
 
     # do operations in the target_lang space
     if target_lang == src_lang:
@@ -1723,13 +1850,14 @@ class TextAugment:
         else:
             lbracket = "["
             rbracket = "]"
+        
         if do_augment:
           self.create_augment_anon_mapper(docs, chunks, src_lang, faker_target_lang, faker_en, aug_scope=aug_scope, target_lang=target_lang, \
-                                          items_key=f'{src_lang}_items', context_key=f'{src_lang}_aug_context', ner_key=f'{src_lang}_ner')
+                                          items_key=f'{src_lang}_items', context_key=f'{src_lang}_aug_context', ner_key=f'{src_lang}_collapse_ner')
         docs, chunks = self.replace_items_in_chunks(docs, chunks,  src_lang, lbracket=lbracket, rbracket=rbracket, \
                                                                          replace_with_bracket=True, do_augment=do_augment, \
                                                                          context_key=f'{src_lang}_aug_context', \
-                                                                         ner_key=f'{src_lang}_ner', items_key=f'{src_lang}_items', \
+                                                                         ner_key=f'{src_lang}_collapse_ner',  items_key=f'{src_lang}_items', \
                                                                          text_key=f'{src_lang}_text', replace_text_key=f'{src_lang}_tmp_text', \
                                                                          offset_key=f'{src_lang}_offset')
         chunks2 = [chunk[f'{src_lang}_tmp_text'] for chunk in chunks]
@@ -1809,12 +1937,16 @@ class TextAugment:
               pass
             trans_text = before + " " + ent + " " + after
           trans_text = chunk[target_text_key] = trans_text.replace("  ", " ").strip() 
+          if do_kenlm and target_lang == 'en':
+              chunk[f'{target_lang}_kenlm'] = self.kenlm_model.get_perplexity(chunk[target_text_key])
           if doc.get(target_text_key, ""):
             chunk[target_offset_key] = len(doc.get(target_text_key, "")) + 1
           else:
             chunk[target_offset_key] = 0
           doc[target_text_key] = (doc.get(target_text_key, "") + " " + trans_text).strip()
-    
+    if do_kenlm and target_lang == 'en':
+      for doc in docs.values():
+        doc[f'{target_lang}_kenlm'] = self.kenlm_model.get_perplexity(doc[target_text_key].replace(" .", " "))
     if do_regex:
       docs = self.apply_regex_ner(target_lang, docs=docs, weight=regex_weight, text_key=target_text_key, ner_key=target_ner_key)
 
@@ -1832,7 +1964,7 @@ class TextAugment:
                 onto_items.append(((ner_word, c[1], c[1] + len(ner_word)), label))
             for ner_mention, label in list(set(onto_items)):
                 aHash = ner.get(ner_mention, {})
-                aHash[label] = aHash.get(label, 0) + ontology_weight * (1.0 + len(ner_mention[0])/100) * backtrans_weight
+                aHash[(label, 'onto')] = aHash.get((label, 'onto'), 0) + ontology_weight * (1.0 + len(ner_mention[0])/100) * backtrans_weight
                 ner[ner_mention] = aHash
 
     if do_spacy:
@@ -1842,29 +1974,15 @@ class TextAugment:
 
     if do_hf_ner:
         # transformer
-        for ner_pipeline, hf_ner_weight2 in ner_pipelines:
+        for model_name, ner_pipeline, hf_ner_weight2 in ner_pipelines:
           for a_batch in self.batch(chunks, batch_size):
-            self.hf_ner(ner_pipeline, target_lang, docs, a_batch, stopwords=stopwords2, weight=hf_ner_weight*backtrans_weight*hf_ner_weight2, text_key=target_text_key, ner_key=target_ner_key, offset_key=target_offset_key)
+            self.hf_ner(ner_pipeline, target_lang, docs, a_batch, stopwords=stopwords2, weight=hf_ner_weight*backtrans_weight*hf_ner_weight2, text_key=target_text_key, \
+                        ner_key=target_ner_key, signal=model_name, offset_key=target_offset_key)
     
     if False: #do_qa_qg_rel and target_lang == 'en':
-      docs, chunks= self.generate_questions_answers_rel(docs, chunks, target_lang)
+      docs, chunks= self.generate_questions_answers_rel(docs, chunks, target_lang, ner_key=target_ner_key)
 
-    if do_cleanup:
-        #do some cleanups. we don't want any ner that are just short numbers (but what about govt id?), stopwords or single characters.
-        for _id, doc in docs.items():
-          ner =  doc[target_ner_key] 
-          for key in list(doc[target_ner_key].keys()):
-            ner_word = key[0]
-            try:
-              if len(ner_word) < 4 and float(ner_word):
-                #print ("deleting ", ner_word)
-                del doc[target_ner_key][key]
-                continue
-            except:
-              pass
-            if ner_word.lower() in stopwords2 or (not self.cjk_detect(ner_word) and len(ner_word) <= 1):
-              #print ("deleting ", ner_word)
-              del doc[target_ner_key][key]
+    docs = self.collapse_ner(docs, target_ner_key, target_collapse_ner_key, target_text_key, stopwords2, do_cleanup=do_cleanup)
 
     #increase weight of src ner_lang items if the target_lang translations indicate it's an NER
     if target_lang != src_lang and not do_augment:
@@ -1896,8 +2014,24 @@ class TextAugment:
 
     if do_docs_trim:
       docs, chunks = self.trim_to_prefer_person(docs, chunks)
-    
-    docs = self.collapse_ner(docs, target_ner_key, target_text_key)
+
+    if do_kenlm and target_lang == 'en':
+      for doc in docs.values():
+        ner = doc[target_ner_key]
+        persons = []
+        for ent, aHash in ner.items():
+          if any(key[0] == 'PERSON' for key in aHash.keys()):
+            persons.append(ent[0])
+        public_figures = []
+        for ent in list(set(persons)):
+          if self.kenlm_model.get_perplexity(ent) <= public_figure_kenlm_cutoff:
+            public_figures.append(ent)
+        public_figures = set(public_figures)
+        for ent, aHash in ner.items():
+          if ent in public_figures:
+            aHash[('PUBLIC_FIGURE', 'kenlm')] = aHash.get(('PUBLIC_FIGURE', 'kenlm'), 0) + 1.0
+
+    docs = self.collapse_ner(docs, target_ner_key, target_collapse_ner_key, target_text_key, stopwords2, do_cleanup=do_cleanup)
     
     if do_backtrans and target_lang != src_lang and not do_augment:
         #TBD: we could run the augmented text back to the original sentence create additional augmented data.
@@ -2078,29 +2212,15 @@ class TextAugment:
             for key2 in aHash1:
               aHash2[key2] = aHash2.get(key2, 0.0) + aHash1[key2]
 
-        if do_cleanup:
-          #do some cleanups. we don't want any ner that are just short numbers, stopwords or single characters.
-          for _id, doc in docs.items():
-            ner =  doc[f'{src_lang}_ner'] 
-            for key in list(doc[f'{src_lang}_ner'].keys()):
-              ner_word = key[0]
-              try:
-                if len(ner_word) < 4 and float(ner_word):
-                  print ("deleting ", ner_word)
-                  del doc[f'{src_lang}_ner'][key]
-                  continue
-              except:
-                pass
-              if ner_word.lower()in stopwords1 or (not self.cjk_detect(ner_word) and len(ner_word) <= 1):
-                print ("deleting ", ner_word)
-                del doc[f'{src_lang}_ner'][key]
 
     #TODO: Let's add in the src_lang ner we matched to the target_lang text into the target_lan ner
     #based on doc[f'{target_lang}_2_{src_lang}_tmp'] 
     #now src_lang and target_lang text will have very similar ner items
 
-    docs = self.collapse_ner(docs, target_ner_key, target_text_key)
-    docs = self.collapse_ner(docs, f"{src_lang}_ner", f"{src_lang}_text")
+    docs = self.collapse_ner(docs, target_ner_key, target_collapse_ner_key, target_text_key, stopwords2, do_cleanup=do_cleanup)
+
+    docs = self.collapse_ner(docs, ner_key = f'{src_lang}_ner', collapse_ner_key = f'{src_lang}_collapse_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1, do_cleanup=do_cleanup)
+
     if do_anonymization and faker_src_lang is not None and faker_en is not None:
       docs, chunks = self.anonymize(docs, chunks, src_lang, faker_src_lang, faker_en, anon_scope=anon_scope)
 
@@ -2124,15 +2244,16 @@ class TextAugment:
               do_regex = True,
               batch_size = 5, 
               batch_window=70,
-              ontology_weight=0.9,
-              spacy_weight=1.25,
-              hf_ner_weight=1.5,
-              regex_weight=2.0,
+              ontology_weight=0.85,
+              spacy_weight=1.00,
+              hf_ner_weight=1.25,
+              regex_weight=1.5,
               backtrans_weight=0.9,
               do_docs_trim=True,
               do_qa_qg_rel=False,
+              do_kenlm = True,
               cutoff=None,
-              target_lang='en', 
+              target_lang='en',
               domain="",
               aug_scope={'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
               anon_scope={'PERSON', 'ID'}):
@@ -2273,6 +2394,7 @@ class TextAugment:
                           do_backtrans=False,
                           do_augment=False,
                           do_anonymization=do_anonymization if target_lang == src_lang else False,
+                          do_kenlm = do_kenlm,
                           do_regex = do_regex,
                           do_cleanup=do_cleanup,
                           batch_size = batch_size, 
@@ -2303,6 +2425,7 @@ class TextAugment:
                             do_regex = do_regex,
                             do_cleanup = do_cleanup,
                             do_qa_qg_rel=do_qa_qg_rel and target_lang == 'en',
+                            do_kenlm = do_kenlm,
                             batch_size = batch_size, 
                             ontology_weight=ontology_weight,
                             spacy_weight=spacy_weight,
@@ -2335,6 +2458,7 @@ class TextAugment:
                             do_regex = do_regex,
                             do_cleanup=do_cleanup,
                             do_qa_qg_rel=do_qa_qg_rel and augment_lang == 'en',
+                            do_kenlm = do_kenlm,
                             batch_size = batch_size, 
                             ontology_weight=ontology_weight,
                             spacy_weight=spacy_weight,
@@ -2345,6 +2469,8 @@ class TextAugment:
         docs, chunks = docs2, chunks2
       return docs, chunks
 
+  #given a dataset, file or any out of core random access text/json data source (by lines), we choose several shards of the data
+  #and we begin to send in chunks of it at a time to the process. 
   @staticmethod
   def multiprocess_ner(instream, outputfile, num_workers=16, ):
     with open(outputfile, 'w', encoding='utf-8') as file:
@@ -2354,7 +2480,55 @@ class TextAugment:
       for i, docs in enumerate(processed_docs, start=1):
         for doc in docs.values():
           file.write(f'{doc}\n')
-    
+  
+  @staticmethod
+  def preload_cache(src_lang, target_lang):
+    SentenceTransformer("sentence-transformers/LaBSE")
+    en_spacy_nlp = spacy.load('en_core_web_sm')
+    try:
+      coref = neuralcoref.NeuralCoref(en_spacy_nlp.vocab)
+    except:
+      pass
+    if src_lang:
+      try:
+        load_dataset("TurkuNLP/register_oscar", data_files=f"{src_lang}/{src_lang}_00000*")
+      except:
+          try:
+            load_dataset("TurkuNLP/register_mc4", data_files=f"{src_lang}/{src_lang}_00000*")
+          except:
+            url = _get_oscar_urls(src_lang)[0]
+            _download_urls([url])
+            try:
+              load_dataset("mc4", src_lang)
+            except:
+              pass
+    arr2 = []
+    for arr in TextAugment.hf_ner_model_map.values():
+      for model_name, _ in arr:
+        arr2.append(model_name)
+    for model_name in list(set(arr2)):
+        AutoModel.from_pretrained(model_name)
+        AutoTokenizer.from_pretrained(model_name)
+    for model_name in m2m100_lang.values():
+        AutoModel.from_pretrained(model_name)
+        AutoTokenizer.from_pretrained(model_name)
+    for aHash in qg_pipeline.SUPPORTED_TASKS.values():
+      for model_name in aHash["default"]:
+        AutoModel.from_pretrained(model_name)
+        AutoTokenizer.from_pretrained(model_name)
+
+    #TODO - get temp dir and move this into the temp dir
+    os.system("mkdir -p ./wikipedia")
+    file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
+    file = cached_download(file_url)
+    os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
+    file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
+    file = cached_download(file_url)
+    os.system(f"ln -s {file} ./wikipedia/en.sp.model")
+    file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
+    file = cached_download(file_url)
+    os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
+    #kenlm_model = KenlmModel("./wikipedia", "en")
 
 def load_py_from_str(s, default=None):
   if not s.strip(): return default
@@ -2371,7 +2545,10 @@ parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Languag
 parser.add_argument('-target_lang', dest='target_lang', type=str, help='Target Language', default="en")
 parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
 parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
-parser.add_argument('-f', dest='f', type=str, help='file to load', default=None)
+parser.add_argument('-file', dest='file', type=str, help='file to load', default=None)
+parser.add_argument('-out', dest='out', type=str, help='file to save', default="out.jsonl")
+parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
+parser.add_argument('-preload_cache', dest='preload_cache', type=bool, help='Preload the cache of models and data', default = False)
 args = parser.parse_args()
 
 if __name__ == "__main__":
@@ -2379,15 +2556,16 @@ if __name__ == "__main__":
     target_lang = args.target_lang
     cutoff = args.cutoff
     batch_size = args.batch_size
-    f = args.f
+    f = args.file
+    out = args.out
     docs = load_all_pii(f) if f else None
-
-    processor = TextAugment()
-    docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
+    if args.preload_cache: TextAugent.preload_cache(src_lang, target_lang)
+    #TODO - do multiprocessing
+    if src_lang is not None:
+      processor = TextAugment(single_process=True)
+      docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
                                          do_backtrans=True, cutoff=cutoff, batch_size=batch_size, docs=docs)
-    docs = processor.serialize_ner_items(docs, ner_keys=[src_lang, target_lang])
-
-    with open('out.jsonl', 'w', encoding='utf-8') as file:
-        for doc in docs:
-            file.write(f'{doc}\n')
-
+      docs = processor.serialize_ner_items(docs, ner_keys=[src_lang, target_lang])
+      with open(out, 'w', encoding='utf-8') as file:
+        for doc in docs.values():
+          file.write(f'{doc}\n')
