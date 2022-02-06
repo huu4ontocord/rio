@@ -1,41 +1,32 @@
-import process.TextAugment
+from process import TextAugment
+import sys
+import argparse
 
-def load_py_from_str(s, default=None):
-  if not s.strip(): return default
-  ret = {'__ret': None}
-  #print (s)
-  exec("__ret= "+s, ret)
-  return ret['__ret']
-
-def load_all_pii(infile="./zh_pii.jsonl"):
-  return [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
-
-in_notebook = 'google.colab' in sys.modules
-if not in_notebook:
-  try:
-      get_ipython()
-  except:
-    in_notebook = False
-
-print('in notebook ', in_notebook)
-if not in_notebook:
-  parser = argparse.ArgumentParser(description='Text Annotation, Augmentation and Anonymization')
-  parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Language', default=None)
-  parser.add_argument('-target_lang', dest='target_lang', type=str, help='Target Language', default="en")
-  parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
-  parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
-  parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
-  parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default="out.jsonl")
-  parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
-  parser.add_argument('-preload_cache', dest='preload_cache', action='store_true', help='Preload the cache of models and data', default = False)
-  parser.add_argument('-multi_process', dest='multi_process', help='Multi Processing NER',action='store_true', default=False)
-
-  args = parser.parse_args()
-else:
-  args = None
 
 if __name__ == "__main__":
-  if args is not None:
+    print('in main')
+    def load_py_from_str(s, default=None):
+        if not s.strip(): return default
+        ret = {'__ret': None}
+        # print (s)
+        exec("__ret= " + s, ret)
+        return ret['__ret']
+
+
+    def load_all_pii(infile="./zh_pii.jsonl"):
+        return [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
+    parser = argparse.ArgumentParser(description='Text Annotation, Augmentation and Anonymization')
+    parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Language', default=None)
+    parser.add_argument('-target_lang', dest='target_lang', type=str, help='Target Language', default="en")
+    parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
+    parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
+    parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
+    parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default="out.jsonl")
+    parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default=1)
+    parser.add_argument('-preload_cache', dest='preload_cache', action='store_true',
+                      help='Preload the cache of models and data', default=False)
+    parser.add_argument('-multi_process', dest='multi_process', help='Multi Processing NER', action='store_true',
+                      default=False)
     src_lang = args.src_lang
     target_lang = args.target_lang
     cutoff = args.cutoff

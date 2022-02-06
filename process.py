@@ -2483,7 +2483,6 @@ class TextAugment:
       docs_chunks = [docs[i:i + num_workers] for i in range(0, len(docs), num_workers)]
       start = time.time()
       processor = TextAugment()
-      global _multiprocess_ner_helper
 
 
       with open(outputfile, 'w', encoding='utf-8') as file:
