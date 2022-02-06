@@ -2464,7 +2464,7 @@ class TextAugment:
       docs_chunks = [docs[i:i + num_workers] for i in range(0, len(docs), num_workers)]
       start = time.time()
       processor = TextAugment()
-
+      global _multiprocess_ner_helper
       def _multiprocess_ner_helper(docs_chunk):
           print('docs_chunk length ', docs_chunk.length)
           return processor.process_ner(docs=docs_chunk, src_lang=src_lang, target_lang=target_lang, do_regex=do_regex, do_spacy=do_spacy, do_backtrans=do_backtrans, cutoff=cutoff, batch_size=batch_size)
