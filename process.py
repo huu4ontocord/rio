@@ -2560,7 +2560,7 @@ if not in_notebook:
   parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
   parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default="out.jsonl")
   parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
-  parser.add_argument('-preload_cache', dest='preload_cache', type=bool, help='Preload the cache of models and data', default = False)
+  parser.add_argument('-preload_cache', dest='preload_cache', action='store_true', help='Preload the cache of models and data', default = False)
   args = parser.parse_args()
 else:
   args = None
