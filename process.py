@@ -183,13 +183,7 @@ urdu_surnames = ["Abid", "Ahmad", "Akbar", "Akmal", "Alam", "Ayaz", "Bohra", "Bu
 
 #basque and catalan - use Spanish names
 
-m2m100_lang = {
-    ('en', 'yo'): "davlan/m2m100_418M-eng-yor-mt",
-    ('yo', 'en'): "davlan/m2m100_418M-yor-en-mt",
-    ('en', 'zu'): "masakhane/m2m100_418M-en-zu-mt",
-    ('zu', 'en'): "masakhane/m2m100_418M-zu-en-mt",
-    ('*', '*') : "facebook/m2m100_418M"
-    }
+
 
 class TextAugment:
   # TO MAKE THIS MORE PARRALLELIZABLE - Make the below instance variables instead of class variables??
@@ -497,6 +491,13 @@ class TextAugment:
                                     ('id', 'en'): 1500,
                                     ('bn', 'en'): 1500,
                                     }
+  m2m100_lang = {
+    ('en', 'yo'): "davlan/m2m100_418M-eng-yor-mt",
+    ('yo', 'en'): "davlan/m2m100_418M-yor-en-mt",
+    ('en', 'zu'): "masakhane/m2m100_418M-en-zu-mt",
+    ('zu', 'en'): "masakhane/m2m100_418M-zu-en-mt",
+    ('*', '*') : "facebook/m2m100_418M"
+    }
 
   strip_chars = " ,،、{}[]|()\"'“”《》«»?!:;?。…．"
   punc_char = ".?!:;?。…．"
@@ -814,19 +815,22 @@ class TextAugment:
 
   def do_translations(self, texts, src_lang='en', target_lang='hi', batch_size=16, do_mariam_mt=False):
     if not do_mariam_mt:
-      if self.m2m_tokenizer is None: 
-        self.m2m_tokenizer = M2M100Tokenizer.from_pretrained("facebook/m2m100_418M")
+      m2m_model_name = self.m2m100_lang.get((src_lang, target_lang), self.m2m100_lang[('*', '*')])
+      if m2m_model_name != self.m2m_model_name or self.m2m_tokenizer is None:
+        self.m2m_tokenizer = M2M100Tokenizer.from_pretrained(m2m_model_name)
       try:
         self.m2m_tokenizer.src_lang = src_lang
         target_lang_bos_token = self.m2m_tokenizer.get_lang_id(target_lang)
+        if m2m_model_name != self.m2m_model_name or self.m2m_model is None:
+            self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval().half().to(self.device)
+        self.m2m_model_name = m2m_model_name
         translations = []
         for src_text_list in tqdm(self.batch(texts, batch_size)):
           try:
             batch = self.m2m_tokenizer(src_text_list, return_tensors="pt", padding=True, truncation=True).to('cuda')
           except:
             break
-          if self.m2m_model is None:
-            self.m2m_model = M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
+
           gen = self.m2m_model.generate(**batch, forced_bos_token_id=target_lang_bos_token, no_repeat_ngram_size=4, ) #
           outputs = self.m2m_tokenizer.batch_decode(gen, skip_special_tokens=True)
           translations.extend(outputs)
@@ -840,7 +844,7 @@ class TextAugment:
     if model_name is not None and model_name not in self.translation_pipelines:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = MarianMTModel.from_pretrained(model_name).half().eval().to(self.device)
-        mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else None)
+        mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else 1)
         self.translation_pipelines[model_name] = mt_pipeline
     if not mt_pipeline:
         raise RuntimeError("no translation pipeline") # we could do multi-step translation where there are no pairs
@@ -1801,11 +1805,11 @@ class TextAugment:
           try:
             model = model_cls.from_pretrained(model_name).half().eval().cuda()
             tokenizer = AutoTokenizer.from_pretrained(model_name)
-            ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else None)
+            ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else 1)
             self.ner_model_name2pipelines[model_name] = ner_pipeline
           except:
             try:
-              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=0 if self.device == 'cuda' else None)
+              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=0 if self.device == 'cuda' else 1)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
             except:
               ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), framework="tf", device=0 if self.device == 'cuda' else 1)
@@ -2509,7 +2513,7 @@ class TextAugment:
     for model_name in list(set(arr2)):
         AutoModel.from_pretrained(model_name)
         AutoTokenizer.from_pretrained(model_name)
-    for model_name in m2m100_lang.values():
+    for model_name in TextAugment.m2m100_lang.values():
         AutoModel.from_pretrained(model_name)
         AutoTokenizer.from_pretrained(model_name)
     for aHash in qg_pipeline.SUPPORTED_TASKS.values():
@@ -2541,7 +2545,7 @@ def load_all_pii(infile="./zh_pii.jsonl"):
   return [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
 
 parser = argparse.ArgumentParser(description='Process PII text')
-parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Language', required=True)
+parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Language', required=False)
 parser.add_argument('-target_lang', dest='target_lang', type=str, help='Target Language', default="en")
 parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
 parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
@@ -2559,7 +2563,7 @@ if __name__ == "__main__":
     f = args.file
     out = args.out
     docs = load_all_pii(f) if f else None
-    if args.preload_cache: TextAugent.preload_cache(src_lang, target_lang)
+    if args.preload_cache: TextAugment.preload_cache(src_lang, target_lang)
     #TODO - do multiprocessing
     if src_lang is not None:
       processor = TextAugment(single_process=True)
