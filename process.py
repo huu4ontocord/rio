@@ -2590,6 +2590,7 @@ if __name__ == "__main__":
     docs = load_all_pii(f) if f else None
     if args.preload_cache: TextAugent.preload_cache(src_lang, target_lang)
     multi_process = args.multi_process
+    num_workers = args.num_workers
 
     docs = TextAugment.intialize_docs(src_lang=src_lang)
     #TODO - do multiprocessing
