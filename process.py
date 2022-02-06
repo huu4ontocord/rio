@@ -2044,7 +2044,7 @@ class TextAugment:
             sep = ""
         else:
             sep = " "
-            
+        doc[f'{target_lang}_2_{src_lang}_tmp'] = doc.get(f'{target_lang}_2_{src_lang}_tmp', {})
         aHash = doc[f'{target_lang}_2_{src_lang}_tmp']
         items = doc[f'{src_lang}_items']
         doc[f'{target_lang}_2_{src_lang}_context'] = dict([(a, items[b][0]) for a, b in aHash.items()])
