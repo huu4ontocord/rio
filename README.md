@@ -15,3 +15,10 @@ python -m spacy download en_core_web_sm
 cd muliwai
 python processor.py -src_lang zh
 ```
+
+
+# Preloading the cache
+```
+cd muliwai
+python processor.py -preload_cache
+```
