@@ -2452,13 +2452,13 @@ class TextAugment:
   @staticmethod
   def multiprocess_ner(docs,
                        outputfile,
-                       src_lang=src_lang,
-                       target_lang=target_lang,
+                       src_lang=None,
+                       target_lang=None,
                        do_regex=True,
                        do_spacy=True,
                        do_backtrans=True,
                        cutoff=cutoff,
-                       batch_size=batch_size,
+                       batch_size=None,
                        num_workers=2):
 
       docs_chunks = [docs[i:i + num_workers] for i in range(0, len(docs), num_workers)]
@@ -2466,11 +2466,10 @@ class TextAugment:
       processor = TextAugment()
 
       def _multiprocess_ner_helper(docs_chunk):
-          print('docs_chunk length ' , docs_chunk.length)
+          print('docs_chunk length ', docs_chunk.length)
           return processor.process_ner(docs=docs_chunk, src_lang=src_lang, target_lang=target_lang, do_regex=do_regex, do_spacy=do_spacy, do_backtrans=do_backtrans, cutoff=cutoff, batch_size=batch_size)
 
       with open(outputfile, 'w', encoding='utf-8') as file:
-
           pool = multiprocessing.Pool(num_workers, initializer=processor.initializer)
 
           processed_docs = pool.imap_unordered(_multiprocess_ner_helper,
