@@ -1682,7 +1682,7 @@ class TextAugment:
 
     return docs, chunks
 
- def serialize_ner_items(self, docs, ner_keys):
+  def serialize_ner_items(self, docs, ner_keys):
         # serialize ner keys
         ner_keys = [k + '_ner' for k in ner_keys if '_ner' not in k]
         serialize_docs = list(docs.values())
