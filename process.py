@@ -2544,25 +2544,36 @@ def load_py_from_str(s, default=None):
 def load_all_pii(infile="./zh_pii.jsonl"):
   return [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
 
-parser = argparse.ArgumentParser(description='Process PII text')
-parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Language', required=False)
-parser.add_argument('-target_lang', dest='target_lang', type=str, help='Target Language', default="en")
-parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
-parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
-parser.add_argument('-file', dest='file', type=str, help='file to load', default=None)
-parser.add_argument('-out', dest='out', type=str, help='file to save', default="out.jsonl")
-parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
-parser.add_argument('-preload_cache', dest='preload_cache', type=bool, help='Preload the cache of models and data', default = False)
-args = parser.parse_args()
+in_notebook = 'google.colab' in sys.modules
+if not in_notebook:
+  try:
+      get_ipython()
+  except:
+    in_notebook = False
+
+if not in_notebook:
+  parser = argparse.ArgumentParser(description='Text Annotation, Augmentation and Anonymization')
+  parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Language', required=False)
+  parser.add_argument('-target_lang', dest='target_lang', type=str, help='Target Language', default="en")
+  parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
+  parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
+  parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
+  parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default="out.jsonl")
+  parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
+  parser.add_argument('-preload_cache', dest='preload_cache', type=bool, help='Preload the cache of models and data', default = False)
+  args = parser.parse_args()
+else:
+  args = None
 
 if __name__ == "__main__":
+  if args is not None:
     src_lang = args.src_lang
     target_lang = args.target_lang
     cutoff = args.cutoff
     batch_size = args.batch_size
-    f = args.file
-    out = args.out
-    docs = load_all_pii(f) if f else None
+    infile = args.infile
+    outfile = args.outfile
+    docs = load_all_pii(infile) if infile else None
     if args.preload_cache: TextAugment.preload_cache(src_lang, target_lang)
     #TODO - do multiprocessing
     if src_lang is not None:
@@ -2570,6 +2581,6 @@ if __name__ == "__main__":
       docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
                                          do_backtrans=True, cutoff=cutoff, batch_size=batch_size, docs=docs)
       docs = processor.serialize_ner_items(docs, ner_keys=[src_lang, target_lang])
-      with open(out, 'w', encoding='utf-8') as file:
+      with open(outfile, 'w', encoding='utf-8') as file:
         for doc in docs.values():
           file.write(f'{doc}\n')
