@@ -27,7 +27,7 @@ if __name__ == "__main__":
                       help='Preload the cache of models and data', default=False)
     parser.add_argument('-multi_process', dest='multi_process', help='Multi Processing NER', action='store_true',
                       default=False)
-    args = args = parser.parse_args()
+    args = parser.parse_args()
     src_lang = args.src_lang
     target_lang = args.target_lang
     cutoff = args.cutoff
