@@ -515,30 +515,29 @@ class TextAugment:
 
   def __init__(self, single_process=1, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
     self.device = "cuda" if torch.cuda.is_available() else "cpu"
-    if single_process:
-      self.initializer(labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
+    self.initializer(labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
 
   def initializer(self, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
-    if labse is not None: TextAugment.labse = labse 
-    if ontology_manager is not None: TextAugment.ontology_manager = ontology_manager
-    if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
-    if ner_model_name2pipelines is not None: TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
-    if en_spacy_nlp is not None: TextAugment.en_spacy_nlp = en_spacy_nlp
-    if faker_en_list is not None: TextAugment.faker_en_list = faker_en_list
-    if qg is not None: TextAugment.qg = qg
-    if kenlm_model is not None: TextAugment.kenlm_model = kenlm_model
+    if labse is not None: self.labse = labse
+    if ontology_manager is not None: self.ontology_manager = ontology_manager
+    if translation_pipelines is not None: self.translation_pipelines = translation_pipelines
+    if ner_model_name2pipelines is not None: self.ner_model_name2pipelines = ner_model_name2pipelines
+    if en_spacy_nlp is not None: self.en_spacy_nlp = en_spacy_nlp
+    if faker_en_list is not None: self.faker_en_list = faker_en_list
+    if qg is not None: self.qg = qg
+    if kenlm_model is not None: self.kenlm_model = kenlm_model
 
-    if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
+    if TextAugment.en_spacy_nlp is None: self.en_spacy_nlp = spacy.load('en_core_web_sm')
     try:
         coref = neuralcoref.NeuralCoref(TextAugment.en_spacy_nlp.vocab)
-        TextAugment.en_spacy_nlp.add_pipe(coref, name='neuralcoref')
+        self.en_spacy_nlp.add_pipe(coref, name='neuralcoref')
         #we could potentially add new items to the vocabulary to improve coref.
     except:
         pass
-    if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg") # TODO make sure it's running in half mode
-    if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().to(self.device)
-    if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
-    if TextAugment.kenlm_model is None: 
+    if self.qg is None: self.qg = qg_pipeline.pipeline("multitask-qa-qg") # TODO make sure it's running in half mode
+    if self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().to(self.device)
+    if self.ontology_manager is None: self.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
+    if self.kenlm_model is None:
       #TODO - save to temp dirS
       os.system("mkdir -p ./wikipedia")
       file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
@@ -551,8 +550,8 @@ class TextAugment:
       file = cached_download(file_url)
       os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
       TextAugment.kenlm_model = KenlmModel("wikipedia", "en")
-    if TextAugment.faker_en_list is None:
-      TextAugment.faker_en_list  = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
+    if self.faker_en_list is None:
+      self.faker_en_list = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
       for faker_en in faker_en_list:
           faker_en.add_provider(person)
           faker_en.add_provider(ssn)
@@ -2480,31 +2479,72 @@ class TextAugment:
                        batch_size=5,
                        num_workers=2):
       multiprocessing.set_start_method('spawn', force=True)
-      docs_chunks = [docs[i:i + num_workers] for i in range(0, len(docs), num_workers)]
+      if num_workers != 0:
+        docs_chunks = [docs[i:i + num_workers] for i in range(0, len(docs), num_workers)]
+      else:
+        docs_chunks = [docs]
       start = time.time()
-      processor = TextAugment()
+      processes = []
+      processor = TextAugment(single_process=False)
+      processor.initializer()
+
+      for i in range(num_workers):
+        p = multiprocessing.Process(target=processor.process_ner, args=(docs_chunks[i],src_lang,
+              None,
+              True,
+              True,
+              True,
+              False,
+              False,
+              False,
+              False,
+              True, # if we do_anonymize, we will copy {src_lang}_text_anon -> text
+              "es",
+              True,
+              True,
+              5,
+              70,
+              0.85,
+              1.00,
+              1.25,
+              1.5,
+              0.9,
+              True,
+              False,
+              True,
+              None,
+              'en',
+              "",
+              {'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
+              {'PERSON', 'ID'},))
+        p.start()
+        processes.append(p)
+      for p in processes:
+        p.join()
 
 
-      with open(outputfile, 'w', encoding='utf-8') as file:
-          pool = multiprocessing.Pool(num_workers, initializer=processor.initializer)
+      # with open(outputfile, 'w', encoding='utf-8') as file:
+      #     for i in range(0, num_workers):
+      #       pool = multiprocessing.Pool(initializer=processor.initializer)
 
-          # processed_docs = pool.imap_unordered(TextAugment._multiprocess_ner_helper,
-          #                                      docs_chunks)
+      #       # processed_docs = pool.imap_unordered(TextAugment._multiprocess_ner_helper,
+      #       #                                      docs_chunks)
 
-          processed_docs = pool.imap_unordered(partial(processor.process_ner,
-                                                       src_lang=src_lang,
-                                                       arget_lang=target_lang,
-                                                       do_regex=do_regex,
-                                                       do_spacy=do_spacy,
-                                                       do_backtrans=do_backtrans,
-                                                       cutoff=cutoff,
-                                                       batch_size=batch_size),
-                                               docs_chunks)
+      #       processed_docs = pool.imap_unordered(partial(processor.process_ner,
+      #                                                   docs=docs_chunks[i],
+      #                                                   src_lang=src_lang,
+      #                                                   arget_lang=target_lang,
+      #                                                   do_regex=do_regex,
+      #                                                   do_spacy=do_spacy,
+      #                                                   do_backtrans=do_backtrans,
+      #                                                   cutoff=cutoff,
+      #                                                   batch_size=batch_size),
+      #                                           )
 
-          for i, docs in enumerate(processed_docs):
-            print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
-            for doc in docs.values():
-              file.write(f'{doc}\n')
+      #       for i, docs in enumerate(processed_docs):
+      #         print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
+      #         for doc in docs.values():
+      #           file.write(f'{doc}\n')
 
   @staticmethod
   def intialize_docs(docs=None, src_lang=None):
