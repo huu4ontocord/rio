@@ -18,7 +18,7 @@ import fsspec
 import copy
 from collections import Counter
 from  datasets import load_dataset
-from transformers import AutoTokenizer, RobertaForTokenClassification, M2M100ForConditionalGeneration, M2M100Tokenizer, pipelines
+from transformers import AutoModel, AutoTokenizer, RobertaForTokenClassification, M2M100ForConditionalGeneration, M2M100Tokenizer, pipelines
 import spacy
 from tqdm import tqdm
 import difflib
@@ -1717,7 +1717,7 @@ class TextAugment:
                 doc[ner_key] = serialize_items
         if outfile:       
           with open(outfile, 'w', encoding='utf-8') as file:
-            for doc in docs:
+            for doc in serialize_docs:
               file.write(f'{doc}\n')
         return serialize_docs
 
@@ -2087,7 +2087,8 @@ class TextAugment:
                       #print ('increasing ', mention, label, aHash[label])
                       found = True
                   if not found:
-                    print ('not found', mention, all_labels)
+                    pass
+                    #print ('not found', mention, all_labels)
 
     if do_backtrans and target_lang != src_lang and not do_augment:
         #TBD: we could run the augmented text back to the original sentence create additional augmented data.
@@ -2210,16 +2211,19 @@ class TextAugment:
                   if ner_word and ner_word.lower() not in stopwords1:
                       ner_word = ner_word.strip(self.strip_chars+".") 
                       #print (ner_word, ner_word in orig_text, orig_text)
-                      i = orig_text[pos:].index(ner_word)
-                      start = pos + i 
-                      len_nerword = len(ner_word)
-                      pos = start + len_nerword
-                      mention2 = (ner_word, offset + start, offset + start + len_nerword)
-                      aHash = bner.get(mention2, {})
-                      for label in ner[mention]:
-                        #print (f'found new mention from {target_lang}', mention, mention2, label)
-                        aHash[label] = aHash.get(label, backtrans_weight) + ner[mention][label]
-                      bner[mention2] = aHash
+                      if ner_word not in orig_text[pos:]:
+                        print ('cant find in orig_text ', ner_word, '**', orig_text[pos:], '**', orig_text)
+                      else:
+                        i = orig_text[pos:].index(ner_word)
+                        start = pos + i 
+                        len_nerword = len(ner_word)
+                        pos = start + len_nerword
+                        mention2 = (ner_word, offset + start, offset + start + len_nerword)
+                        aHash = bner.get(mention2, {})
+                        for label in ner[mention]:
+                          #print (f'found new mention from {target_lang}', mention, mention2, label)
+                          aHash[label] = aHash.get(label, backtrans_weight) + ner[mention][label]
+                        bner[mention2] = aHash
                   idx = None
                   ner_word = ""
                   ent2 = ""
@@ -2571,7 +2575,7 @@ class TextAugment:
               pass
     arr2 = []
     for arr in TextAugment.hf_ner_model_map.values():
-      for model_name, _ in arr:
+      for model_name, _, _ in arr:
         arr2.append(model_name)
     for model_name in list(set(arr2)):
         AutoModel.from_pretrained(model_name)
