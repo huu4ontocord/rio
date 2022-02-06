@@ -22,11 +22,11 @@ def multiprocess_ner(docs,
     docs_chunks = [docs]
   start = time.time()
   processor = TextAugment(single_process=False)
-  processor.initializer()
+  # processor.initializer()
 
   with open(outputfile, 'w', encoding='utf-8') as file:
       # for i in range(0, num_workers):
-        pool = multiprocessing.Pool(processes=num_workers)
+        pool = multiprocessing.Pool(processes=num_workers, initializer=processor.initializer)
 
         # processed_docs = pool.imap_unordered(TextAugment._multiprocess_ner_helper,
         #                                      docs_chunks)

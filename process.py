@@ -512,55 +512,64 @@ class TextAugment:
   max_stoword_len_ja = max([0]+[len(a) for a in stopwords.get('ja', [])])
   stopwords_en = set(stopwords.get('en',[]))
 
+  def __init__(self, single_process=1, labse=None, ontology_manager=None, translation_pipelines=None,
+               ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+      self.device = "cuda" if torch.cuda.is_available() else "cpu"
+      if single_process:
+          self.initializer(labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines,
+                           ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp,
+                           faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
 
-  def __init__(self, single_process=1, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
-    self.device = "cuda" if torch.cuda.is_available() else "cpu"
-    self.initializer(labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
+  def initializer(self, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None,
+                  en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+      if labse is not None: TextAugment.labse = labse
+      if ontology_manager is not None: TextAugment.ontology_manager = ontology_manager
+      if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
+      if ner_model_name2pipelines is not None: TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
+      if en_spacy_nlp is not None: TextAugment.en_spacy_nlp = en_spacy_nlp
+      if faker_en_list is not None: TextAugment.faker_en_list = faker_en_list
+      if qg is not None: TextAugment.qg = qg
+      if kenlm_model is not None: TextAugment.kenlm_model = kenlm_model
 
-  def initializer(self, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
-    if labse is not None: self.labse = labse
-    if ontology_manager is not None: self.ontology_manager = ontology_manager
-    if translation_pipelines is not None: self.translation_pipelines = translation_pipelines
-    if ner_model_name2pipelines is not None: self.ner_model_name2pipelines = ner_model_name2pipelines
-    if en_spacy_nlp is not None: self.en_spacy_nlp = en_spacy_nlp
-    if faker_en_list is not None: self.faker_en_list = faker_en_list
-    if qg is not None: self.qg = qg
-    if kenlm_model is not None: self.kenlm_model = kenlm_model
-
-    if TextAugment.en_spacy_nlp is None: self.en_spacy_nlp = spacy.load('en_core_web_sm')
-    try:
-        coref = neuralcoref.NeuralCoref(TextAugment.en_spacy_nlp.vocab)
-        self.en_spacy_nlp.add_pipe(coref, name='neuralcoref')
-        #we could potentially add new items to the vocabulary to improve coref.
-    except:
-        pass
-    if self.qg is None: self.qg = qg_pipeline.pipeline("multitask-qa-qg") # TODO make sure it's running in half mode
-    if self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().to(self.device)
-    if self.ontology_manager is None: self.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
-    if self.kenlm_model is None:
-      #TODO - save to temp dirS
-      os.system("mkdir -p ./wikipedia")
-      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
-      file = cached_download(file_url)
-      os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
-      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
-      file = cached_download(file_url)
-      os.system(f"ln -s {file} ./wikipedia/en.sp.model")
-      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
-      file = cached_download(file_url)
-      os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
-      TextAugment.kenlm_model = KenlmModel("wikipedia", "en")
-    if self.faker_en_list is None:
-      self.faker_en_list = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
-      for faker_en in faker_en_list:
-          faker_en.add_provider(person)
-          faker_en.add_provider(ssn)
-          faker_en.add_provider(address)
-          faker_en.add_provider(geo)
-          faker_en.add_provider(internet)
-          faker_en.add_provider(company)
-    #print ("finished load")
-    #TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
+      if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
+      try:
+          coref = neuralcoref.NeuralCoref(TextAugment.en_spacy_nlp.vocab)
+          TextAugment.en_spacy_nlp.add_pipe(coref, name='neuralcoref')
+          # we could potentially add new items to the vocabulary to improve coref.
+      except:
+          pass
+      if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline(
+          "multitask-qa-qg")  # TODO make sure it's running in half mode
+      if TextAugment.labse is None: TextAugment.labse = SentenceTransformer(
+          "sentence-transformers/LaBSE").half().eval().to(self.device)
+      if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None  # OntologyManager(src_lang='en') #src_lang=src_lang
+      if TextAugment.kenlm_model is None:
+          # TODO - save to temp dir
+          os.system("mkdir -p ./wikipedia")
+          if not os.path.exists("./wikipedia/en.arpa.bin"):
+              file_url = hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
+              file = cached_download(file_url)
+              os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
+          if not os.path.exists("./wikipedia/en.sp.model"):
+              file_url = hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
+              file = cached_download(file_url)
+              os.system(f"ln -s {file} ./wikipedia/en.sp.model")
+          if not os.path.exists("./wikipedia/en.sp.vocab"):
+              file_url = hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
+              file = cached_download(file_url)
+              os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
+          TextAugment.kenlm_model = KenlmModel("wikipedia", "en")
+      if TextAugment.faker_en_list is None:
+          TextAugment.faker_en_list = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
+          for faker_en in faker_en_list:
+              faker_en.add_provider(person)
+              faker_en.add_provider(ssn)
+              faker_en.add_provider(address)
+              faker_en.add_provider(geo)
+              faker_en.add_provider(internet)
+              faker_en.add_provider(company)
+      # print ("finished load")
+      # TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
 
   def check_good_sentence(self, s, src_lang, stopwords, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
     #basic dejunk
