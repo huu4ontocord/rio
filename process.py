@@ -538,17 +538,20 @@ class TextAugment:
     if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().to(self.device)
     if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
     if TextAugment.kenlm_model is None: 
-      #TODO - save to temp dirS
+      #TODO - save to temp dir
       os.system("mkdir -p ./wikipedia")
-      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
-      file = cached_download(file_url)
-      os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
-      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
-      file = cached_download(file_url)
-      os.system(f"ln -s {file} ./wikipedia/en.sp.model")
-      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
-      file = cached_download(file_url)
-      os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
+      if not os.path.exists("./wikipedia/en.arpa.bin"): 
+        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
+        file = cached_download(file_url)
+        os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
+      if not os.path.exists("./wikipedia/en.sp.model"): 
+        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
+        file = cached_download(file_url)
+        os.system(f"ln -s {file} ./wikipedia/en.sp.model")
+      if not os.path.exists("./wikipedia/en.sp.vocab"):
+        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
+        file = cached_download(file_url)
+        os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
       TextAugment.kenlm_model = KenlmModel("wikipedia", "en")
     if TextAugment.faker_en_list is None:
       TextAugment.faker_en_list  = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
@@ -1980,7 +1983,7 @@ class TextAugment:
                     for key2 in list(aHash.keys()):
                       aHash[key2] /= 2.0
                 else:
-                  vals = list(doc[f'{src_lang}_ner'][mention].keys())
+                  #vals = list(doc[f'{src_lang}_ner'][mention].keys())
                   ent = ent.strip(self.strip_chars)
                   doc[f'{target_lang}_2_{src_lang}_tmp'][ent] = idx
             else: # except:
@@ -2583,15 +2586,18 @@ class TextAugment:
 
     #TODO - get temp dir and move this into the temp dir
     os.system("mkdir -p ./wikipedia")
-    file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
-    file = cached_download(file_url)
-    os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
-    file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
-    file = cached_download(file_url)
-    os.system(f"ln -s {file} ./wikipedia/en.sp.model")
-    file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
-    file = cached_download(file_url)
-    os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
+    if not os.path.exists("./wikipedia/en.arpa.bin"): 
+      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
+      file = cached_download(file_url)
+      os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
+    if not os.path.exists("./wikipedia/en.sp.model"): 
+      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
+      file = cached_download(file_url)
+      os.system(f"ln -s {file} ./wikipedia/en.sp.model")
+    if not os.path.exists("./wikipedia/en.sp.vocab"):
+      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
+      file = cached_download(file_url)
+      os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
     #kenlm_model = KenlmModel("./wikipedia", "en")
 
 in_notebook = 'google.colab' in sys.modules
