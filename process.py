@@ -29,6 +29,7 @@ from torch.nn.functional import cosine_similarity
 import langid
 import json
 import os
+import time
 import gzip
 import argparse
 import re, regex
@@ -2449,7 +2450,17 @@ class TextAugment:
   #given a dataset, file or any out of core random access text/json data source (by lines), we choose several shards of the data
   #and we begin to send in chunks of it at a time to the process. 
   @staticmethod
-  def multiprocess_ner(docs, outputfile, num_workers=2):
+  def multiprocess_ner(docs,
+                       outputfile,
+                       src_lang=src_lang,
+                       target_lang=target_lang,
+                       do_regex=True,
+                       do_spacy=True,
+                       do_backtrans=True,
+                       cutoff=cutoff,
+                       batch_size=batch_size,
+                       num_workers=2):
+
       docs_chunks = [docs[i:i + num_workers] for i in range(0, len(docs), num_workers)]
       start = time.time()
 
@@ -2457,7 +2468,15 @@ class TextAugment:
           processor = TextAugment()
           pool = multiprocessing.Pool(num_workers, initializer=processor.initializer)
 
-          processed_docs = pool.imap_unordered(processor.process_ner, docs_chunks)
+          processed_docs = pool.imap_unordered(processor.process_ner,
+                                               docs_chunks,
+                                               src_lang=src_lang,
+                                               target_lang=target_lang,
+                                               do_regex=do_regex,
+                                               do_spacy=do_spacy,
+                                               do_backtrans=do_backtrans,
+                                               cutoff=cutoff,
+                                               batch_size=batch_size)
 
           for i, docs in enumerate(processed_docs):
             print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
@@ -2580,11 +2599,25 @@ if __name__ == "__main__":
     if not multi_process:
       processor = TextAugment(single_process=True)
 
-      docs, chunks = processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
-                                         do_backtrans=True, cutoff=cutoff, batch_size=batch_size)
+      docs, chunks = processor.process_ner(docs=docs,
+                                           src_lang=src_lang,
+                                           target_lang=target_lang,
+                                           do_regex=True,
+                                           do_spacy=True,
+                                           do_backtrans=True,
+                                           cutoff=cutoff,
+                                           batch_size=batch_size)
       docs = processor.serialize_ner_items(docs, ner_keys=[src_lang, target_lang])
       with open(out, 'w', encoding='utf-8') as file:
         for doc in docs.values():
           file.write(f'{doc}\n')
     else:
-        TextAugment.multiprocess_ner()
+        TextAugment.multiprocess_ner(docs=docs,
+                                     src_lang=src_lang,
+                                     target_lang=target_lang,
+                                     do_regex=True,
+                                     do_spacy=True,
+                                     do_backtrans=True,
+                                     cutoff=cutoff,
+                                     batch_size=batch_size,
+                                     outputfile=out)
