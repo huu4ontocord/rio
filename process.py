@@ -2659,7 +2659,7 @@ if __name__ == "__main__":
                                            batch_size=batch_size)
       docs = processor.serialize_ner_items(docs, ner_keys=[src_lang, target_lang])
       with open(outfile, 'w', encoding='utf-8') as file:
-        for doc in docs.values():
+        for doc in docs:
           file.write(f'{doc}\n')
     else:
         print(f"Multi Processing with {num_workers} workers")
