@@ -2457,8 +2457,8 @@ class TextAugment:
                        do_regex=True,
                        do_spacy=True,
                        do_backtrans=True,
-                       cutoff=cutoff,
-                       batch_size=None,
+                       cutoff=None,
+                       batch_size=5,
                        num_workers=2):
 
       docs_chunks = [docs[i:i + num_workers] for i in range(0, len(docs), num_workers)]
