@@ -2472,7 +2472,7 @@ class TextAugment:
   #given a dataset, file or any out of core random access text/json data source (by lines), we choose several shards of the data
   #and we begin to send in chunks of it at a time to the process. 
   @staticmethod
-  def multiprocess_ner(instream, outputfile, num_workers=16, ):
+  def multiprocess_ner(instream, outputfile, num_workers=2):
     with open(outputfile, 'w', encoding='utf-8') as file:
       processor = TextAugment()
       pool = multiprocessing.Pool(num_workers, initializer=processor.initializer)
@@ -2548,7 +2548,9 @@ parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size
 parser.add_argument('-file', dest='file', type=str, help='file to load', default=None)
 parser.add_argument('-out', dest='out', type=str, help='file to save', default="out.jsonl")
 parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
-parser.add_argument('-preload_cache', dest='preload_cache', type=bool, help='Preload the cache of models and data', default = False)
+parser.add_argument('-preload_cache', dest='preload_cache', type=bool, help='Preload the cache of models and data', default=False)
+parser.add_argument('-multi_process', dest='multi_process', type=bool, help='Multi Processing NER', default=False)
+
 args = parser.parse_args()
 
 if __name__ == "__main__":
@@ -2560,8 +2562,11 @@ if __name__ == "__main__":
     out = args.out
     docs = load_all_pii(f) if f else None
     if args.preload_cache: TextAugent.preload_cache(src_lang, target_lang)
+    multi_process = args.multi_process
+
+
     #TODO - do multiprocessing
-    if src_lang is not None:
+    if not multi_process:
       processor = TextAugment(single_process=True)
       docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
                                          do_backtrans=True, cutoff=cutoff, batch_size=batch_size, docs=docs)
@@ -2569,3 +2574,5 @@ if __name__ == "__main__":
       with open(out, 'w', encoding='utf-8') as file:
         for doc in docs.values():
           file.write(f'{doc}\n')
+    else:
+        TextAugment.multiprocess_ner
