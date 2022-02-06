@@ -31,6 +31,7 @@ import json
 import os
 import time
 import gzip
+from functools import partial
 import argparse
 import re, regex
 import itertools
@@ -2475,7 +2476,17 @@ class TextAugment:
       with open(outputfile, 'w', encoding='utf-8') as file:
           pool = multiprocessing.Pool(num_workers, initializer=processor.initializer)
 
-          processed_docs = pool.imap_unordered(TextAugment._multiprocess_ner_helper,
+          # processed_docs = pool.imap_unordered(TextAugment._multiprocess_ner_helper,
+          #                                      docs_chunks)
+
+          processed_docs = pool.imap_unordered(partial(processor.process_ner,
+                                                       src_lang=src_lang,
+                                                       arget_lang=target_lang,
+                                                       do_regex=do_regex,
+                                                       do_spacy=do_spacy,
+                                                       do_backtrans=do_backtrans,
+                                                       cutoff=cutoff,
+                                                       batch_size=batch_size),
                                                docs_chunks)
 
           for i, docs in enumerate(processed_docs):
