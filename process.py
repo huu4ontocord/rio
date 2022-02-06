@@ -36,7 +36,7 @@ import re, regex
 import itertools
 import torch
 from sentence_transformers import SentenceTransformer
-import multiprocessing
+from torch import multiprocessing
 from edugp_kenlm_model import *
 from huggingface_hub import hf_hub_url, cached_download
     
@@ -2460,7 +2460,7 @@ class TextAugment:
                        cutoff=None,
                        batch_size=5,
                        num_workers=2):
-
+      multiprocessing.set_start_method('spawn', force=True)
       docs_chunks = [docs[i:i + num_workers] for i in range(0, len(docs), num_workers)]
       start = time.time()
       processor = TextAugment()
@@ -2574,7 +2574,7 @@ parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, 
 parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
 parser.add_argument('-file', dest='file', type=str, help='file to load', default=None)
 parser.add_argument('-out', dest='out', type=str, help='file to save', default="out.jsonl")
-parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
+parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default=1)
 parser.add_argument('-preload_cache', dest='preload_cache', action='store_true', help='Preload the cache of models and data', default=False)
 parser.add_argument('-multi_process', dest='multi_process', help='Multi Processing NER',action='store_true', default=False)
 
@@ -2609,6 +2609,7 @@ if __name__ == "__main__":
         for doc in docs.values():
           file.write(f'{doc}\n')
     else:
+        print(f"Multi Processing with {num_workers}")
         TextAugment.multiprocess_ner(docs=docs,
                                      src_lang=src_lang,
                                      target_lang=target_lang,
@@ -2617,4 +2618,5 @@ if __name__ == "__main__":
                                      do_backtrans=True,
                                      cutoff=cutoff,
                                      batch_size=batch_size,
-                                     outputfile=out)
+                                     outputfile=out,
+                                     num_workers=num_workers)
