@@ -2584,7 +2584,7 @@ class TextAugment:
         AutoModel.from_pretrained(model_name)
         AutoTokenizer.from_pretrained(model_name)
     for aHash in qg_pipeline.SUPPORTED_TASKS.values():
-      for model_name in aHash["default"]:
+      for model_name in aHash["default"].values():
         AutoModel.from_pretrained(model_name)
         AutoTokenizer.from_pretrained(model_name)
 
