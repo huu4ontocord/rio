@@ -2634,9 +2634,10 @@ if __name__ == "__main__":
     infile = args.infile
     outfile = args.outfile
     docs = TextAugment.deserialize_ner_items(infile=infile) if infile else None
-    if args.preload_cache: TextAugment.preload_cache(src_lang, target_lang)
+    if args.preload_cache: 
+      TextAugment.preload_cache(src_lang, target_lang)
     #TODO - do multiprocessing
-    if src_lang is not None:
+    elif src_lang is not None:
       processor = TextAugment(single_process=True)
       docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
                                          do_backtrans=True, cutoff=cutoff, batch_size=batch_size, docs=docs)
