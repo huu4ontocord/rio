@@ -18,7 +18,7 @@ import fsspec
 import copy
 from collections import Counter
 from  datasets import load_dataset
-from transformers import AutoTokenizer, RobertaForTokenClassification, M2M100ForConditionalGeneration, M2M100Tokenizer, pipelines
+from transformers import AutoModel, AutoTokenizer, RobertaForTokenClassification, M2M100ForConditionalGeneration, M2M100Tokenizer, pipelines
 import spacy
 from tqdm import tqdm
 import difflib
@@ -175,7 +175,7 @@ bantu_surnames = ["Dlamini", "Gumede", "Hadebe", "Ilunga", "Kamau", "Khoza", "Lu
 #male and female
 vietnamese_firstnames = ["Anh", "Dung", "Hanh", "Hoa", "Hong", "Khanh", "Lan", "Liem", "Nhung", "Duy", "Xuan"]
 vietnamese_surnames = ["Nguyễn","Trần","Lê","Phạm","Hoàng","Huỳnh","Phan","Vũ","Võ", "Đặng","Bùi", "Đỗ", "Hồ", "Ngô", "Dương", "Lý"]
-
+""
 #use english firstnames for now
 bengali_surnames  = ["Banerjee", "Bagchi", "Bhaduri", "Bhattacharjee", "Chakraborty", "Chatterjee", "Ganguly", "Goswami", "Ghoshal", "Lahiri", "Maitra", "Mukherjee", "Sanyal", "Chakraborty", "Bhattacharya", "Baidya", "Sengupta", "Dasgupta", "Duttagupta", "Gupta", "Sen-Sharma", "Basu", "Bose", "Dutta", "Ghosh", "Choudhury", "Guha", "Gain", "Mitra", "Singh", "Sinha", "Sen", "Pal", "De", "Dey", "Deb", "Dev", "Jana", "Palit", "Chanda", "Chandra", "Das", "Dam", "Kar", "Nandi", "Sarkar", "Nag", "Som"]
 
@@ -469,33 +469,34 @@ class TextAugment:
       'is': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
       }
 
+  #wikipedia kenlm model based on prompt "f{s} (born"
   #TODO figure out actual numbers. Also, add languge specific models
-  public_figure_kenlm_cutoff_map = {('en', 'en'): 1500,
-                                    ('yo', 'en'): 1500,
-                                    ('zu', 'en'): 1500,
-                                    ('sn', 'en'): 1500,
-                                    ('st', 'en'): 1500,
-                                    ('ny', 'en'): 1500,
-                                    ('xh', 'en'): 1500,
-                                    ('sw', 'en'): 1500,
-                                    ('ig', 'en'): 1500,
-                                    ('ar', 'en'): 1500,
-                                    ('en', 'en'): 1500,
-                                    ('es', 'en'): 1500,
-                                    ('eu', 'en'): 1500,
-                                    ('ca', 'en'): 1500,
-                                    ('pt', 'en'): 1500,
-                                    ('fr', 'en'): 1500,
-                                    ('zh', 'en'): 1500,
-                                    ('vi', 'en'): 1500,
-                                    ('hi', 'en'): 1500,
-                                    ('ur', 'en'): 1500,
-                                    ('id', 'en'): 1500,
-                                    ('bn', 'en'): 1500,
+  public_figure_kenlm_cutoff_map = {('en', 'en'): 450,
+                                    ('yo', 'en'): 450,
+                                    ('zu', 'en'): 450,
+                                    ('sn', 'en'): 450,
+                                    ('st', 'en'): 450,
+                                    ('ny', 'en'): 450,
+                                    ('xh', 'en'): 450,
+                                    ('sw', 'en'): 450,
+                                    ('ig', 'en'): 450,
+                                    ('ar', 'en'): 450,
+                                    ('en', 'en'): 450,
+                                    ('es', 'en'): 450,
+                                    ('eu', 'en'): 450,
+                                    ('ca', 'en'): 450,
+                                    ('pt', 'en'): 450,
+                                    ('fr', 'en'): 450,
+                                    ('zh', 'en'): 450,
+                                    ('vi', 'en'): 450,
+                                    ('hi', 'en'): 450,
+                                    ('ur', 'en'): 450,
+                                    ('id', 'en'): 450,
+                                    ('bn', 'en'): 450,
                                     }
   m2m100_lang = {
     ('en', 'yo'): "Davlan/m2m100_418M-eng-yor-mt",
-    ('yo', 'en'): "Davlan/m2m100_418M-yor-en-mt",
+    ('yo', 'en'): "Davlan/m2m100_418M-yor-eng-mt",
     ('en', 'zu'): "masakhane/m2m100_418M-en-zu-mt",
     ('zu', 'en'): "masakhane/m2m100_418M-zu-en-mt",
     ('*', '*') : "facebook/m2m100_418M"
@@ -512,64 +513,59 @@ class TextAugment:
   max_stoword_len_ja = max([0]+[len(a) for a in stopwords.get('ja', [])])
   stopwords_en = set(stopwords.get('en',[]))
 
-  def __init__(self, single_process=1, labse=None, ontology_manager=None, translation_pipelines=None,
-               ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
-      self.device = "cuda" if torch.cuda.is_available() else "cpu"
-      if single_process:
-          self.initializer(labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines,
-                           ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp,
-                           faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
 
-  def initializer(self, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None,
-                  en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
-      if labse is not None: TextAugment.labse = labse
-      if ontology_manager is not None: TextAugment.ontology_manager = ontology_manager
-      if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
-      if ner_model_name2pipelines is not None: TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
-      if en_spacy_nlp is not None: TextAugment.en_spacy_nlp = en_spacy_nlp
-      if faker_en_list is not None: TextAugment.faker_en_list = faker_en_list
-      if qg is not None: TextAugment.qg = qg
-      if kenlm_model is not None: TextAugment.kenlm_model = kenlm_model
+  def __init__(self, single_process=1, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+    self.device = "cuda" if torch.cuda.is_available() else "cpu"
+    if single_process:
+      self.initializer(labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
 
-      if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
-      try:
-          coref = neuralcoref.NeuralCoref(TextAugment.en_spacy_nlp.vocab)
-          TextAugment.en_spacy_nlp.add_pipe(coref, name='neuralcoref')
-          # we could potentially add new items to the vocabulary to improve coref.
-      except:
-          pass
-      if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline(
-          "multitask-qa-qg")  # TODO make sure it's running in half mode
-      if TextAugment.labse is None: TextAugment.labse = SentenceTransformer(
-          "sentence-transformers/LaBSE").half().eval().to(self.device)
-      if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None  # OntologyManager(src_lang='en') #src_lang=src_lang
-      if TextAugment.kenlm_model is None:
-          # TODO - save to temp dir
-          os.system("mkdir -p ./wikipedia")
-          if not os.path.exists("./wikipedia/en.arpa.bin"):
-              file_url = hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
-              file = cached_download(file_url)
-              os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
-          if not os.path.exists("./wikipedia/en.sp.model"):
-              file_url = hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
-              file = cached_download(file_url)
-              os.system(f"ln -s {file} ./wikipedia/en.sp.model")
-          if not os.path.exists("./wikipedia/en.sp.vocab"):
-              file_url = hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
-              file = cached_download(file_url)
-              os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
-          TextAugment.kenlm_model = KenlmModel("wikipedia", "en")
-      if TextAugment.faker_en_list is None:
-          TextAugment.faker_en_list = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
-          for faker_en in faker_en_list:
-              faker_en.add_provider(person)
-              faker_en.add_provider(ssn)
-              faker_en.add_provider(address)
-              faker_en.add_provider(geo)
-              faker_en.add_provider(internet)
-              faker_en.add_provider(company)
-      # print ("finished load")
-      # TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
+  def initializer(self, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+    if labse is not None: TextAugment.labse = labse 
+    if ontology_manager is not None: TextAugment.ontology_manager = ontology_manager
+    if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
+    if ner_model_name2pipelines is not None: TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
+    if en_spacy_nlp is not None: TextAugment.en_spacy_nlp = en_spacy_nlp
+    if faker_en_list is not None: TextAugment.faker_en_list = faker_en_list
+    if qg is not None: TextAugment.qg = qg
+    if kenlm_model is not None: TextAugment.kenlm_model = kenlm_model
+
+    if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
+    try:
+        coref = neuralcoref.NeuralCoref(TextAugment.en_spacy_nlp.vocab)
+        TextAugment.en_spacy_nlp.add_pipe(coref, name='neuralcoref')
+        #we could potentially add new items to the vocabulary to improve coref.
+    except:
+        pass
+    if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg") # TODO make sure it's running in half mode
+    if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().to(self.device)
+    if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
+    if TextAugment.kenlm_model is None: 
+      #TODO - save to temp dir
+      os.system("mkdir -p ./wikipedia")
+      if not os.path.exists("./wikipedia/en.arpa.bin"): 
+        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
+        file = cached_download(file_url)
+        os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
+      if not os.path.exists("./wikipedia/en.sp.model"): 
+        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
+        file = cached_download(file_url)
+        os.system(f"ln -s {file} ./wikipedia/en.sp.model")
+      if not os.path.exists("./wikipedia/en.sp.vocab"):
+        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
+        file = cached_download(file_url)
+        os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
+      TextAugment.kenlm_model = KenlmModel("wikipedia", "en")
+    if TextAugment.faker_en_list is None:
+      TextAugment.faker_en_list  = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
+      for faker_en in faker_en_list:
+          faker_en.add_provider(person)
+          faker_en.add_provider(ssn)
+          faker_en.add_provider(address)
+          faker_en.add_provider(geo)
+          faker_en.add_provider(internet)
+          faker_en.add_provider(company)
+    #print ("finished load")
+    #TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
 
   def check_good_sentence(self, s, src_lang, stopwords, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
     #basic dejunk
@@ -1698,12 +1694,22 @@ class TextAugment:
     return docs, chunks
 
   #TODO: we also need a deserialize
-  def serialize_ner_items(self, docs, ner_keys):
+  @staticmethod
+  def serialize_ner_items(docs, ner_keys=None, outfile=""):
         # serialize ner keys
-        ner_keys = [k + '_ner' for k in ner_keys if '_ner' not in k]
-        serialize_docs = list(docs.values())
+        if ner_keys:
+          ner_keys = [k + '_ner' for k in ner_keys if '_ner' not in k]
+        else:
+          ner_keys = []
+        if type(docs) is dict:
+          serialize_docs = list(docs.values())
+        else:
+          serialize_docs = docs
+
+        serialize_docs.sort(key=lambda a: int(a.get('id', -1)))
+        serialize_docs = copy.copy(serialize_docs)
         for doc in serialize_docs:
-            for ner_key in ner_keys:
+            for ner_key in ner_keys + ([] if ner_keys else [key for key in doc if key.endswith('_ner')]):
                 ner_items = doc[ner_key]
                 serialize_items = []
                 for (text, start, end), ner_value in ner_items.items():
@@ -1711,9 +1717,49 @@ class TextAugment:
                     ner_dict = {'text': text, 'start': start, 'end': end, 'ner_values': ner_value}
                     serialize_items.append(ner_dict)
                 doc[ner_key] = serialize_items
-
+        if outfile:       
+          with open(outfile, 'w', encoding='utf-8') as file:
+            for doc in serialize_docs:
+              file.write(f'{doc}\n')
         return serialize_docs
 
+  @staticmethod
+  def deserialize_ner_items(docs=None, infile="", return_dict=False):
+    def load_py_from_str(s, default=None):
+      if not s.strip(): return default
+      ret = {'__ret': None}
+      #print (s)
+      exec("__ret= "+s, ret)
+      return ret['__ret']
+      
+    def deserialize_doc(doc):
+       for ner_key in [key for key in doc if key.endswith('_ner')]:
+                ner_items = doc[ner_key]
+                if ner_items and type(ner_items) is list and 'ner_values' in ner_items[0]:
+                  deserialize_items = {}
+                  for item in ner_items:
+                    mention = (item['text'], item['start'], item['end'])
+                    aHash = dict([(tuple(a['label']) if type(a['label']) is list else a['label'], float(a['score'])) for a in item['ner_values']])
+                    deserialize_items[mention] = aHash
+                  doc[ner_key] = deserialize_items
+
+    if infile:
+      docs= [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
+    elif docs:
+      if type(docs) is dict:
+        docs = copy.copy(docs.values())
+        return_dict = True
+      else:
+        docs = copy.copy(docs)
+    if return_dict:
+      return dict([(int(doc.get('id', idx)), deserialize_doc(doc)) for idx, doc in enumerate(docs)])
+    else:
+      return [deserialize_doc(doc) for doc in docs]
+    return docs
+
+
+
+            
   #TODO - refactor this method into parts
   def process_ner_chunks_with_trans(self,
                           src_lang,
@@ -1939,7 +1985,7 @@ class TextAugment:
                     for key2 in list(aHash.keys()):
                       aHash[key2] /= 2.0
                 else:
-                  vals = list(doc[f'{src_lang}_ner'][mention].keys())
+                  #vals = list(doc[f'{src_lang}_ner'][mention].keys())
                   ent = ent.strip(self.strip_chars)
                   doc[f'{target_lang}_2_{src_lang}_tmp'][ent] = idx
             else: # except:
@@ -2006,7 +2052,7 @@ class TextAugment:
             persons.append(ent[0])
         public_figures = []
         for ent in list(set(persons)):
-          if self.kenlm_model.get_perplexity(ent) <= public_figure_kenlm_cutoff:
+          if self.kenlm_model.get_perplexity(f"{ent} (born") <= public_figure_kenlm_cutoff:
             public_figures.append(ent)
         public_figures = set(public_figures)
         for ent, aHash in ner.items():
@@ -2043,7 +2089,8 @@ class TextAugment:
                       #print ('increasing ', mention, label, aHash[label])
                       found = True
                   if not found:
-                    print ('not found', mention, all_labels)
+                    pass
+                    #print ('not found', mention, all_labels)
 
     if do_backtrans and target_lang != src_lang and not do_augment:
         #TBD: we could run the augmented text back to the original sentence create additional augmented data.
@@ -2166,16 +2213,19 @@ class TextAugment:
                   if ner_word and ner_word.lower() not in stopwords1:
                       ner_word = ner_word.strip(self.strip_chars+".")
                       #print (ner_word, ner_word in orig_text, orig_text)
-                      i = orig_text[pos:].index(ner_word)
-                      start = pos + i
-                      len_nerword = len(ner_word)
-                      pos = start + len_nerword
-                      mention2 = (ner_word, offset + start, offset + start + len_nerword)
-                      aHash = bner.get(mention2, {})
-                      for label in ner[mention]:
-                        #print (f'found new mention from {target_lang}', mention, mention2, label)
-                        aHash[label] = aHash.get(label, backtrans_weight) + ner[mention][label]
-                      bner[mention2] = aHash
+                      if ner_word not in orig_text[pos:]:
+                        print ('cant find in orig_text ', ner_word, '**', orig_text[pos:], '**', orig_text)
+                      else:
+                        i = orig_text[pos:].index(ner_word)
+                        start = pos + i 
+                        len_nerword = len(ner_word)
+                        pos = start + len_nerword
+                        mention2 = (ner_word, offset + start, offset + start + len_nerword)
+                        aHash = bner.get(mention2, {})
+                        for label in ner[mention]:
+                          #print (f'found new mention from {target_lang}', mention, mention2, label)
+                          aHash[label] = aHash.get(label, backtrans_weight) + ner[mention][label]
+                        bner[mention2] = aHash
                   idx = None
                   ner_word = ""
                   ent2 = ""
@@ -2529,7 +2579,7 @@ class TextAugment:
               pass
     arr2 = []
     for arr in TextAugment.hf_ner_model_map.values():
-      for model_name, _ in arr:
+      for model_name, _, _ in arr:
         arr2.append(model_name)
     for model_name in list(set(arr2)):
         AutoModel.from_pretrained(model_name)
@@ -2538,98 +2588,61 @@ class TextAugment:
         AutoModel.from_pretrained(model_name)
         AutoTokenizer.from_pretrained(model_name)
     for aHash in qg_pipeline.SUPPORTED_TASKS.values():
-      for model_name in aHash["default"]:
+      for model_name in aHash["default"].values():
         AutoModel.from_pretrained(model_name)
         AutoTokenizer.from_pretrained(model_name)
 
     #TODO - get temp dir and move this into the temp dir
     os.system("mkdir -p ./wikipedia")
-    file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
-    file = cached_download(file_url)
-    os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
-    file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
-    file = cached_download(file_url)
-    os.system(f"ln -s {file} ./wikipedia/en.sp.model")
-    file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
-    file = cached_download(file_url)
-    os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
+    if not os.path.exists("./wikipedia/en.arpa.bin"): 
+      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
+      file = cached_download(file_url)
+      os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
+    if not os.path.exists("./wikipedia/en.sp.model"): 
+      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
+      file = cached_download(file_url)
+      os.system(f"ln -s {file} ./wikipedia/en.sp.model")
+    if not os.path.exists("./wikipedia/en.sp.vocab"):
+      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
+      file = cached_download(file_url)
+      os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
     #kenlm_model = KenlmModel("./wikipedia", "en")
 
+in_notebook = 'google.colab' in sys.modules
+if not in_notebook:
+  try:
+      get_ipython()
+  except:
+    in_notebook = False
 
-def multiprocess_ner(docs,
-                   outputfile,
-                   src_lang=None,
-                   target_lang=None,
-                   do_regex=True,
-                   do_spacy=True,
-                   do_backtrans=True,
-                   cutoff=None,
-                   batch_size=5,
-                   num_workers=2):
-  multiprocessing.set_start_method('spawn', force=True)
-  if num_workers != 0:
-    docs_chunks = [docs[i:i + num_workers] for i in range(0, len(docs), num_workers)]
-  else:
-    docs_chunks = [docs]
-  start = time.time()
-  processor = TextAugment(single_process=False)
-  processor.initializer()
+if not in_notebook:
+  parser = argparse.ArgumentParser(description='Text Annotation, Augmentation and Anonymization')
+  parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Language', default=None)
+  parser.add_argument('-target_lang', dest='target_lang', type=str, help='Target Language', default="en")
+  parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
+  parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
+  parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
+  parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default="out.jsonl")
+  parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
+  parser.add_argument('-preload_cache', dest='preload_cache', action='store_true', help='Preload the cache of models and data', default = False)
+  args = parser.parse_args()
+else:
+  args = None
 
-  # for i in range(num_workers):
-  #   p = multiprocessing.Process(target=processor.process_ner, args=(docs[i],src_lang,
-  #         None,
-  #         True,
-  #         True,
-  #         True,
-  #         False,
-  #         False,
-  #         False,
-  #         False,
-  #         True, # if we do_anonymize, we will copy {src_lang}_text_anon -> text
-  #         "es",
-  #         True,
-  #         True,
-  #         5,
-  #         70,
-  #         0.85,
-  #         1.00,
-  #         1.25,
-  #         1.5,
-  #         0.9,
-  #         True,
-  #         False,
-  #         True,
-  #         None,
-  #         'en',
-  #         "",
-  #         {'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
-  #         {'PERSON', 'ID'},))
-  #   p.start()
-  #   processes.append(p)
-  # for p in processes:
-  #   p.join()
-
-
-  with open(outputfile, 'w', encoding='utf-8') as file:
-      # for i in range(0, num_workers):
-        pool = multiprocessing.Pool(processes=num_workers)
-
-        # processed_docs = pool.imap_unordered(TextAugment._multiprocess_ner_helper,
-        #                                      docs_chunks)
-
-        processed_docs = pool.imap_unordered(partial(processor.process_ner,
-                                                    # docs=docs_chunks[i],
-                                                    src_lang=src_lang,
-                                                    arget_lang=target_lang,
-                                                    do_regex=do_regex,
-                                                    do_spacy=do_spacy,
-                                                    do_backtrans=do_backtrans,
-                                                    cutoff=cutoff,
-                                                    batch_size=batch_size),
-                                            docs[:num_workers])
-
-        for i, docs in enumerate(processed_docs):
-          print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
-          for doc in docs.values():
-            file.write(f'{doc}\n')
-
+if __name__ == "__main__":
+  if args is not None:
+    src_lang = args.src_lang
+    target_lang = args.target_lang
+    cutoff = args.cutoff
+    batch_size = args.batch_size
+    infile = args.infile
+    outfile = args.outfile
+    docs = TextAugment.deserialize_ner_items(infile=infile) if infile else None
+    if args.preload_cache: 
+      TextAugment.preload_cache(src_lang, target_lang)
+    #TODO - do multiprocessing
+    elif src_lang is not None:
+      processor = TextAugment(single_process=True)
+      docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
+                                         do_backtrans=True, cutoff=cutoff, batch_size=batch_size, docs=docs)
+      docs = processor.serialize_ner_items(docs, outfile=outfile)
