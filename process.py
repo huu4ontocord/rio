@@ -494,7 +494,7 @@ class TextAugment:
                                     }
   m2m100_lang = {
     ('en', 'yo'): "Davlan/m2m100_418M-eng-yor-mt",
-    ('yo', 'en'): "Davlan/m2m100_418M-yor-en-mt",
+    ('yo', 'en'): "Davlan/m2m100_418M-yor-eng-mt",
     ('en', 'zu'): "masakhane/m2m100_418M-en-zu-mt",
     ('zu', 'en'): "masakhane/m2m100_418M-zu-en-mt",
     ('*', '*') : "facebook/m2m100_418M"
