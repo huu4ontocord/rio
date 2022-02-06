@@ -2448,7 +2448,12 @@ class TextAugment:
       return docs, chunks
 
   #given a dataset, file or any out of core random access text/json data source (by lines), we choose several shards of the data
-  #and we begin to send in chunks of it at a time to the process. 
+  #and we begin to send in chunks of it at a time to the process.
+  @staticmethod
+  def _multiprocess_ner_helper(docs_chunk):
+      print('docs_chunk length ', len(docs_chunk))
+      return processor.process_ner(docs=docs_chunk, src_lang='vi', target_lang='en', do_regex=True,
+                                   do_spacy=True, do_backtrans=True, cutoff=None, batch_size=5)
   @staticmethod
   def multiprocess_ner(docs,
                        outputfile,
@@ -2465,14 +2470,12 @@ class TextAugment:
       start = time.time()
       processor = TextAugment()
       global _multiprocess_ner_helper
-      def _multiprocess_ner_helper(docs_chunk):
-          print('docs_chunk length ', len(docs_chunk))
-          return processor.process_ner(docs=docs_chunk, src_lang=src_lang, target_lang=target_lang, do_regex=do_regex, do_spacy=do_spacy, do_backtrans=do_backtrans, cutoff=cutoff, batch_size=batch_size)
+
 
       with open(outputfile, 'w', encoding='utf-8') as file:
           pool = multiprocessing.Pool(num_workers, initializer=processor.initializer)
 
-          processed_docs = pool.imap_unordered(_multiprocess_ner_helper,
+          processed_docs = pool.imap_unordered(TextAugment._multiprocess_ner_helper,
                                                docs_chunks)
 
           for i, docs in enumerate(processed_docs):
@@ -2610,7 +2613,7 @@ if __name__ == "__main__":
         for doc in docs.values():
           file.write(f'{doc}\n')
     else:
-        print(f"Multi Processing with {num_workers}")
+        print(f"Multi Processing with {num_workers} workers")
         TextAugment.multiprocess_ner(docs=docs,
                                      src_lang=src_lang,
                                      target_lang=target_lang,
