@@ -2575,7 +2575,7 @@ if __name__ == "__main__":
     if args.preload_cache: TextAugent.preload_cache(src_lang, target_lang)
     multi_process = args.multi_process
 
-    docs = TextAugment.intialize_docs()
+    docs = TextAugment.intialize_docs(src_lang=src_lang)
     #TODO - do multiprocessing
     if not multi_process:
       processor = TextAugment(single_process=True)
