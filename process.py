@@ -173,7 +173,7 @@ bantu_surnames = ["Dlamini", "Gumede", "Hadebe", "Ilunga", "Kamau", "Khoza", "Lu
 #male and female
 vietnamese_firstnames = ["Anh", "Dung", "Hanh", "Hoa", "Hong", "Khanh", "Lan", "Liem", "Nhung", "Duy", "Xuan"]
 vietnamese_surnames = ["Nguyễn","Trần","Lê","Phạm","Hoàng","Huỳnh","Phan","Vũ","Võ", "Đặng","Bùi", "Đỗ", "Hồ", "Ngô", "Dương", "Lý"]
-
+""
 #use english firstnames for now
 bengali_surnames  = ["Banerjee", "Bagchi", "Bhaduri", "Bhattacharjee", "Chakraborty", "Chatterjee", "Ganguly", "Goswami", "Ghoshal", "Lahiri", "Maitra", "Mukherjee", "Sanyal", "Chakraborty", "Bhattacharya", "Baidya", "Sengupta", "Dasgupta", "Duttagupta", "Gupta", "Sen-Sharma", "Basu", "Bose", "Dutta", "Ghosh", "Choudhury", "Guha", "Gain", "Mitra", "Singh", "Sinha", "Sen", "Pal", "De", "Dey", "Deb", "Dev", "Jana", "Palit", "Chanda", "Chandra", "Das", "Dam", "Kar", "Nandi", "Sarkar", "Nag", "Som"]
 
@@ -467,29 +467,30 @@ class TextAugment:
       'is': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
       }
 
+  #wikipedia kenlm model based on prompt "f{s} (born"
   #TODO figure out actual numbers. Also, add languge specific models
-  public_figure_kenlm_cutoff_map = {('en', 'en'): 1500,
-                                    ('yo', 'en'): 1500,
-                                    ('zu', 'en'): 1500,
-                                    ('sn', 'en'): 1500,
-                                    ('st', 'en'): 1500,
-                                    ('ny', 'en'): 1500,
-                                    ('xh', 'en'): 1500,
-                                    ('sw', 'en'): 1500,
-                                    ('ig', 'en'): 1500,
-                                    ('ar', 'en'): 1500,
-                                    ('en', 'en'): 1500,
-                                    ('es', 'en'): 1500,
-                                    ('eu', 'en'): 1500,
-                                    ('ca', 'en'): 1500,
-                                    ('pt', 'en'): 1500,
-                                    ('fr', 'en'): 1500,
-                                    ('zh', 'en'): 1500,
-                                    ('vi', 'en'): 1500,
-                                    ('hi', 'en'): 1500,
-                                    ('ur', 'en'): 1500,
-                                    ('id', 'en'): 1500,
-                                    ('bn', 'en'): 1500,
+  public_figure_kenlm_cutoff_map = {('en', 'en'): 450,
+                                    ('yo', 'en'): 450,
+                                    ('zu', 'en'): 450,
+                                    ('sn', 'en'): 450,
+                                    ('st', 'en'): 450,
+                                    ('ny', 'en'): 450,
+                                    ('xh', 'en'): 450,
+                                    ('sw', 'en'): 450,
+                                    ('ig', 'en'): 450,
+                                    ('ar', 'en'): 450,
+                                    ('en', 'en'): 450,
+                                    ('es', 'en'): 450,
+                                    ('eu', 'en'): 450,
+                                    ('ca', 'en'): 450,
+                                    ('pt', 'en'): 450,
+                                    ('fr', 'en'): 450,
+                                    ('zh', 'en'): 450,
+                                    ('vi', 'en'): 450,
+                                    ('hi', 'en'): 450,
+                                    ('ur', 'en'): 450,
+                                    ('id', 'en'): 450,
+                                    ('bn', 'en'): 450,
                                     }
   m2m100_lang = {
     ('en', 'yo'): "Davlan/m2m100_418M-eng-yor-mt",
@@ -1380,7 +1381,7 @@ class TextAugment:
                 mention = (ner_word, i, i+len(ner_word))
                 aHash = ner.get(mention, {})
                 
-                aHash[(label, signal)] = aHash.get((label, signal), 0) + spacy_weight * (1.0 + len(ner_word)/100) * extra_weight
+                aHash[(label, singal)] = aHash.get((label, singal), 0) + spacy_weight * (1.0 + len(ner_word)/100) * extra_weight
                 ner[mention] = aHash
 
   def trim_to_prefer_person(self, docs, chunks, prob=100):
@@ -1688,12 +1689,22 @@ class TextAugment:
     return docs, chunks
 
   #TODO: we also need a deserialize
-  def serialize_ner_items(self, docs, ner_keys):
+  @staticmethod
+  def serialize_ner_items(docs, ner_keys=None, outfile=""):
         # serialize ner keys
-        ner_keys = [k + '_ner' for k in ner_keys if '_ner' not in k]
-        serialize_docs = list(docs.values())
+        if ner_keys:
+          ner_keys = [k + '_ner' for k in ner_keys if '_ner' not in k]
+        else:
+          ner_keys = []
+        if type(docs) is dict:
+          serialize_docs = list(docs.values())
+        else:
+          serialize_docs = docs
+
+        serialize_docs.sort(key=lambda a: int(a.get('id', -1)))
+        serialize_docs = copy.copy(serialize_docs)
         for doc in serialize_docs:
-            for ner_key in ner_keys:
+            for ner_key in ner_keys + ([] if ner_keys else [key for key in doc if key.endswith('_ner')]):
                 ner_items = doc[ner_key]
                 serialize_items = []
                 for (text, start, end), ner_value in ner_items.items():
@@ -1701,9 +1712,49 @@ class TextAugment:
                     ner_dict = {'text': text, 'start': start, 'end': end, 'ner_values': ner_value}
                     serialize_items.append(ner_dict)
                 doc[ner_key] = serialize_items
-
+        if outfile:       
+          with open(outfile, 'w', encoding='utf-8') as file:
+            for doc in docs:
+              file.write(f'{doc}\n')
         return serialize_docs
 
+  @staticmethod
+  def deserialize_ner_items(docs=None, infile="", return_dict=False):
+    def load_py_from_str(s, default=None):
+      if not s.strip(): return default
+      ret = {'__ret': None}
+      #print (s)
+      exec("__ret= "+s, ret)
+      return ret['__ret']
+      
+    def deserialize_doc(doc):
+       for ner_key in [key for key in doc if key.endswith('_ner')]:
+                ner_items = doc[ner_key]
+                if ner_items and type(ner_items) is list and 'ner_values' in ner_items[0]:
+                  deserialize_items = {}
+                  for item in ner_items:
+                    mention = (item['text'], item['start'], item['end'])
+                    aHash = dict([(tuple(a['label']) if type(a['label']) is list else a['label'], float(a['score'])) for a in item['ner_values']])
+                    deserialize_items[mention] = aHash
+                  doc[ner_key] = deserialize_items
+
+    if infile:
+      docs= [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
+    elif docs:
+      if type(docs) is dict:
+        docs = copy.copy(docs.values())
+        return_dict = True
+      else:
+        docs = copy.copy(docs)
+    if return_dict:
+      return dict([(int(doc.get('id', idx)), deserialize_doc(doc)) for idx, doc in enumerate(docs)])
+    else:
+      return [deserialize_doc(doc) for doc in docs]
+    return docs
+
+
+
+            
   #TODO - refactor this method into parts
   def process_ner_chunks_with_trans(self, 
                           src_lang, 
@@ -1996,7 +2047,7 @@ class TextAugment:
             persons.append(ent[0])
         public_figures = []
         for ent in list(set(persons)):
-          if self.kenlm_model.get_perplexity(ent) <= public_figure_kenlm_cutoff:
+          if self.kenlm_model.get_perplexity(f"{ent} (born") <= public_figure_kenlm_cutoff:
             public_figures.append(ent)
         public_figures = set(public_figures)
         for ent, aHash in ner.items():
@@ -2543,16 +2594,6 @@ class TextAugment:
     os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
     #kenlm_model = KenlmModel("./wikipedia", "en")
 
-def load_py_from_str(s, default=None):
-  if not s.strip(): return default
-  ret = {'__ret': None}
-  #print (s)
-  exec("__ret= "+s, ret)
-  return ret['__ret']
-
-def load_all_pii(infile="./zh_pii.jsonl"):
-  return [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
-
 in_notebook = 'google.colab' in sys.modules
 if not in_notebook:
   try:
@@ -2582,14 +2623,11 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     infile = args.infile
     outfile = args.outfile
-    docs = load_all_pii(infile) if infile else None
+    docs = TextAugment.deserialize_ner_items(infile=infile) if infile else None
     if args.preload_cache: TextAugment.preload_cache(src_lang, target_lang)
     #TODO - do multiprocessing
     if src_lang is not None:
       processor = TextAugment(single_process=True)
       docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
                                          do_backtrans=True, cutoff=cutoff, batch_size=batch_size, docs=docs)
-      docs = processor.serialize_ner_items(docs, ner_keys=[src_lang, target_lang])
-      with open(outfile, 'w', encoding='utf-8') as file:
-        for doc in docs:
-          file.write(f'{doc}\n')
+      docs = processor.serialize_ner_items(docs, outfile=outfile)
