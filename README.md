@@ -20,5 +20,6 @@ python processor.py -src_lang zh
 # Preloading the cache
 ```
 cd muliwai
-python processor.py -preload_cache
+python processor.py -src_lang zh -preload_cache
+
 ```
