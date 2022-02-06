@@ -1,4 +1,4 @@
-from process import TextAugment
+from process import TextAugment, multiprocess_ner
 import sys
 import argparse
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
           file.write(f'{doc}\n')
     else:
         print(f"Multi Processing with {num_workers} workers")
-        TextAugment.multiprocess_ner(docs=docs,
+        multiprocess_ner(docs=docs,
                                      src_lang=src_lang,
                                      target_lang=target_lang,
                                      do_regex=True,
