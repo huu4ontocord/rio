@@ -2,6 +2,7 @@ from process import TextAugment
 import sys
 import argparse
 from torch import multiprocessing
+import time
 
 def multiprocess_ner(docs,
                    outputfile,
