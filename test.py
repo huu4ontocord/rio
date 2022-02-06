@@ -3,6 +3,7 @@ import sys
 import argparse
 from torch import multiprocessing
 import time
+from functools import partial
 
 def multiprocess_ner(docs,
                    outputfile,
