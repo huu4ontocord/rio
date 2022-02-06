@@ -16,14 +16,16 @@ def multiprocess_ner(docs,
                    batch_size=5,
                    num_workers=2):
   multiprocessing.set_start_method('spawn', force=True)
+
   if num_workers != 0:
-    docs_chunks = [docs[i:i + num_workers] for i in range(0, len(docs), num_workers)]
+      chunk_size = int(len(docs) / num_workers)
+      docs_chunks = [docs[i:i + chunk_size] for i in range(0, len(docs), chunk_size)]
   else:
     docs_chunks = [docs]
   start = time.time()
   processor = TextAugment(single_process=False)
   # processor.initializer()
-
+  print(len(docs_chunks))
   with open(outputfile, 'w', encoding='utf-8') as file:
       # for i in range(0, num_workers):
         pool = multiprocessing.Pool(processes=num_workers, initializer=processor.initializer)
@@ -40,17 +42,17 @@ def multiprocess_ner(docs,
                                                     do_backtrans=do_backtrans,
                                                     cutoff=cutoff,
                                                     batch_size=batch_size),
-                                            docs[:num_workers])
+                                            docs_chunks)
 
         for i, docs in enumerate(processed_docs):
           print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
-          for doc in docs.values():
+          for doc in docs:
+          # for doc in docs.values():
             file.write(f'{doc}\n')
 
 
 
 if __name__ == "__main__":
-    print('in main')
     def load_py_from_str(s, default=None):
         if not s.strip(): return default
         ret = {'__ret': None}
@@ -94,7 +96,7 @@ if __name__ == "__main__":
                                            target_lang=target_lang,
                                            do_regex=True,
                                            do_spacy=True,
-                                           do_backtrans=False,
+                                           do_backtrans=True,
                                            cutoff=cutoff,
                                            batch_size=batch_size)
       print('total out docs ', len(docs))
@@ -109,7 +111,7 @@ if __name__ == "__main__":
                                      target_lang=target_lang,
                                      do_regex=True,
                                      do_spacy=True,
-                                     do_backtrans=False,
+                                     do_backtrans=True,
                                      cutoff=cutoff,
                                      batch_size=batch_size,
                                      outputfile=outfile,
