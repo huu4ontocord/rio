@@ -1,6 +1,50 @@
-from process import TextAugment, multiprocess_ner
+from process import TextAugment
 import sys
 import argparse
+from torch import multiprocessing
+
+def multiprocess_ner(docs,
+                   outputfile,
+                   src_lang=None,
+                   target_lang=None,
+                   do_regex=True,
+                   do_spacy=True,
+                   do_backtrans=True,
+                   cutoff=None,
+                   batch_size=5,
+                   num_workers=2):
+  multiprocessing.set_start_method('spawn', force=True)
+  if num_workers != 0:
+    docs_chunks = [docs[i:i + num_workers] for i in range(0, len(docs), num_workers)]
+  else:
+    docs_chunks = [docs]
+  start = time.time()
+  processor = TextAugment(single_process=False)
+  processor.initializer()
+
+  with open(outputfile, 'w', encoding='utf-8') as file:
+      # for i in range(0, num_workers):
+        pool = multiprocessing.Pool(processes=num_workers)
+
+        # processed_docs = pool.imap_unordered(TextAugment._multiprocess_ner_helper,
+        #                                      docs_chunks)
+
+        processed_docs = pool.imap_unordered(partial(processor.process_ner,
+                                                    # docs=docs_chunks[i],
+                                                    src_lang=src_lang,
+                                                    arget_lang=target_lang,
+                                                    do_regex=do_regex,
+                                                    do_spacy=do_spacy,
+                                                    do_backtrans=do_backtrans,
+                                                    cutoff=cutoff,
+                                                    batch_size=batch_size),
+                                            docs[:num_workers])
+
+        for i, docs in enumerate(processed_docs):
+          print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
+          for doc in docs.values():
+            file.write(f'{doc}\n')
+
 
 
 if __name__ == "__main__":
