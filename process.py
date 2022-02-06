@@ -2587,4 +2587,4 @@ if __name__ == "__main__":
         for doc in docs.values():
           file.write(f'{doc}\n')
     else:
-        TextAugment.multiprocess_ner
+        TextAugment.multiprocess_ner()
