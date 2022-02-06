@@ -2463,20 +2463,18 @@ class TextAugment:
 
       docs_chunks = [docs[i:i + num_workers] for i in range(0, len(docs), num_workers)]
       start = time.time()
+      processor = TextAugment()
+
+      def _multiprocess_ner_helper(docs_chunk):
+          print('docs_chunk length ' , docs_chunk.length)
+          return processor.process_ner(docs=docs_chunk, src_lang=src_lang, target_lang=target_lang, do_regex=do_regex, do_spacy=do_spacy, do_backtrans=do_backtrans, cutoff=cutoff, batch_size=batch_size)
 
       with open(outputfile, 'w', encoding='utf-8') as file:
-          processor = TextAugment()
+
           pool = multiprocessing.Pool(num_workers, initializer=processor.initializer)
 
-          processed_docs = pool.imap_unordered(processor.process_ner,
-                                               docs_chunks,
-                                               src_lang=src_lang,
-                                               target_lang=target_lang,
-                                               do_regex=do_regex,
-                                               do_spacy=do_spacy,
-                                               do_backtrans=do_backtrans,
-                                               cutoff=cutoff,
-                                               batch_size=batch_size)
+          processed_docs = pool.imap_unordered(_multiprocess_ner_helper,
+                                               docs_chunks)
 
           for i, docs in enumerate(processed_docs):
             print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
