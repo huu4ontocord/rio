@@ -1380,7 +1380,7 @@ class TextAugment:
                 mention = (ner_word, i, i+len(ner_word))
                 aHash = ner.get(mention, {})
                 
-                aHash[(label, singal)] = aHash.get((label, singal), 0) + spacy_weight * (1.0 + len(ner_word)/100) * extra_weight
+                aHash[(label, signal)] = aHash.get((label, signal), 0) + spacy_weight * (1.0 + len(ner_word)/100) * extra_weight
                 ner[mention] = aHash
 
   def trim_to_prefer_person(self, docs, chunks, prob=100):
