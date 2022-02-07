@@ -2646,7 +2646,8 @@ if __name__ == "__main__":
     #TODO - do multiprocessing
     elif src_lang is not None:
       processor = TextAugment(single_process=True)
-      docs = processor.intialize_docs(docs, src_lang)
+      if not docs:
+        docs = processor.intialize_docs(docs, src_lang)
       docs, chunks = processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
-                                         do_backtrans=True, cutoff=cutoff, batch_size=batch_size, docs=docs)
+                                         do_backtrans=True, cutoff=cutoff, batch_size=batch_size)
       docs = processor.serialize_ner_items(docs, outfile=outfile)
