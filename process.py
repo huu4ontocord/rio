@@ -2550,6 +2550,7 @@ class TextAugment:
             _download_urls([url])
             docs = [{'text':text}  for text in [try_decode(t) for t in gzip.open(url.split("/")[-1], "rb").readlines()] if text]
             try:
+              domain = 'mc4'
               d = load_dataset("mc4", src_lang)
               d = list(d['train'])
             except:
