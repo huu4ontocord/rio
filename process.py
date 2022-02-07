@@ -2268,8 +2268,14 @@ class TextAugment:
               mention = tuple(key[:-1])
               if mention in src_ner:
                 aHash = src_ner[mention]
-                for m in re.finditer(ent, text):
-                  mention2 = (ent, m.start(), m.end())
+                pos = 0
+                len_text = len(text)
+                while pos < len_text and ent in text[pos:]:
+                  i = text[pos:].index(ent)
+                  start = pos + i
+                  end = start + len(ent)
+                  pos = end+1
+                  mention2 = (ent, start, end)
                   ner[mention2] = aHash1 = ner.get(mention2, {})
                   for label in aHash:
                     aHash1[label] = aHash1.get(label, 0) + aHash[label]
