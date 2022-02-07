@@ -824,22 +824,27 @@ class TextAugment:
       try:
         self.m2m_tokenizer.src_lang = src_lang
         target_lang_bos_token = self.m2m_tokenizer.get_lang_id(target_lang)
+      except:
+        do_mariam_mt = True
+        pass
+      if not do_mariam_mt:
         if m2m_model_name != self.m2m_model_name or self.m2m_model is None:
             self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval().half().to(self.device)
         self.m2m_model_name = m2m_model_name
         translations = []
-        for src_text_list in tqdm(self.batch(texts, batch_size)):
+        for src_text_list in self.batch(texts, batch_size):
           try:
             batch = self.m2m_tokenizer(src_text_list, return_tensors="pt", padding=True, truncation=True).to('cuda')
           except:
+            do_mariam_mt = True
             break
 
           gen = self.m2m_model.generate(**batch, forced_bos_token_id=target_lang_bos_token, no_repeat_ngram_size=4, ) #
           outputs = self.m2m_tokenizer.batch_decode(gen, skip_special_tokens=True)
           translations.extend(outputs)
-        return translations
-      except:
-       pass
+        if not do_mariam_mt:
+          return translations
+
     translations = []
     #mariam_mt = self.mariam_mt
     model_name = mariam_mt.get((src_lang, target_lang))
@@ -852,8 +857,8 @@ class TextAugment:
     if not mt_pipeline:
         raise RuntimeError("no translation pipeline") # we could do multi-step translation where there are no pairs
     mt_pipeline = self.translation_pipelines[model_name]
-    for src_text_list in tqdm(self.batch(texts, batch_size)):
-        outputs = [t['translation_text'] for t in mt_pipeline(src_text_list)]
+    for src_text_list in self.batch(texts, batch_size):
+        outputs = [t['translation_text'] for t in mt_pipeline(src_text_list, batch_size=batch_size)]
         translations.extend(outputs)
     return translations
 
@@ -967,7 +972,7 @@ class TextAugment:
       ner_key = f'{src_lang}_ner'
     if text_key is None:
       text_key = f'{src_lang}_text'
-    results_arr = hf_pipeline([chunk[text_key] for chunk in chunks])
+    results_arr = hf_pipeline([chunk[text_key] for chunk in chunks], batch_size=len(chunks))
     results_arr2 = []
     offset = 0
     for chunk, results in zip(chunks, results_arr):
