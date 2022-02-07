@@ -37,6 +37,11 @@ from sentence_transformers import SentenceTransformer
 from torch import multiprocessing
 from edugp_kenlm_model import *
 from huggingface_hub import hf_hub_url, cached_download
+import sys
+import argparse
+from torch import multiprocessing
+import time
+from functools import partial
 
 import sys
 try:
@@ -2635,6 +2640,48 @@ class TextAugment:
       os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
     #kenlm_model = KenlmModel("./wikipedia", "en")
 
+  @staticmethod
+  def multiprocess_ner(docs,
+                    outfile,
+                    src_lang=None,
+                    target_lang=None,
+                    do_regex=True,
+                    do_spacy=True,
+                    do_backtrans=True,
+                    cutoff=None,
+                    batch_size=5,
+                    num_workers=2):
+    multiprocessing.set_start_method('spawn', force=True)
+
+    if num_workers > 1:
+        chunk_size = int(len(docs) / num_workers)
+        docs_chunks = [docs[i:i + chunk_size] for i in range(0, len(docs), chunk_size)]
+    else:
+      docs_chunks = [docs]
+    start = time.time()
+    processor = TextAugment(single_process=False)
+    # processor.initializer()
+    print(len(docs_chunks))
+    with open(outfile, 'w', encoding='utf-8') as file:
+        # for i in range(0, num_workers):
+          pool = multiprocessing.Pool(processes=num_workers, initializer=processor.initializer)
+          processed_docs = pool.imap_unordered(partial(processor.process_ner,
+                                                      # docs=docs_chunks[i],
+                                                      src_lang=src_lang,
+                                                      target_lang=target_lang,
+                                                      do_regex=do_regex,
+                                                      do_spacy=do_spacy,
+                                                      do_backtrans=do_backtrans,
+                                                      cutoff=cutoff,
+                                                      batch_size=batch_size),
+                                              docs_chunks)
+
+          for i, docs in enumerate(processed_docs):
+            print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
+            for doc in docs:
+            # for doc in docs.values():
+              file.write(f'{doc}\n')
+
 in_notebook = 'google.colab' in sys.modules
 if not in_notebook:
   try:
@@ -2664,6 +2711,9 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     infile = args.infile
     outfile = args.outfile
+    num_workers = args.num_workers
+    if cutoff <= 0:
+      cutoff = None
     if outfile is None:
       if src_lang is not None:
         outfile = f"{src_lang}_out.jsonl"
@@ -2674,9 +2724,23 @@ if __name__ == "__main__":
       TextAugment.preload_cache(src_lang, target_lang)
     #TODO - do multiprocessing
     elif src_lang is not None:
-      processor = TextAugment(single_process=True)
-      if not docs:
-        docs = processor.intialize_docs(docs, src_lang)
-      docs, chunks = processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
-                                         do_backtrans=True, cutoff=cutoff, batch_size=batch_size)
-      docs = processor.serialize_ner_items(docs, outfile=outfile)
+      if num_workers > 1:
+        if not docs:
+          docs = TextAugment.intialize_docs(docs, src_lang)
+        TextAugment.multiprocess_ner(docs,
+                    outfile,
+                    src_lang=src_lang,
+                    target_lang=target_lang,
+                    do_regex=True,
+                    do_spacy=True,
+                    do_backtrans=True,
+                    cutoff=cutoff,
+                    batch_size=batch_size,
+                    num_workers=num_workers)
+      else:
+        processor = TextAugment(single_process=True)
+        if not docs:
+          docs = processor.intialize_docs(docs, src_lang)
+        docs, chunks = processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
+                                          do_backtrans=True, cutoff=cutoff, batch_size=batch_size)
+        docs = processor.serialize_ner_items(docs, outfile=outfile)
