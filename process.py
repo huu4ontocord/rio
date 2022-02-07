@@ -2290,7 +2290,6 @@ class TextAugment:
   def process_ner(self,
               docs,
               src_lang,
-              text=None,
               do_spacy = True,
               do_hf_ner = True,
               do_ontology = True,
@@ -2322,9 +2321,7 @@ class TextAugment:
       It uses a cross lingual NER model that is 'close enough', and also uses backtranslation (target_lang English) to do further NER, and then map back to src_lang.
       It can also create crosslingual augmented data to create additional data for training.
       This routine can also be used to do anonymization of the original src_lang text at the end of the NER pipeline.
-
       Note: This code will have a side-effect on the docs.
-
       """
       src_is_cjk = src_lang in ('zh', 'ko', 'ja')
       if src_is_cjk:
@@ -2373,35 +2370,47 @@ class TextAugment:
         doc['lang'] = doc.get('lang', src_lang)
         doc['domain'] = doc['domain'] if doc.get('domain') is not None else domain
         doc['chunks'] = doc.get('chunks', [])
-        #simple multi-lingual tokenizer
+        
+        #simple multi-lingual tokenizer and sentence splitter
+        offset = 0
         if src_is_cjk:
-          textarr = doc[f'{src_lang}_text']
+          text = list(doc[f'{src_lang}_text'].replace("。", "。 ").replace("  ", " "))
         else:
-          textarr = doc[f'{src_lang}_text'].split()
-        if True:
+          textarr = doc[f'{src_lang}_text'].replace("  ", " ").split()
           text = []
           for t in textarr:
+            len_t = len(t)
+            if len_t == 1: 
+              text.append(t)
+              continue
             punc_found = [punc for punc in t if punc in self.punc_char]
-            if punc_found and ((punc_found[0] not in ".。") or \
-                              (t[-1] not in self.punc_char and t[0] not in "0123456789" and t[0] == t[0].lower()) or \
+            word1, word2 = "", ""
+            if punc_found:
+              tarr = t.split(punc_found[0])
+              word1 = tarr[-2]
+              word2 = tarr[-1]
+            if punc_found and t[-1] not in self.punc_char and \
+                              ((punc_found[0] not in ".。") or \
+                               (t[0] not in "0123456789" and t[0] == t[0].lower()) or \
                                (word1 and word1[-1] in self.strip_chars) or \
-                               (word2 and word2[0] in self.strip_chars) or \
-                               (word2 and word2[0] not in "0123456789" and word2[0] == word2[0].upper() and word2[-1] == word2[-1].lower())):
+                               (word2 and word2[0] in self.strip_chars)):
               w = t[t.index(punc_found[0])+1]
               if w == w.upper():
                 t, t1 = t.split(punc_found[0],1)
-                t = t+punc_found[0]+(" " if src_is_cjk else "")
+                t = t+punc_found[0]
                 text.append(t)
                 text.append(t1)
                 continue
             text.append(t)
-          text[0] = text[0].lstrip()
-          text[-1] = text[-1].rstrip()
-          doc[f'{src_lang}_text'] = sep.join(text)
-          len_text = len(text)
-          while len_text > batch_window:
+        text[0] = text[0].lstrip()
+        text[-1] = text[-1].rstrip()
+        doc[f'{src_lang}_text'] = sep.join(text)
+        len_text = len(text)
+        src_text = ""
+        while len_text > batch_window:
             for j in range(batch_window-1, len_text):
-              if (src_is_cjk and (text[j] in self.punc_char or text[j] == ' ')) or (not src_is_cjk and text[j][-1] in self.punc_char):
+              if (src_is_cjk and text[j] in self.punc_char+' ') or \
+                  (not src_is_cjk and text[j][-1] in self.punc_char):
                 break
             text_str = sep.join(text[:j+1])
             chunks.append({f'{src_lang}_text': text_str, 'id': doc['id'], f'{src_lang}_offset': offset})
@@ -2409,11 +2418,11 @@ class TextAugment:
             offset += len(text_str) + (0 if src_is_cjk else 1)
             text = text[j+1:]
             len_text = len(text)
-          if text:
+        if text:
             text_str = sep.join(text)
             chunks.append({f'{src_lang}_text': text_str, 'id': doc['id'], f'{src_lang}_offset': offset})
             doc['chunks'].append(chunks[-1])
-      print (docs)
+      
       # store as a dictionary for easy lookup
       docs = dict([(doc['id'], doc) for doc in docs])
       if do_docs_trim:
