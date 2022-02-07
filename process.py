@@ -1,12 +1,9 @@
 """
 Copyright, 2021-2022 Ontocord, LLC, All rights reserved.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -879,6 +876,32 @@ class TextAugment:
     lst = list(lst)
     for i in range(0, len(lst), n):
         yield lst[i: i + n]
+
+  def simple_sentence_split(self, text, sep=" ", is_cjk=False):
+        if is_cjk:
+          textarr = text
+        else:
+          textarr = text.split()
+        if True: #This is a simple sentence splitter b/c we need to do this multilingual. We could try nltk.punkt.
+          text = []
+          for t in textarr:
+            punc_found = [punc for punc in t if punc in self.punc_char]
+            word2 = ""
+            if punc_found:
+              word2 = t.split(punc_found[-1])[-1]
+            if punc_found and ((t[-1] not in self.punc_char and t[0] not in "0123456789" and t[0] == t[0].lower()) or \
+                               (word2[0] not in "0123456789" and word2[0] == word2[0].upper() and word2[-1] == word2[-1].lower())):
+              w = t[t.index(punc_found[0])+1]
+              if w == w.upper():
+                t, t1 = t.split(punc_found[0],1)
+                t = t+punc_found[0]+(" " if is_cjk else "")
+                text.append(t)
+                text.append(t1)
+                continue
+            text.append(t)
+          text[0] = text[0].lstrip()
+          text[-1] = text[-1].rstrip()
+          return sep.join(text)
 
   def apply_regex_ner(self, src_lang, docs, context_window = 20, weight = 1.0, text_key=None, ner_key=None, signal='regex'):
     """
@@ -1756,9 +1779,6 @@ class TextAugment:
     else:
       return [deserialize_doc(doc) for doc in docs]
     return docs
-
-
-
             
   #TODO - refactor this method into parts
   def process_ner_chunks_with_trans(self,
@@ -2328,13 +2348,17 @@ class TextAugment:
       It uses a cross lingual NER model that is 'close enough', and also uses backtranslation (target_lang English) to do further NER, and then map back to src_lang.
       It can also create crosslingual augmented data to create additional data for training.
       This routine can also be used to do anonymization of the original src_lang text at the end of the NER pipeline.
+
+      Note: This code will have a side-effect on the docs.
+
       """
       src_is_cjk = src_lang in ('zh', 'ko', 'ja')
       if src_is_cjk:
         sep = ""
       else:
         sep = " "
-
+      if type(docs) is dict:
+        docs = list(docs.values())      
       #for testing only
       if cutoff is not None and len(docs) > cutoff:
         docs = docs[:cutoff]
@@ -2358,15 +2382,13 @@ class TextAugment:
           #print ('problem**', doc)
           doc['text'] = doc[f'{src_lang}_text'] = ' . . . '
 
-        #del doc['text'] # we don't delete 'text'. we will overwrite 'text'
       flagged_words1 = set([s for s in flagged_words.get(src_lang, []) if len(s) < 5])
       stopwords1 = set(stopwords.get(src_lang, []))
       if do_docs_trim:
         docs = [doc for doc in docs if self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, flagged_words=flagged_words1)]
         #print ('trimmed junk', (len_docs-len(docs))/len_docs)
       len_d = len(docs)
-      #flagged_words2 = set([s for s in flagged_words_ac_dc.get(target_lang, []) if len(s) < 5])
-
+      
       counter = {}
       chunks = []
       for doc in docs:
@@ -2378,28 +2400,9 @@ class TextAugment:
         doc['domain'] = doc['domain'] if doc.get('domain') is not None else domain
         doc['chunks'] = doc.get('chunks', [])
         offset = 0
-        if src_is_cjk:
-          textarr = doc[f'{src_lang}_text']
-        else:
-          textarr = doc[f'{src_lang}_text'].split()
-        if True:
-          text = []
-          for t in textarr:
-            punc_found = [punc for punc in t if punc in self.punc_char]
-            if punc_found and t[-1] not in self.punc_char and t[0] not in "0123456789" and t[0] == t[0].lower():
-              w = t[t.index(punc_found[0])+1]
-              if w == w.upper():
-                t, t1 = t.split(punc_found[0],1)
-                t = t+punc_found[0]+(" " if src_is_cjk else "")
-                text.append(t)
-                text.append(t1)
-                continue
-            text.append(t)
-          text[0] = text[0].lstrip()
-          text[-1] = text[-1].rstrip()
-          doc[f'{src_lang}_text'] = sep.join(text)
-          len_text = len(text)
-          while len_text > batch_window:
+        text = doc[f'{src_lang}_text'] = self.simple_sentence_split(doc[f'{src_lang}_text'], sep, src_is_cjk)
+        len_text = len(text)
+        while len_text > batch_window:
             for j in range(batch_window-1, len_text):
               if (src_is_cjk and text[j] in self.punc_char) or (not src_is_cjk and text[j][-1] in self.punc_char):
                 break
@@ -2409,17 +2412,17 @@ class TextAugment:
             offset += len(text_str) + (0 if src_is_cjk else 1)
             text = text[j+1:]
             len_text = len(text)
-          if text:
+        if text:
             text_str = sep.join(text)
             chunks.append({f'{src_lang}_text': text_str, 'id': doc['id'], f'{src_lang}_offset': offset})
             doc['chunks'].append(chunks[-1])
 
+      # store as a dictionary for easy lookup
       docs = dict([(doc['id'], doc) for doc in docs])
       if do_docs_trim:
         docs2, chunks2 = self.trim_to_prefer_person(docs, chunks)
         do_docs_trim = len(docs2) == len(docs)
         docs, chunks = docs2, chunks2
-
 
       # we do this here because we don't want to trim  ner items that are considered empty.
       # we should probably fix trim_to_prefer_person to not do any trimming if all ner's are empty
@@ -2643,6 +2646,7 @@ if __name__ == "__main__":
     #TODO - do multiprocessing
     elif src_lang is not None:
       processor = TextAugment(single_process=True)
-      docs, chunks = processor.process_ner(src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
+      docs = processor.intialize_docs(docs, src_lang)
+      docs, chunks = processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
                                          do_backtrans=True, cutoff=cutoff, batch_size=batch_size, docs=docs)
       docs = processor.serialize_ner_items(docs, outfile=outfile)
