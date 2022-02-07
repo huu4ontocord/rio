@@ -2649,7 +2649,7 @@ if not in_notebook:
   parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
   parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
   parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
-  parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default="out.jsonl")
+  parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default=None)
   parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
   parser.add_argument('-preload_cache', dest='preload_cache', action='store_true', help='Preload the cache of models and data', default = False)
   args = parser.parse_args()
@@ -2664,6 +2664,11 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     infile = args.infile
     outfile = args.outfile
+    if outfile is None:
+      if src_lang is not None:
+        outfile = f"{src_lang}_out.jsonl"
+      else:
+        outfile = "out.jsonl"
     docs = TextAugment.deserialize_ner_items(infile=infile) if infile else None
     if args.preload_cache: 
       TextAugment.preload_cache(src_lang, target_lang)
