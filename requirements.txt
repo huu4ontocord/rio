@@ -11,3 +11,4 @@ fsspec
 tqdm 
 sentence-transformers
 nltk
+protobuf 
