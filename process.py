@@ -2549,6 +2549,11 @@ class TextAugment:
             url = _get_oscar_urls(src_lang)[0]
             _download_urls([url])
             docs = [{'text':text}  for text in [try_decode(t) for t in gzip.open(url.split("/")[-1], "rb").readlines()] if text]
+            try:
+              d = load_dataset("mc4", src_lang)
+              d = list(d['train'])
+            except:
+              pass
       elif isinstance(docs, str):
           docs = [{'text': docs}]
       elif isinstance(docs, list):
