@@ -877,11 +877,12 @@ class TextAugment:
     for i in range(0, len(lst), n):
         yield lst[i: i + n]
 
-  def simple_sentence_split(self, text, sep=" ", is_cjk=False):
+  def simple_sentence_tokenize(self, text, sep=" ", is_cjk=False):
         if is_cjk:
           textarr = text
         else:
           textarr = text.split()
+        print (textarr)
         if True: #This is a simple sentence splitter b/c we need to do this multilingual. We could try nltk.punkt.
           text = []
           for t in textarr:
@@ -905,9 +906,11 @@ class TextAugment:
                 text.append(t1)
                 continue
             text.append(t)
+          print (text)
           text[0] = text[0].lstrip()
           text[-1] = text[-1].rstrip()
-          return sep.join(text).replace("  ", " ")
+          #print (sep.join(text).replace("  ", " "))
+          return text
 
   def apply_regex_ner(self, src_lang, docs, context_window = 20, weight = 1.0, text_key=None, ner_key=None, signal='regex'):
     """
@@ -2405,24 +2408,34 @@ class TextAugment:
         doc['lang'] = doc.get('lang', src_lang)
         doc['domain'] = doc['domain'] if doc.get('domain') is not None else domain
         doc['chunks'] = doc.get('chunks', [])
-        offset = 0
-        text = doc[f'{src_lang}_text'] = self.simple_sentence_split(doc[f'{src_lang}_text'], sep, src_is_cjk)
-        len_text = len(text)
+        offset = 0  
+        text_arr = self.simple_sentence_tokenize(doc[f'{src_lang}_text'], sep, src_is_cjk)
+        len_text = len(text_arr)
+        text = ""
         while len_text > batch_window:
             for j in range(batch_window-1, len_text):
-              if (src_is_cjk and text[j] in self.punc_char) or (not src_is_cjk and text[j][-1] in self.punc_char):
+              if (src_is_cjk and text_arr[j] in self.punc_char) or (not src_is_cjk and text_arr[j][-1] in self.punc_char):
                 break
-            text_str = sep.join(text[:j+1])
+            text_str = sep.join(text_arr[:j+1]).replace("  ", " ")
             chunks.append({f'{src_lang}_text': text_str, 'id': doc['id'], f'{src_lang}_offset': offset})
             doc['chunks'].append(chunks[-1])
+            if text:
+              text = text + sep + text_str
+            else:
+              text = text_str
             offset += len(text_str) + (0 if src_is_cjk else 1)
-            text = text[j+1:]
-            len_text = len(text)
-        if text:
-            text_str = sep.join(text)
+            text_arr = text_arr[j+1:]
+            len_text = len(text_arr)
+        if text_arr:
+            text_str = sep.join(text_arr).replace("  ", " ")
+            if text:
+              text = text + sep + text_str
+            else:
+              text = text_str
             chunks.append({f'{src_lang}_text': text_str, 'id': doc['id'], f'{src_lang}_offset': offset})
             doc['chunks'].append(chunks[-1])
-
+        doc[f'{src_lang}_text'] = text
+      print (docs)
       # store as a dictionary for easy lookup
       docs = dict([(doc['id'], doc) for doc in docs])
       if do_docs_trim:
@@ -2540,6 +2553,7 @@ class TextAugment:
   @staticmethod
   def intialize_docs(docs=None, src_lang=None):
       print("Intialize Documents")
+      domain = ""
       if docs is None:
         try:
           domain = 'oscar_registry'
