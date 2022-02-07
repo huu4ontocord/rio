@@ -877,41 +877,6 @@ class TextAugment:
     for i in range(0, len(lst), n):
         yield lst[i: i + n]
 
-  def simple_sentence_tokenize(self, text, sep=" ", is_cjk=False):
-        if is_cjk:
-          textarr = text
-        else:
-          textarr = text.split()
-        print (textarr)
-        if True: #This is a simple sentence splitter b/c we need to do this multilingual. We could try nltk.punkt.
-          text = []
-          for t in textarr:
-            punc_found = [punc for punc in t if punc in self.punc_char]
-            word1 = ""
-            word2 = ""
-            if punc_found:
-              word_arr = t.split(punc_found[0])
-              word1 = word_arr[-2]
-              word2 = word_arr[-1]
-            if punc_found and ((punc_found[0] not in ".。") or \
-                              (t[-1] not in self.punc_char and t[0] not in "0123456789" and t[0] == t[0].lower()) or \
-                               (word1 and word1[-1] in self.strip_chars) or \
-                               (word2 and word2[0] in self.strip_chars) or \
-                               (word2 and word2[0] not in "0123456789" and word2[0] == word2[0].upper() and word2[-1] == word2[-1].lower())):
-              #w = t[t.index(punc_found[0])+1]
-              if True: # w == w.upper():
-                t, t1 = t.split(punc_found[0],1)
-                t = t+punc_found[0]+" " 
-                text.append(t)
-                text.append(t1)
-                continue
-            text.append(t)
-          print (text)
-          text[0] = text[0].lstrip()
-          text[-1] = text[-1].rstrip()
-          #print (sep.join(text).replace("  ", " "))
-          return text
-
   def apply_regex_ner(self, src_lang, docs, context_window = 20, weight = 1.0, text_key=None, ner_key=None, signal='regex'):
     """
     apply regexes from the rulebase. if there is a context, check if the context is met in the context_window.
@@ -2408,33 +2373,46 @@ class TextAugment:
         doc['lang'] = doc.get('lang', src_lang)
         doc['domain'] = doc['domain'] if doc.get('domain') is not None else domain
         doc['chunks'] = doc.get('chunks', [])
-        offset = 0  
-        text_arr = self.simple_sentence_tokenize(doc[f'{src_lang}_text'], sep, src_is_cjk)
-        len_text = len(text_arr)
-        text = ""
-        while len_text > batch_window:
+        #simple multi-lingual tokenizer
+        if src_is_cjk:
+          textarr = doc[f'{src_lang}_text']
+        else:
+          textarr = doc[f'{src_lang}_text'].split()
+        if True:
+          text = []
+          for t in textarr:
+            punc_found = [punc for punc in t if punc in self.punc_char]
+            if punc_found and ((punc_found[0] not in ".。") or \
+                              (t[-1] not in self.punc_char and t[0] not in "0123456789" and t[0] == t[0].lower()) or \
+                               (word1 and word1[-1] in self.strip_chars) or \
+                               (word2 and word2[0] in self.strip_chars) or \
+                               (word2 and word2[0] not in "0123456789" and word2[0] == word2[0].upper() and word2[-1] == word2[-1].lower())):
+              w = t[t.index(punc_found[0])+1]
+              if w == w.upper():
+                t, t1 = t.split(punc_found[0],1)
+                t = t+punc_found[0]+(" " if src_is_cjk else "")
+                text.append(t)
+                text.append(t1)
+                continue
+            text.append(t)
+          text[0] = text[0].lstrip()
+          text[-1] = text[-1].rstrip()
+          doc[f'{src_lang}_text'] = sep.join(text)
+          len_text = len(text)
+          while len_text > batch_window:
             for j in range(batch_window-1, len_text):
-              if (src_is_cjk and text_arr[j] in self.punc_char) or (not src_is_cjk and text_arr[j][-1] in self.punc_char):
+              if (src_is_cjk and (text[j] in self.punc_char or text[j] == ' ')) or (not src_is_cjk and text[j][-1] in self.punc_char):
                 break
-            text_str = sep.join(text_arr[:j+1]).replace("  ", " ")
+            text_str = sep.join(text[:j+1])
             chunks.append({f'{src_lang}_text': text_str, 'id': doc['id'], f'{src_lang}_offset': offset})
             doc['chunks'].append(chunks[-1])
-            if text:
-              text = text + sep + text_str
-            else:
-              text = text_str
             offset += len(text_str) + (0 if src_is_cjk else 1)
-            text_arr = text_arr[j+1:]
-            len_text = len(text_arr)
-        if text_arr:
-            text_str = sep.join(text_arr).replace("  ", " ")
-            if text:
-              text = text + sep + text_str
-            else:
-              text = text_str
+            text = text[j+1:]
+            len_text = len(text)
+          if text:
+            text_str = sep.join(text)
             chunks.append({f'{src_lang}_text': text_str, 'id': doc['id'], f'{src_lang}_offset': offset})
             doc['chunks'].append(chunks[-1])
-        doc[f'{src_lang}_text'] = text
       print (docs)
       # store as a dictionary for easy lookup
       docs = dict([(doc['id'], doc) for doc in docs])
