@@ -886,22 +886,28 @@ class TextAugment:
           text = []
           for t in textarr:
             punc_found = [punc for punc in t if punc in self.punc_char]
+            word1 = ""
             word2 = ""
             if punc_found:
-              word2 = t.split(punc_found[-1])[-1]
-            if punc_found and ((t[-1] not in self.punc_char and t[0] not in "0123456789" and t[0] == t[0].lower()) or \
-                               (word2[0] not in "0123456789" and word2[0] == word2[0].upper() and word2[-1] == word2[-1].lower())):
-              w = t[t.index(punc_found[0])+1]
-              if w == w.upper():
+              word_arr = t.split(punc_found[0])
+              word1 = word_arr[-2]
+              word2 = word_arr[-1]
+            if punc_found and ((punc_found[0] not in ".。") or \
+                              (t[-1] not in self.punc_char and t[0] not in "0123456789" and t[0] == t[0].lower()) or \
+                               (word1 and word1[-1] in self.strip_chars) or \
+                               (word2 and word2[0] in self.strip_chars) or \
+                               (word2 and word2[0] not in "0123456789" and word2[0] == word2[0].upper() and word2[-1] == word2[-1].lower())):
+              #w = t[t.index(punc_found[0])+1]
+              if True: # w == w.upper():
                 t, t1 = t.split(punc_found[0],1)
-                t = t+punc_found[0]+(" " if is_cjk else "")
+                t = t+punc_found[0]+" " 
                 text.append(t)
                 text.append(t1)
                 continue
             text.append(t)
           text[0] = text[0].lstrip()
           text[-1] = text[-1].rstrip()
-          return sep.join(text)
+          return sep.join(text).replace("  ", " ")
 
   def apply_regex_ner(self, src_lang, docs, context_window = 20, weight = 1.0, text_key=None, ner_key=None, signal='regex'):
     """
