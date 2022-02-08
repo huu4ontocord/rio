@@ -2053,9 +2053,12 @@ class TextAugment:
           else:
             chunk[target_text_key] = " . . . "
 
-        all_embed = self.labse.encode(chunks2, convert_to_tensor=True)
-        all_trans_embed = self.labse.encode([chunk[target_text_key] for chunk in chunks], convert_to_tensor=True)
-        similarity = cosine_similarity(all_embed, all_trans_embed, dim=1)
+        if len(chunks2) == 0:
+          similarity = []
+        else:
+          all_embed = self.labse.encode(chunks2, convert_to_tensor=True)
+          all_trans_embed = self.labse.encode([chunk[target_text_key] for chunk in chunks], convert_to_tensor=True)
+          similarity = cosine_similarity(all_embed, all_trans_embed, dim=1)
         for chunk, sim_score in zip(chunks, similarity):
           trans_text = chunk[target_text_key]
           sim_score = sim_score.item()
@@ -2224,10 +2227,11 @@ class TextAugment:
             sep = ""
         else:
             sep = " "
-        doc[f'{target_lang}_2_{src_lang}_tmp'] = doc.get(f'{target_lang}_2_{src_lang}_tmp', {})
-        aHash = doc[f'{target_lang}_2_{src_lang}_tmp']
-        items = doc[f'{src_lang}_items']
-        doc[f'{target_lang}_2_{src_lang}_context'] = dict([(a, items[b][0]) for a, b in aHash.items()])
+        for doc in docs.values():
+          doc[f'{target_lang}_2_{src_lang}_tmp'] = doc.get(f'{target_lang}_2_{src_lang}_tmp', {})
+          aHash = doc[f'{target_lang}_2_{src_lang}_tmp']
+          items = doc[f'{src_lang}_items']
+          doc[f'{target_lang}_2_{src_lang}_context'] = dict([(a, items[b][0]) for a, b in aHash.items()])
         docs, chunks = self.replace_items_in_chunks(docs, chunks,  src_lang, lbracket=lbracket, rbracket=rbracket, \
                                                                          replace_with_bracket=True, do_augment=True, \
                                                                          ner_key=f'{target_lang}_ner', items_key=f'{target_lang}_items', \
@@ -2249,9 +2253,12 @@ class TextAugment:
           else:
             chunk[f'{src_lang}_text_backtrans_from_{target_lang}'] = " . . . "
 
-        all_embed = self.labse.encode(backtrans_text, convert_to_tensor=True)
-        all_trans_embed = self.labse.encode([chunk[f'{src_lang}_text'] for chunk in chunks], convert_to_tensor=True)
-        similarity = cosine_similarity(all_embed, all_trans_embed, dim=1)
+        if len(backtrans_text) == 0:
+          similarity = []
+        else:
+          all_embed = self.labse.encode(backtrans_text, convert_to_tensor=True)
+          all_trans_embed = self.labse.encode([chunk[f'{src_lang}_text'] for chunk in chunks], convert_to_tensor=True)
+          similarity = cosine_similarity(all_embed, all_trans_embed, dim=1)
         for chunk, trans_text, sim_score in zip(chunks, backtrans_text, similarity):
           _id = chunk['id']
           doc = docs[_id]
