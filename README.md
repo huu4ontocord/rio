@@ -15,7 +15,11 @@ python -m spacy download en_core_web_sm
 cd muliwai
 python processor.py -src_lang zh
 ```
-
+If you have more than one GPU
+```
+cd muliwai
+python processor.py -src_lang zh -num_workers=2
+```
 
 # Preloading the cache
 ```
