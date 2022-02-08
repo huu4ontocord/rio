@@ -230,7 +230,7 @@ class TextAugmentGlobalModel:
     if not hasattr(self, 'translation_pipelines') or self.translation_pipelines is None: 
       self.translation_pipelines  = {}
       self.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
-      #TODO - do MariamMT model load
+      #TODO - do MariamMT model load, other m2m models
     for target_lang in list(set(target_langs + src_langs + aug_langs)):
       for model_name, model_cls, hf_ner_weight2 in TextAugment.hf_ner_model_map.get(target_lang, []):
           if model_name not in self.ner_model_name2pipelines:
@@ -587,7 +587,9 @@ class TextAugment:
     if single_process:
       self.initializer(available_global_model=available_global_model, device=self.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
 
-  def initializer(self, available_global_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+  def initializer(self, all_available_global_model=None, available_global_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+    if all_available_global_model is not None:
+      available_global_models = all_available_global_model
     if device is not None:
       self.device = device
     device = self.device
@@ -2745,21 +2747,23 @@ class TextAugment:
                     batch_size=5,
                     num_workers=2):
     multiprocessing.set_start_method('spawn', force=True)
-
+    if target_lang is None:
+      target_lang = "en"
+    #TODO create a generator function to return docs_chunks
     if num_workers > 1:
         chunk_size = int(len(docs) / num_workers)
         docs_chunks = [docs[i:i + chunk_size] for i in range(0, len(docs), chunk_size)]
     else:
       docs_chunks = [docs]
     start = time.time()
+    TextAugmentGlobalModel.initializer_all(src_langs=[src_lang], target_langs=[target_lang])
     processor = TextAugment(single_process=False)
     # processor.initializer()
     print(len(docs_chunks))
     with open(outfile, 'w', encoding='utf-8') as file:
         # for i in range(0, num_workers):
-          pool = multiprocessing.Pool(processes=num_workers, initializer=processor.initializer)
+          pool = multiprocessing.Pool(processes=num_workers, initializer=partial(processor.initializer, all_available_global_model=available_global_models))
           processed_docs = pool.imap_unordered(partial(processor.process_ner,
-                                                      # docs=docs_chunks[i],
                                                       src_lang=src_lang,
                                                       target_lang=target_lang,
                                                       do_regex=do_regex,
@@ -2771,9 +2775,9 @@ class TextAugment:
                                               docs_chunks)
           i = 0
           for  docs in tqdm(processed_docs):
-            print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
+            #print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
             i += 1
-            for doc in docs:
+            for doc in processor.serialize_ner_items(docs):
             # for doc in docs.values():
               file.write(f'{doc}\n')
 
