@@ -2771,7 +2771,7 @@ class TextAugment:
     if num_workers > 1:
         len_docs = len(docs)
         chunk_size = int(len_docs / num_workers)
-        docs_chunks = [docs[i:min(i + chunk_size, len_docs] for i in range(0, len_docs, chunk_size)]
+        docs_chunks = [docs[i:min(i + chunk_size, len_docs)] for i in range(0, len_docs, chunk_size)]
     else:
       docs_chunks = [docs]
     start = time.time()
