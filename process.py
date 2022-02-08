@@ -587,7 +587,7 @@ class TextAugment:
         self.device = "cpu"  
     if single_process:
       self.initializer(available_global_model=available_global_model, device=self.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
-    print ("init called", hasttr(self, 'ner_model_name2pipelines'))
+    print ("init called", hasattr(self, 'ner_model_name2pipelines'))
 
   def initializer(self, all_available_global_model=None, available_global_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
     global available_global_models
