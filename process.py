@@ -2433,7 +2433,7 @@ class TextAugment:
       This routine can also be used to do anonymization of the original src_lang text at the end of the NER pipeline.
       Note: This code will have a side-effect on the docs.
       """
-      print (self.ner_model_name2pipelines)
+      #print (self.ner_model_name2pipelines)
       src_is_cjk = src_lang in ('zh', 'ko', 'ja')
       if src_is_cjk:
         sep = ""
