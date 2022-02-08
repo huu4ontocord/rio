@@ -249,7 +249,12 @@ class TextAugmentGlobalModel:
                 self.ner_model_name2pipelines[model_name] = ner_pipeline
 
 class TextAugment:
-
+  device_id = None
+  device = None
+  ner_model_name2pipelines = {}
+  translation_pipelines = {}
+  qg = None
+  labse = None
   m2m_model_name = ""
   m2m_tokenizer = None
   en_spacy_nlp = None
@@ -573,37 +578,33 @@ class TextAugment:
   def __init__(self, device=None, single_process=1, available_global_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
     
     if device is not None:
-      self.device = device
+      TextAugment.device = device
       if device == "cpu": 
-        self.device_id = -1
+        TextAugment.device_id = -1
       else:
-        device_id = int(device.split(":")[-1])
+        TextAugment.device_id = int(device.split(":")[-1])
     else:
       if available_gpus:
-        self.device_id = random.choice(available_gpus)
-        self.device = "cuda:"+str(self.device_id) 
+        TextAugment.device_id = random.choice(available_gpus)
+        TextAugment.device = "cuda:"+str(TextAugment.device_id) 
       else:
-        self.device_id = -1
-        self.device = "cpu"  
+        TextAugment.device_id = -1
+        TextAugment.device = "cpu"  
     if single_process:
-      self.initializer(available_global_model=available_global_model, device=self.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
+      TextAugment.initializer(available_global_model=available_global_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
     print ("init called", hasattr(self, 'ner_model_name2pipelines'))
 
   def initializer(self, all_available_global_model=None, available_global_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
     global available_global_models
-    if not hasattr(self, 'qg'): self.qg = None
-    if not hasattr(self, 'labse'): self.labse = None
-    if not hasattr(self, 'ner_model_name2pipelines'): self.ner_model_name2pipelines = {}
-    if not hasattr(self, 'translation_pipelines'): self.translation_pipelines = {}
     if all_available_global_model is not None:
       available_global_models = all_available_global_model
     if device is not None:
-      self.device = device
-    device = self.device
+      TextAugment.device = device
+    device = TextAugment.device
     if available_global_model is not None:
       available_global_models[available_global_model.device_id] = available_global_model
       device_id = available_global_model.device_id
-      self.device = device = available_global_model.device
+      TextAugment.device = device = available_global_model.device
       labse = available_global_model.labse
       qg = available_global_model.qg
       translation_pipelines = available_global_model.translation_pipelines
@@ -611,27 +612,27 @@ class TextAugment:
     else:
       if device is None:
         if available_gpus:
-          self.device_id = random.choice(available_gpus)
-          device = self.device = "cuda:"+str(self.device_id) 
+          TextAugment.device_id = random.choice(available_gpus)
+          device = TextAugment.device = "cuda:"+str(TextAugment.device_id) 
         else:
-          self.device_id = -1
-          device = self.device = "cpu"  
+          TextAugment.device_id = -1
+          device = TextAugment.device = "cpu"  
       print (device)
       if device != "cpu":
         device_id = int(device.split(":")[-1])
         available_global_model = available_global_models[device_id]
         print (available_global_models)
         if available_global_model is None: 
-          available_global_models[device_id] = available_global_model = TextAugmentGlobalModel(device=self.device)
+          available_global_models[device_id] = available_global_model = TextAugmentGlobalModel(device=TextAugment.device)
         labse = available_global_model.labse
         qg = available_global_model.qg
         translation_pipelines = available_global_model.translation_pipelines
         ner_model_name2pipelines = available_global_model.ner_model_name2pipelines
 
-    if labse is not None: self.labse = labse 
-    if translation_pipelines is not None: self.translation_pipelines = translation_pipelines
-    if ner_model_name2pipelines is not None: self.ner_model_name2pipelines = ner_model_name2pipelines
-    if qg is not None: self.qg = qg
+    if labse is not None: TextAugment.labse = labse 
+    if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
+    if ner_model_name2pipelines is not None: TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
+    if qg is not None: TextAugment.qg = qg
     if ontology_manager is not None: TextAugment.ontology_manager = ontology_manager
     if en_spacy_nlp is not None: TextAugment.en_spacy_nlp = en_spacy_nlp
     if faker_en_list is not None: TextAugment.faker_en_list = faker_en_list
@@ -644,20 +645,20 @@ class TextAugment:
     except:
         pass
     
-    if self.qg is None: self.qg = qg_pipeline.pipeline("multitask-qa-qg", device=self.device) # TODO make sure it's running in half mode
-    if self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache").half().eval().to(self.device)
-    if self.ner_model_name2pipelines is None: self.ner_model_name2pipelines = {}
-    if self.translation_pipelines is None: 
-      self.translation_pipelines  = {}
-    if "facebook/m2m100_418M" not in self.translation_pipelines:
-      self.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
+    if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
+    if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache").half().eval().to(TextAugment.device)
+    if TextAugment.ner_model_name2pipelines is None: TextAugment.ner_model_name2pipelines = {}
+    if TextAugment.translation_pipelines is None: 
+      TextAugment.translation_pipelines  = {}
+    if "facebook/m2m100_418M" not in TextAugment.translation_pipelines:
+      TextAugment.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(TextAugment.device)
     #TODO MariamMT in global context
-    print ('**', self.device, self.ner_model_name2pipelines)
+    print ('**', TextAugment.device, TextAugment.ner_model_name2pipelines)
     if available_global_model is not None:
-        available_global_model.labse = self.labse 
-        available_global_model.qg = self.qg
-        available_global_model.translation_pipelines = self.translation_pipelines 
-        available_global_model.ner_model_name2pipelines = self.ner_model_name2pipelines
+        if TextAugment.labse  is not None: available_global_model.labse = TextAugment.labse 
+        if TextAugment.qg is not None: available_global_model.qg = TextAugment.qg
+        if TextAugment.translation_pipelines  is not None: available_global_model.translation_pipelines = TextAugment.translation_pipelines 
+        if TextAugment.ner_model_name2pipelines is not None: available_global_model.ner_model_name2pipelines = TextAugment.ner_model_name2pipelines
         available_global_models[available_global_model.device_id] = available_global_model 
         
     if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
