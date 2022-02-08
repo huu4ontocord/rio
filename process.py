@@ -207,7 +207,7 @@ class TextAugmentGlobalModel:
     self.mariam_mt = None
 
   @staticmethod
-  def initializer_all(self, src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
+  def initializer_all(src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
     global available_global_models
     for i, available_global_model in enumerate(available_global_models):
       if available_global_model is None:  
