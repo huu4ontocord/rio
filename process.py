@@ -186,10 +186,13 @@ urdu_surnames = ["Abid", "Ahmad", "Akbar", "Akmal", "Alam", "Ayaz", "Bohra", "Bu
 
 #basque and catalan - use Spanish names
 
-available_gpus = [torch.cuda.device(i).idx for i in range(torch.cuda.device_count())]
-available_global_models = [None]* len(available_gpus)
 
-class TextAugmentGlobalModel:
+
+class TextAugmentGPUModel:
+
+  available_gpus = [torch.cuda.device(i).idx for i in range(torch.cuda.device_count())]
+  available_gpu_models  = [None]* torch.cuda.device_count()
+  
   def __init__(self, device_id=None, device=None):
     if device_id is not None:
       self.device_id = int(device_id)
@@ -208,12 +211,12 @@ class TextAugmentGlobalModel:
 
   @staticmethod
   def initializer_all(src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
-    global available_global_models
-    for i, available_global_model in enumerate(available_global_models):
-      if available_global_model is None:  
-        available_global_model = TextAugmentGlobalModel(device_id=i)
-      available_global_model.initializer(src_langs=src_langs, target_langs=target_langs, aug_langs=aug_langs)
-      available_global_models[available_global_model.device_id] = available_global_model
+
+    for i, available_gpu_model in enumerate(TextAugmentGPUModel.available_gpu_models ):
+      if available_gpu_model is None:  
+        available_gpu_model = TextAugmentGPUModel(device_id=i)
+      available_gpu_model.initializer(src_langs=src_langs, target_langs=target_langs, aug_langs=aug_langs)
+      TextAugmentGPUModel.available_gpu_models [available_gpu_model.device_id] = available_gpu_model
 
   def initializer(self, device_id=None, device=None, src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
     if device_id is not None:
@@ -575,7 +578,7 @@ class TextAugment:
   stopwords_en = set(stopwords.get('en',[]))
 
 
-  def __init__(self, device=None, single_process=1, available_global_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+  def __init__(self, device=None, single_process=1, available_gpu_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
     
     if device is not None:
       TextAugment.device = device
@@ -584,47 +587,55 @@ class TextAugment:
       else:
         TextAugment.device_id = int(device.split(":")[-1])
     else:
-      if available_gpus:
-        TextAugment.device_id = random.choice(available_gpus)
+      if TextAugmentGPUModel.available_gpus:
+        TextAugment.device_id = random.choice(TextAugmentGPUModel.available_gpus)
         TextAugment.device = "cuda:"+str(TextAugment.device_id) 
       else:
         TextAugment.device_id = -1
         TextAugment.device = "cpu"  
     if single_process:
-      self.initializer(available_global_model=available_global_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
+      self.initializer(available_gpu_model=available_gpu_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
     
-  def initializer(self, all_available_global_model=None, available_global_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
-    global available_global_models
-    if all_available_global_model is not None:
-      available_global_models = all_available_global_model
+  def initializer(self, device_id_by_proess_id=True, all_available_gpu_model=None, available_gpu_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+    if all_available_gpu_model is not None:
+      TextAugmentGPUModel.available_gpu_models  = all_available_gpu_model
     if device is not None:
       TextAugment.device = device
     device = TextAugment.device
-    if available_global_model is not None:
-      available_global_models[available_global_model.device_id] = available_global_model
-      device_id = available_global_model.device_id
-      TextAugment.device = device = available_global_model.device
-      labse = available_global_model.labse
-      qg = available_global_model.qg
-      translation_pipelines = available_global_model.translation_pipelines
-      ner_model_name2pipelines = available_global_model.ner_model_name2pipelines
+    if available_gpu_model is not None:
+      TextAugmentGPUModel.available_gpu_models [available_gpu_model.device_id] = available_gpu_model
+      device_id = available_gpu_model.device_id
+      TextAugment.device = device = available_gpu_model.device
+      labse = available_gpu_model.labse
+      qg = available_gpu_model.qg
+      translation_pipelines = available_gpu_model.translation_pipelines
+      ner_model_name2pipelines = available_gpu_model.ner_model_name2pipelines
     else:
       if device is None:
-        if available_gpus:
-          TextAugment.device_id = random.choice(available_gpus)
+        if TextAugmentGPUModel.available_gpus:
+          if device_id_by_proess_id:
+            process_id = torch.multiprocessing.current_process().name.split("-")[-1]
+            try:
+              process_id = int(process_id)
+            except:
+              process_id = 0
+            device_id = process_id % len(TextAugmentGPUModel.available_gpus)
+          else:
+            device_id = random.choice(TextAugmentGPUModel.available_gpus)
+          TextAugment.device_id = device_id
           device = TextAugment.device = "cuda:"+str(TextAugment.device_id) 
         else:
           TextAugment.device_id = -1
           device = TextAugment.device = "cpu"  
       if device != "cpu":
         device_id = int(device.split(":")[-1])
-        available_global_model = available_global_models[device_id]
-        if available_global_model is None: 
-          available_global_models[device_id] = available_global_model = TextAugmentGlobalModel(device=TextAugment.device)
-        labse = available_global_model.labse
-        qg = available_global_model.qg
-        translation_pipelines = available_global_model.translation_pipelines
-        ner_model_name2pipelines = available_global_model.ner_model_name2pipelines
+        available_gpu_model = TextAugmentGPUModel.available_gpu_models [device_id]
+        if available_gpu_model is None: 
+          TextAugmentGPUModel.available_gpu_models [device_id] = available_gpu_model = TextAugmentGPUModel(device=TextAugment.device)
+        labse = available_gpu_model.labse
+        qg = available_gpu_model.qg
+        translation_pipelines = available_gpu_model.translation_pipelines
+        ner_model_name2pipelines = available_gpu_model.ner_model_name2pipelines
     
     if labse is not None: TextAugment.labse = labse 
     if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
@@ -650,12 +661,12 @@ class TextAugment:
     if "facebook/m2m100_418M" not in TextAugment.translation_pipelines:
       TextAugment.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(TextAugment.device)
     #TODO MariamMT in global context
-    if available_global_model is not None:
-        if TextAugment.labse  is not None: available_global_model.labse = TextAugment.labse 
-        if TextAugment.qg is not None: available_global_model.qg = TextAugment.qg
-        if TextAugment.translation_pipelines  is not None: available_global_model.translation_pipelines = TextAugment.translation_pipelines 
-        if TextAugment.ner_model_name2pipelines is not None: available_global_model.ner_model_name2pipelines = TextAugment.ner_model_name2pipelines
-        available_global_models[available_global_model.device_id] = available_global_model 
+    if available_gpu_model is not None:
+        if TextAugment.labse  is not None: available_gpu_model.labse = TextAugment.labse 
+        if TextAugment.qg is not None: available_gpu_model.qg = TextAugment.qg
+        if TextAugment.translation_pipelines  is not None: available_gpu_model.translation_pipelines = TextAugment.translation_pipelines 
+        if TextAugment.ner_model_name2pipelines is not None: available_gpu_model.ner_model_name2pipelines = TextAugment.ner_model_name2pipelines
+        TextAugmentGPUModel.available_gpu_models [available_gpu_model.device_id] = available_gpu_model 
         
     if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
     if TextAugment.kenlm_model is None: 
@@ -2758,18 +2769,19 @@ class TextAugment:
       target_lang = "en"
     #TODO create a generator function to return docs_chunks
     if num_workers > 1:
-        chunk_size = int(len(docs) / num_workers)
-        docs_chunks = [docs[i:i + chunk_size] for i in range(0, len(docs), chunk_size)]
+        len_docs = len(docs)
+        chunk_size = int(len_docs / num_workers)
+        docs_chunks = [docs[i:min(i + chunk_size, len_docs] for i in range(0, len_docs, chunk_size)]
     else:
       docs_chunks = [docs]
     start = time.time()
-    TextAugmentGlobalModel.initializer_all(src_langs=[src_lang], target_langs=[target_lang])
+    TextAugmentGPUModel.initializer_all(src_langs=[src_lang], target_langs=[target_lang])
     processor = TextAugment(single_process=False)
     # processor.initializer()
     print(len(docs_chunks))
     with open(outfile, 'w', encoding='utf-8') as file:
         # for i in range(0, num_workers):
-          pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_global_model=available_global_models))
+          pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_gpu_model=TextAugmentGPUModel.available_gpu_models ))
           processed_docs = pool.imap_unordered(partial(processor.process_ner,
                                                       src_lang=src_lang,
                                                       target_lang=target_lang,
