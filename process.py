@@ -615,6 +615,7 @@ class TextAugment:
       if device != "cpu":
         device_id = int(device.split(":")[-1])
         available_global_model = available_global_models[device_id]
+        print (available_global_models)
         if available_global_model is None: 
           available_global_models[device_id] = available_global_model = TextAugmentGlobalModel(device=self.device)
         labse = available_global_model.labse
@@ -637,7 +638,7 @@ class TextAugment:
         #we could potentially add new items to the vocabulary to improve coref.
     except:
         pass
-    print (self.device)
+    
     if not hasattr(self, 'qg') or self.qg is None: self.qg = qg_pipeline.pipeline("multitask-qa-qg", device=self.device) # TODO make sure it's running in half mode
     if not hasattr(self, 'labse') or self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache").half().eval().to(self.device)
     if not hasattr(self, 'ner_model_name2pipelines') or self.ner_model_name2pipelines is None: self.ner_model_name2pipelines = {}
@@ -645,6 +646,7 @@ class TextAugment:
       self.translation_pipelines  = {}
       self.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
     #TODO MariamMT in global context
+    print (self.device, self.ner_model_name2pipelines)
     if available_global_model is not None:
         available_global_model.labse = self.labse 
         available_global_model.qg = self.qg
