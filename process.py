@@ -590,6 +590,10 @@ class TextAugment:
 
   def initializer(self, all_available_global_model=None, available_global_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
     global available_global_models
+    if not hasattr(self, 'qg'): self.qg = None
+    if not hasattr(self, 'labse'): self.labse = None
+    if not hasattr(self, 'ner_model_name2pipelines'): self.ner_model_name2pipelines = {}
+    if not hasattr(self, 'translation_pipelines'): self.translation_pipelines = {}
     if all_available_global_model is not None:
       available_global_models = all_available_global_model
     if device is not None:
@@ -639,11 +643,12 @@ class TextAugment:
     except:
         pass
     
-    if not hasattr(self, 'qg') or self.qg is None: self.qg = qg_pipeline.pipeline("multitask-qa-qg", device=self.device) # TODO make sure it's running in half mode
-    if not hasattr(self, 'labse') or self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache").half().eval().to(self.device)
-    if not hasattr(self, 'ner_model_name2pipelines') or self.ner_model_name2pipelines is None: self.ner_model_name2pipelines = {}
-    if not hasattr(self, 'translation_pipelines') or self.translation_pipelines is None: 
+    if self.qg is None: self.qg = qg_pipeline.pipeline("multitask-qa-qg", device=self.device) # TODO make sure it's running in half mode
+    if self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache").half().eval().to(self.device)
+    if self.ner_model_name2pipelines is None: self.ner_model_name2pipelines = {}
+    if self.translation_pipelines is None: 
       self.translation_pipelines  = {}
+    if "facebook/m2m100_418M" not in self.translation_pipelines:
       self.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
     #TODO MariamMT in global context
     print (self.device, self.ner_model_name2pipelines)
@@ -651,7 +656,7 @@ class TextAugment:
         available_global_model.labse = self.labse 
         available_global_model.qg = self.qg
         available_global_model.translation_pipelines = self.translation_pipelines 
-        available_global_model.ner_model_name2pipeline = self.ner_model_name2pipelines
+        available_global_model.ner_model_name2pipelines = self.ner_model_name2pipelines
         available_global_models[available_global_model.device_id] = available_global_model 
         
     if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
