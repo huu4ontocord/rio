@@ -15,7 +15,7 @@ import fsspec
 import copy
 from collections import Counter
 from  datasets import load_dataset
-from transformers import AutoModel, AutoTokenizer, RobertaForTokenClassification, M2M100ForConditionalGeneration, M2M100Tokenizer, pipelines
+from transformers import AutoConfig, AutoModel, AutoTokenizer, RobertaForTokenClassification, M2M100ForConditionalGeneration, M2M100Tokenizer, pipelines
 import spacy
 from tqdm import tqdm
 import difflib
@@ -33,7 +33,6 @@ import argparse
 import re, regex
 import itertools
 import torch
-from sentence_transformers import SentenceTransformer
 from torch import multiprocessing
 from edugp_kenlm_model import *
 from huggingface_hub import hf_hub_url, cached_download
@@ -187,21 +186,75 @@ urdu_surnames = ["Abid", "Ahmad", "Akbar", "Akmal", "Alam", "Ayaz", "Bohra", "Bu
 
 #basque and catalan - use Spanish names
 
+available_gpus = [torch.cuda.device(i).idx for i in range(torch.cuda.device_count())]
+available_global_models = [None]* len(available_gpus)
 
+class TextAugmentGlobalModel:
+  def __init__(self, device_id=None, device=None):
+    if device_id is not None:
+      self.device_id = int(device_id)
+      self.device = "cuda:"+str(device_id)
+    elif device is not None:
+      self.device=device
+      self.device_id = int(device.split(":")[-1])
+    else:
+      self.device = None
+      self.device_id = None
+    self.labse = None
+    self.qg  = None
+    self.translation_pipelines = None
+    self.ner_model_name2pipelines = None
+    self.mariam_mt = None
+
+  @staticmethod
+  def initializer_all(self, src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
+    for i, available_global_model in enumerate(available_global_models):
+      if available_global_model is None:  
+        available_global_model = TextAugmentGlobalModel(device_id=i)
+      available_global_model.initializer(src_langs=src_langs, target_langs=target_langs, aug_langs=aug_langs)
+      available_global_models[available_global_model.device_id] = available_global_model
+
+  def initializer(self, device_id=None, device=None, src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
+    if device_id is not None:
+      self.device_id = int(device_id)
+      self.device = "cuda:"+str(device_id)
+    elif device is not None:
+      self.device=device
+      self.device_id = int(device.split(":")[-1])
+    else:
+      self.device = self.device
+      self.device_id = self.device_id
+    if not hasattr(self, 'qg') or self.qg is None: self.qg = qg_pipeline.pipeline("multitask-qa-qg", device=self.device) # TODO make sure it's running in half mode
+    if not hasattr(self, 'labse') or self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache").half().eval().to(self.device)
+    if not hasattr(self, 'ner_model_name2pipelines') or self.ner_model_name2pipelines is None: self.ner_model_name2pipelines = {}
+    if not hasattr(self, 'translation_pipelines') or self.translation_pipelines is None: 
+      self.translation_pipelines  = {}
+      self.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
+      #TODO - do MariamMT model load
+    for target_lang in list(set(target_langs + src_langs + aug_langs)):
+      for model_name, model_cls, hf_ner_weight2 in TextAugment.hf_ner_model_map.get(target_lang, []):
+          if model_name not in self.ner_model_name2pipelines:
+            try:
+              model = model_cls.from_pretrained(model_name).half().eval().to(self.device)
+              tokenizer = AutoTokenizer.from_pretrained(model_name)
+              ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=self.device_id)
+              self.ner_model_name2pipelines[model_name] = ner_pipeline
+            except:
+              try:
+                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=self.device_id)
+                self.ner_model_name2pipelines[model_name] = ner_pipeline
+              except:
+                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), framework="tf",  device=self.device_id)
+                self.ner_model_name2pipelines[model_name] = ner_pipeline
 
 class TextAugment:
-  # TO MAKE THIS MORE PARRALLELIZABLE - Make the below instance variables instead of class variables??
-  m2m_model = None
+
   m2m_model_name = ""
   m2m_tokenizer = None
   en_spacy_nlp = None
   faker_en_list  = None
-  labse = None
-  qg  = None
-  translation_pipelines = {}
-  ner_model_name2pipelines = {}
   kenlm_model = None
-
+  
   #from https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py which is under the MIT License
   # see also for ICD https://stackoverflow.com/questions/5590862/icd9-regex-pattern - but this could be totally wrong!
   # we do regex in this order in order to not capture ner inside domain names and email addresses.
@@ -516,21 +569,63 @@ class TextAugment:
   stopwords_en = set(stopwords.get('en',[]))
 
 
-  def __init__(self, single_process=1, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
-    self.device = "cuda" if torch.cuda.is_available() else "cpu"
-    if single_process:
-      self.initializer(labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
+  def __init__(self, device=None, single_process=1, available_global_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
 
-  def initializer(self, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
-    if labse is not None: TextAugment.labse = labse 
+    if device is not None:
+      self.device = device
+      if device == "cpu": 
+        self.device_id = -1
+      else:
+        device_id = int(device.split(":")[-1])
+    else:
+      if available_gpus:
+        self.device_id = random.choice(available_gpus)
+        self.device = "cuda:"+str(self.device_id) 
+      else:
+        self.device_id = -1
+        self.device = "cpu"  
+    if single_process:
+      self.initializer(available_global_model=available_global_model, device=self.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
+
+  def initializer(self, available_global_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+    if device is not None:
+      self.device = device
+    device = self.device
+    if available_global_model is not None:
+      available_global_models[available_global_model.device_id] = available_global_model
+      device_id = available_global_model.device_id
+      self.device = device = available_global_model.device
+      labse = available_global_model.labse
+      qg = available_global_model.qg
+      translation_pipelines = available_global_model.translation_pipelines
+      ner_model_name2pipelines = available_global_model.ner_model_name2pipelines
+    else:
+      if device is None:
+        if available_gpus:
+          self.device_id = random.choice(available_gpus)
+          device = self.device = "cuda:"+str(self.device_id) 
+        else:
+          self.device_id = -1
+          device = self.device = "cpu"  
+      print (device)
+      if device != "cpu":
+        device_id = int(device.split(":")[-1])
+        available_global_model = available_global_models[device_id]
+        if available_global_model is None: 
+          available_global_models[device_id] = available_global_model = TextAugmentGlobalModel(device=self.device)
+        labse = available_global_model.labse
+        qg = available_global_model.qg
+        translation_pipelines = available_global_model.translation_pipelines
+        ner_model_name2pipelines = available_global_model.ner_model_name2pipelines
+
+    if labse is not None: self.labse = labse 
+    if translation_pipelines is not None: self.translation_pipelines = translation_pipelines
+    if ner_model_name2pipelines is not None: self.ner_model_name2pipelines = ner_model_name2pipelines
+    if qg is not None: self.qg = qg
     if ontology_manager is not None: TextAugment.ontology_manager = ontology_manager
-    if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
-    if ner_model_name2pipelines is not None: TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
     if en_spacy_nlp is not None: TextAugment.en_spacy_nlp = en_spacy_nlp
     if faker_en_list is not None: TextAugment.faker_en_list = faker_en_list
-    if qg is not None: TextAugment.qg = qg
     if kenlm_model is not None: TextAugment.kenlm_model = kenlm_model
-
     if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
     try:
         coref = neuralcoref.NeuralCoref(TextAugment.en_spacy_nlp.vocab)
@@ -538,8 +633,21 @@ class TextAugment:
         #we could potentially add new items to the vocabulary to improve coref.
     except:
         pass
-    if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg") # TODO make sure it's running in half mode
-    if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE").half().eval().to(self.device)
+    print (self.device)
+    if not hasattr(self, 'qg') or self.qg is None: self.qg = qg_pipeline.pipeline("multitask-qa-qg", device=self.device) # TODO make sure it's running in half mode
+    if not hasattr(self, 'labse') or self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache").half().eval().to(self.device)
+    if not hasattr(self, 'ner_model_name2pipelines') or self.ner_model_name2pipelines is None: self.ner_model_name2pipelines = {}
+    if not hasattr(self, 'translation_pipelines') or self.translation_pipelines is None: 
+      self.translation_pipelines  = {}
+      self.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
+    #TODO MariamMT in global context
+    if available_global_model is not None:
+        available_global_model.labse = self.labse 
+        available_global_model.qg = self.qg
+        available_global_model.translation_pipelines = self.translation_pipelines 
+        available_global_model.ner_model_name2pipeline = self.ner_model_name2pipelines
+        available_global_models[available_global_model.device_id] = available_global_model 
+        
     if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
     if TextAugment.kenlm_model is None: 
       #TODO - save to temp dir
@@ -642,7 +750,7 @@ class TextAugment:
     return lang == src_lang
 
   #WIP - we can use this q/a q/g method to extract people, place and thing, and potentially age/date AND to get a relationship between a person and a PII info
-  def generate_questions_answers_rel(self, docs, chunks, src_lang, default_answers=[], text_key=None, ner_key=None, rel_key=None, signal='qg_rel'):
+  def generate_questions_answers_rel(self, docs, chunks, src_lang, default_answers=[], text_key=None, ner_key=None, rel_key=None, signal='qg_rel', weight=1.0):
     answers = {}
 
     if ner_key is None:
@@ -668,44 +776,27 @@ class TextAugment:
       #default_answers = list(set([a['answer'] for a in aHash]+default_answers))
       #print (aHash)
       for aHash1 in aHash:
-        if answers.get(aHash1['answer'].lower()) or answers1.get(aHash1['answer'].lower()):
-          continue
-        if len(aHash1['answer'].split()) > 10:
-          aHash1['answer'] = " ".join(aHash1['answer'].split()[:10])
         i+=1
         quest=aHash1['question'].lower().strip("?").replace("'s",  " 's").replace("  ", " ").split()
         question=aHash1['question'].lower()
         answer=aHash1['answer'].lower()
-        for mention in ner:
-          ent = mention[0].lower()
-          if ent in answer or ent in question:
-            rel[question] = rel.get(question, []) + [mention]
-        label=""
+        label=None
         #TODO, use spacy_en to get NER and only fall back to "who", "when", "where" to determine ner if we find nothing
         if quest[0] == "who" and aHash1['answer'][-1] =='s':
-          label="organization_"+str(i)
-          if "'s" in quest:
-            for j in range(len(quest)):
-              if j > 0 and quest[j-1]=="'s":
-                label = quest[j]+"_"+str(i)
-                break
-          for a in aHash1['answer'].lower().split():
-            if a not in self.stopwords_en:
-              answers[a] = label
+          label="ORG"
         elif quest[0] == "who":
-          label="person_"+str(i)
+          label="PERSON"
           if "'s" in quest:
             for j in range(len(quest)):
               if j > 0 and quest[j-1]=="'s":
-                label = quest[j]+"_"+str(i)
+                label = "MISC"
                 break
-          for a in aHash1['answer'].lower().split():
-            if a not in self.stopwords_en:
-              answers[a] = label
         elif quest[0] == "where":
           label="LOC"
         elif quest[0] == "when":
-          label="AGE"
+          label = "DATE"
+          if "born" in quest or "died" in quest or "birthday" in quest or "birthdate" in quest:
+            label="AGE"
         elif quest[0] == "why":
           label="EVENT"
         elif quest[0] == "how" and quest[1] in ("much", "many"):
@@ -714,49 +805,28 @@ class TextAugment:
           label="EVENT"
         elif quest[0] in ("which", "what") and quest[1] not in self.stopwords_en:
           label="MISC"
-        elif "'s" in quest:
-          for j in range(len(quest)):
-            if j > 0 and quest[j-1]=="'s":
-              label = quest[j].upper()
-              break
+        else:
+          label = None
         if label:
-          answers[aHash1['answer']] = label
-      #print (answers)
+          mentions = [mention for mention in ner if (mention[0] == aHash1['answer'] or mention[0].startswith(aHash1['answer']) or aHash1['answer'].startswith(mention[0]))]
+          if mentions:
+            for mention in mentions:
+              ner[mention][(label, signal)] = ner[mention].get((label, signal), 0) + weight
+          else:
+            pos = 0
+            while aHash1['answer'] in text[pos:]:
+              i = text[pos:].index(aHash1['answer'])
+              start = pos + i
+              end = start + len(aHash1['answer'])
+              pos = end + 1
+              ner[mention][(label, signal)] = ner[mention].get((label, signal), 0) + weight
 
-    for aHash in allqa:
-      answers1={}
-      for aHash1 in aHash:
-        if answers1.get(aHash1['answer'].lower()):
-          continue
-        quest = " "+aHash1['question'].lower().strip("?").replace("'s",  " 's").replace("  ", " ")+" "
-        q_type =  quest[0]
-        agent = []
-        answer_keys = list(answers.keys())
-        answer_keys.sort(key=lambda k: len(k), reverse=True)
-        for a in answer_keys:
-          if " "+a+" " in quest:
-              quest = quest.replace(" "+a+" ", " "+answers[a]+" ")
-          elif " "+a+", " in quest:
-              quest = quest.replace(" "+a+", ", " "+answers[a]+", ")
-        quest = quest.split()
-        #print (quest)
-        qtype = []
-        if answers.get(aHash1['answer'].lower()):
-          if answers.get(aHash1['answer'].lower()).split("_")[0] == "PWE":
-            qtype = ["is", "who"]
-        if not qtype and quest[0] in ("when", "where", "why", "how"): #, "which"
-          qtype=[quest[0]]
-          if quest[0]=="how" and quest[1] in ("much", "many"):
-            qtype = qtype + [quest[1]]
-
-        #label=[q for q in quest if (q not in ("much", "many",) and not self.stopwords_en.get(q) and q not in answers)]#+qtype
-        label=[q for q in quest if (q[0] not in "0123456789") and (q not in ("the", "a", "an"))]
-        if len(label) > 10:
-            label=label[:10]
-        answers1[aHash1['answer'].lower()] = " ".join(label)
-      #print ('qg', answers1)
-      chunk['question_answers'] = answers1
-      #TODO - add into ner_key
+          for mention in ner:
+            ent = mention[0].lower()
+            if ent in question:
+              for mention0 in mentions:
+                rel[question] = rel.get(question, []) + [(mention0, mention)]                               
+    return docs  
 
   @staticmethod
   def get_aligned_text(sent1, sent2, src_lang, prefer_split_char="]"):
@@ -834,12 +904,15 @@ class TextAugment:
         pass
       if not do_mariam_mt:
         if m2m_model_name != self.m2m_model_name or self.m2m_model is None:
-            self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval().half().to(self.device)
+          if m2m_model_name in  self.translation_pipelines:
+            self.m2m_model =  self.translation_pipelines[m2m_model_name]
+          else:
+            self.translation_pipelines[m2m_model_name] = self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval().half().to(self.device)
         self.m2m_model_name = m2m_model_name
         translations = []
         for src_text_list in self.batch(texts, batch_size):
           try:
-            batch = self.m2m_tokenizer(src_text_list, return_tensors="pt", padding=True, truncation=True).to('cuda')
+            batch = self.m2m_tokenizer(src_text_list, return_tensors="pt", padding=True, truncation=True).to(self.device)
           except:
             do_mariam_mt = True
             break
@@ -857,7 +930,10 @@ class TextAugment:
     if model_name is not None and model_name not in self.translation_pipelines:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = MarianMTModel.from_pretrained(model_name).half().eval().to(self.device)
-        mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else 1)
+        if self.device == 'cpu':
+          mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer)
+        else:
+          mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=self.device_id)
         self.translation_pipelines[model_name] = mt_pipeline
     if not mt_pipeline:
         raise RuntimeError("no translation pipeline") # we could do multi-step translation where there are no pairs
@@ -977,6 +1053,7 @@ class TextAugment:
       ner_key = f'{src_lang}_ner'
     if text_key is None:
       text_key = f'{src_lang}_text'
+    print (chunks)
     results_arr = hf_pipeline([chunk[text_key] for chunk in chunks], batch_size=len(chunks))
     results_arr2 = []
     offset = 0
@@ -1345,7 +1422,7 @@ class TextAugment:
                 aHash[(label, signal)] = aHash.get((label, signal), 0) + spacy_weight * (1.0 + len(ner_word)/100) * extra_weight
                 ner[mention2] = aHash
                 if label in ('PERSON', 'PUBLIC_FIGURE'):
-                  coref = ref2mention.get(mention2ref.get(mention), [])
+                  coref = list(set([a[0] for a in ref2mention.get(mention2ref.get(mention), [])]))
                   if "he" in coref or "He" in coref or "him" in coref or "Him" in coref or "his" in coref or "His" in coref or "Mr." in coref or "Mr" in coref or "mr" in coref or "mr." in coref:
                     mention2pronoun[mention2] = "he"
                   elif "she" in coref or "She" in coref or "her" in coref or "Her" in coref or "hers" in coref or "Hers" in coref or "Miss" in coref or "miss" in coref or  "Mrs." in coref or "Mrs" in coref or "mrs" in coref or "mrs." in coref or "Ms." in coref or "Ms" in coref or "ms" in coref or "ms." in coref:
@@ -1865,16 +1942,25 @@ class TextAugment:
         if model_name not in self.ner_model_name2pipelines:
           #print ("setting")
           try:
-            model = model_cls.from_pretrained(model_name).half().eval().cuda()
+            model = model_cls.from_pretrained(model_name).half().eval().to(self.device)
             tokenizer = AutoTokenizer.from_pretrained(model_name)
-            ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=0 if self.device == 'cuda' else 1)
+            if self.device == 'cpu':
+              ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer)
+            else:
+              ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=self.device_id)
             self.ner_model_name2pipelines[model_name] = ner_pipeline
           except:
             try:
-              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=0 if self.device == 'cuda' else 1)
+              if self.device == 'cpu':
+                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},))
+              else:
+                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=self.device_id)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
             except:
-              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), framework="tf", device=0 if self.device == 'cuda' else 1)
+              if self.device == 'cpu':
+                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), framework="tf")
+              else:
+                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), framework="tf", device=self.device_id)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
         ner_pipelines.append((model_name, self.ner_model_name2pipelines[model_name], hf_ner_weight2))
     target_is_cjk = target_lang in ('zh', 'ko', 'ja')
@@ -2542,7 +2628,7 @@ class TextAugment:
                             do_docs_trim=do_docs_trim)
         docs, chunks = docs2, chunks2
 
-      return docs, chunks
+      return docs
 
   #given a dataset, file or any out of core random access text/json data source (by lines), we choose several shards of the data
   #and we begin to send in chunks of it at a time to the process.
@@ -2590,7 +2676,10 @@ class TextAugment:
 
   @staticmethod
   def preload_cache(src_lang, target_lang):
-    SentenceTransformer("sentence-transformers/LaBSE")
+    AutoConfig.from_pretrained("sentence-transformers/LaBSE")
+    AutoTokenizer.from_pretrained("sentence-transformers/LaBSE")
+    AutoModel.from_pretrained("sentence-transformers/LaBSE")
+    SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache")
     en_spacy_nlp = spacy.load('en_core_web_sm')
     try:
       coref = neuralcoref.NeuralCoref(en_spacy_nlp.vocab)
@@ -2616,13 +2705,16 @@ class TextAugment:
     for model_name in list(set(arr2)):
         AutoModel.from_pretrained(model_name)
         AutoTokenizer.from_pretrained(model_name)
+        AutoConfig.from_pretrained(model_name)
     for model_name in TextAugment.m2m100_lang.values():
         AutoModel.from_pretrained(model_name)
         AutoTokenizer.from_pretrained(model_name)
+        AutoConfig.from_pretrained(model_name)
     for aHash in qg_pipeline.SUPPORTED_TASKS.values():
       for model_name in aHash["default"].values():
         AutoModel.from_pretrained(model_name)
         AutoTokenizer.from_pretrained(model_name)
+        AutoConfig.from_pretrained(model_name)
 
     #TODO - get temp dir and move this into the temp dir
     os.system("mkdir -p ./wikipedia")
@@ -2639,6 +2731,7 @@ class TextAugment:
       file = cached_download(file_url)
       os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
     #kenlm_model = KenlmModel("./wikipedia", "en")
+  
 
   @staticmethod
   def multiprocess_ner(docs,
@@ -2673,11 +2766,13 @@ class TextAugment:
                                                       do_spacy=do_spacy,
                                                       do_backtrans=do_backtrans,
                                                       cutoff=cutoff,
-                                                      batch_size=batch_size),
+                                                      batch_size=batch_size,
+                                                       ),
                                               docs_chunks)
-
-          for i, docs in enumerate(processed_docs):
+          i = 0
+          for  docs in tqdm(processed_docs):
             print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
+            i += 1
             for doc in docs:
             # for doc in docs.values():
               file.write(f'{doc}\n')
@@ -2702,6 +2797,7 @@ if not in_notebook:
   args = parser.parse_args()
 else:
   args = None
+
 
 if __name__ == "__main__":
   if args is not None:
@@ -2741,6 +2837,6 @@ if __name__ == "__main__":
         processor = TextAugment(single_process=True)
         if not docs:
           docs = processor.intialize_docs(docs, src_lang)
-        docs, chunks = processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
+        docs = processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
                                           do_backtrans=True, cutoff=cutoff, batch_size=batch_size)
         docs = processor.serialize_ner_items(docs, outfile=outfile)
