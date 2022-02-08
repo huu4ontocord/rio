@@ -2767,13 +2767,13 @@ class TextAugment:
     else:
       docs_chunks = [docs]
     start = time.time()
-    #TextAugmentGlobalModel.initializer_all(src_langs=[src_lang], target_langs=[target_lang])
+    TextAugmentGlobalModel.initializer_all(src_langs=[src_lang], target_langs=[target_lang])
     processor = TextAugment(single_process=False)
     # processor.initializer()
     print(len(docs_chunks))
     with open(outfile, 'w', encoding='utf-8') as file:
         # for i in range(0, num_workers):
-          pool = multiprocessing.Pool(processes=num_workers, initializer=processor.initializer) # partial(processor.initializer, all_available_global_model=available_global_models))
+          pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_global_model=available_global_models))
           processed_docs = pool.imap_unordered(partial(processor.process_ner,
                                                       src_lang=src_lang,
                                                       target_lang=target_lang,
