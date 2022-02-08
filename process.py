@@ -571,7 +571,7 @@ class TextAugment:
 
 
   def __init__(self, device=None, single_process=1, available_global_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
-
+    
     if device is not None:
       self.device = device
       if device == "cpu": 
@@ -587,6 +587,7 @@ class TextAugment:
         self.device = "cpu"  
     if single_process:
       self.initializer(available_global_model=available_global_model, device=self.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
+    print ("init called", hasttr(self, 'ner_model_name2pipelines')
 
   def initializer(self, all_available_global_model=None, available_global_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
     global available_global_models
@@ -651,7 +652,7 @@ class TextAugment:
     if "facebook/m2m100_418M" not in self.translation_pipelines:
       self.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
     #TODO MariamMT in global context
-    print (self.device, self.ner_model_name2pipelines)
+    print ('**', self.device, self.ner_model_name2pipelines)
     if available_global_model is not None:
         available_global_model.labse = self.labse 
         available_global_model.qg = self.qg
@@ -1596,8 +1597,7 @@ class TextAugment:
             labelsHash2['AGE'] = labelsHash2['AGE'] + labelsHash2['DATE']
             del labelsHash2['DATE']
           if 'DATE' in labelsHash2 and 'ID' in labelsHash2:
-            labelsHash2['ID'] = labelsHash2['ID'] + labelsHash2['DATE']
-            del labelsHash2['DATE']
+            del labelsHash2['ID'] # we prefe dates to ids?
           if 'CARDINAL' in labelsHash2 and 'ID' in labelsHash2:
             labelsHash2['ID'] = labelsHash2['ID'] + labelsHash2['CARDINAL']
             del labelsHash2['CARDINAL']
