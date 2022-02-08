@@ -1,4 +1,5 @@
  
+import re, regex
 #from https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py which is under the MIT License
 # see also for ICD https://stackoverflow.com/questions/5590862/icd9-regex-pattern - but this could be totally wrong!
 # we do regex in this order in order to not capture ner inside domain names and email addresses.
