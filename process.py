@@ -592,8 +592,7 @@ class TextAugment:
         TextAugment.device = "cpu"  
     if single_process:
       TextAugment.initializer(available_global_model=available_global_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
-    print ("init called", hasattr(self, 'ner_model_name2pipelines'))
-
+    
   def initializer(self, all_available_global_model=None, available_global_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
     global available_global_models
     if all_available_global_model is not None:
@@ -617,18 +616,16 @@ class TextAugment:
         else:
           TextAugment.device_id = -1
           device = TextAugment.device = "cpu"  
-      print (device)
       if device != "cpu":
         device_id = int(device.split(":")[-1])
         available_global_model = available_global_models[device_id]
-        print (available_global_models)
         if available_global_model is None: 
           available_global_models[device_id] = available_global_model = TextAugmentGlobalModel(device=TextAugment.device)
         labse = available_global_model.labse
         qg = available_global_model.qg
         translation_pipelines = available_global_model.translation_pipelines
         ner_model_name2pipelines = available_global_model.ner_model_name2pipelines
-
+    
     if labse is not None: TextAugment.labse = labse 
     if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
     if ner_model_name2pipelines is not None: TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
@@ -653,7 +650,6 @@ class TextAugment:
     if "facebook/m2m100_418M" not in TextAugment.translation_pipelines:
       TextAugment.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(TextAugment.device)
     #TODO MariamMT in global context
-    print ('**', TextAugment.device, TextAugment.ner_model_name2pipelines)
     if available_global_model is not None:
         if TextAugment.labse  is not None: available_global_model.labse = TextAugment.labse 
         if TextAugment.qg is not None: available_global_model.qg = TextAugment.qg
@@ -1066,7 +1062,7 @@ class TextAugment:
       ner_key = f'{src_lang}_ner'
     if text_key is None:
       text_key = f'{src_lang}_text'
-    print (chunks)
+    #print (chunks)
     results_arr = hf_pipeline([chunk[text_key] for chunk in chunks], batch_size=len(chunks))
     results_arr2 = []
     offset = 0
@@ -2277,7 +2273,7 @@ class TextAugment:
                     idx = None
 
             if idx is not None and idx >= len_items:
-              print ('err', idx, t, o)
+              print ('err idx out of range of items', idx, t, o)
             if idx is not None and idx < len_items:
               ner_word += o
               if "[" in t:
