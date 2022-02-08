@@ -208,6 +208,7 @@ class TextAugmentGlobalModel:
 
   @staticmethod
   def initializer_all(self, src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
+    global available_global_models
     for i, available_global_model in enumerate(available_global_models):
       if available_global_model is None:  
         available_global_model = TextAugmentGlobalModel(device_id=i)
@@ -588,6 +589,7 @@ class TextAugment:
       self.initializer(available_global_model=available_global_model, device=self.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
 
   def initializer(self, all_available_global_model=None, available_global_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+    global available_global_models
     if all_available_global_model is not None:
       available_global_models = all_available_global_model
     if device is not None:
