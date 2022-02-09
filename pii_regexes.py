@@ -198,3 +198,57 @@ regex_rulebase = {
       ],
     },
  }
+
+def detect_ner_with_regex_and_context(sentence, src_lang):
+      global regex_rulebase
+      if src_lang in ("zh", "ko", "ja"):
+          sentence_set = set(sentence.lower())
+      else:
+          sentence_set = set(sentence.lower().split(" "))
+      idx = 0
+      all_ner = []
+      original_sentence = sentence
+      for tag, regex_group in regex_rulebase.items():
+          for regex_context in regex_group.get(src_lang, []) + regex_group.get("default", []):
+              if True:
+                  regex, context = regex_context
+                  found_context = False
+                  if context:
+                      for c1 in context:
+                        c1 = c1.lower()
+                        for c2 in c1.split():
+                          if c2 in sentence_set:
+                              found_context = True
+                              break
+                        if found_context: break
+                      if not found_context:
+                          continue
+                  for ent in regex.findall(sentence):
+                      if not isinstance(ent, str) or not ent:
+                          continue
+                      sentence2 = original_sentence
+                      delta = 0
+                      while True:
+                        if ent not in sentence2:
+                          break
+                        else:
+                          i = sentence2.index(ent)
+                          j = i + len(ent)
+                          if found_context:
+                              len_sentence = len(sentence2)
+                              left = sentence2[max(0, i - context_window) : i].lower()
+                              right = sentence2[j : min(len_sentence, j + context_window)].lower()
+                              found_context = False
+                              for c in context:
+                                c = c.lower()
+                                if c in left or c in right:
+                                    found_context = True
+                                    break
+                              if not found_context:
+                                sentence2 = sentence2[i+len(ent):]
+                                continue
+                          sentence2 = sentence2[i+len(ent):]
+                          all_ner.append((ent, delta+i, delta+j, tag))
+                          delta += j
+                          idx += 1
+      return all_ner
