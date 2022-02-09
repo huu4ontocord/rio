@@ -3,7 +3,7 @@ import re, regex
 #from https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py which is under the MIT License
 # see also for ICD https://stackoverflow.com/questions/5590862/icd9-regex-pattern - but this could be totally wrong!
 # we do regex in this order in order to not capture ner inside domain names and email addresses.
-#NORp, AGE and DISEASE are just test cases. We will use transformers and rules to detect these.
+#NORP, AGE and DISEASE regexes are just test cases. We will use transformers and rules to detect these.
 regex_rulebase = {
     "NORP": {
       "en": [(re.compile(r"upper class|middle class|working class|lower class", re.IGNORECASE), None),],
