@@ -2516,9 +2516,9 @@ class TextAugment:
   @staticmethod
   def preload_cache(src_lang, target_lang):
     print ("preload_cache")
-    AutoConfig.from_pretrained("sentence-transformers/LaBSE")
-    AutoTokenizer.from_pretrained("sentence-transformers/LaBSE")
-    AutoModel.from_pretrained("sentence-transformers/LaBSE")
+    #AutoConfig.from_pretrained("sentence-transformers/LaBSE")
+    #AutoTokenizer.from_pretrained("sentence-transformers/LaBSE")
+    #AutoModel.from_pretrained("sentence-transformers/LaBSE")
     SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache")
     en_spacy_nlp = spacy.load('en_core_web_sm')
     try:
