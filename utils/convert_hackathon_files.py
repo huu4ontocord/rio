@@ -35,6 +35,7 @@ def create_all_pii(src_lang=None, infiles = ["/content/drive/Shareddrives/BigSci
             labels3 = []
             ner3 = {}
             text = dlist[i]['content']
+            text = text.replace('\"\"', '\"').replace('\"\"', '\"').replace('\"\"', '\"').replace('\"\"', '\"').replace('\"\"', '\"')
             dat2 = {}
             if text.replace(" ", "").lower() in seen:
               dat2 = seen[text.replace(" ", "").lower()]
