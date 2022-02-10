@@ -11,4 +11,5 @@ fsspec
 tqdm 
 sentence-transformers
 nltk
-protobuf 
+protobuf
+python-stdnum
