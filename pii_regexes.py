@@ -635,7 +635,10 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, igno
                       if not isinstance(ent, str) or not ent:
                           continue
                       stnum_type = id_2_stdnum_type(ent)
+                    
                       #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
+                      #TODO: we couold do a rule where given the language, map to country, and if the country stdnum is matched, 
+                      #we won't skip this ent even if it also matches an ignore_stdnum_type
                       if any(a for a in stnum_type if a in ignore_stdnum_type):
                         continue
                       sentence2 = original_sentence
