@@ -78,8 +78,6 @@ def try_decode(text):
    except:
      return None
 
-
-
 faker_list = [
     'ar_AA',
     'ar_PS',
@@ -156,12 +154,16 @@ def _get_oscar_urls(language, shuffled="unshuffled", deduplicated="deduplicated"
     data_filenames = [line.decode().split("\t")[0] for line in f if line]
     return [base_data_url + data_filename for data_filename in data_filenames]
 
-def _download_urls(urls):
-  for url in urls:
-    if not os.path.exists(url.split("/")[-1]):
-      os.system(f"wget {url}")
-
-
+def _download_oscar(language, shard=0, cache_dir=None, shuffled="unshuffled", deduplicated="deduplicated"):
+  if cache_dir is None: 
+    cache_dir = "~/.cache/transformers"
+  os.system(f"mkdir -p {cache_dir}")
+  _file = f"{cache_dir}/OSCAR_{language}_{shard}.jsonl"
+  if not os.path.exists(_file):
+      urls = _get_oscar_urls(language, shuffled, deduplicated)
+      url = urls[shard]
+      os.system(f"wget {url} -O {_file}")
+  return _file
 
 trannum = str.maketrans("0123456789", "1111111111")
 
@@ -185,7 +187,6 @@ urdu_firstnames = ["Azhar", "Benazir", "Farahnaz", "Maliha", "Minoo", "Romana", 
 urdu_surnames = ["Abid", "Ahmad", "Akbar", "Akmal", "Alam", "Ayaz", "Bohra", "Bucha", "Bukhari", "Buksh", "Bux", "Chandpuri", "Changezi", "Emani", "Farrukhabadi", "Farrukhi", "Fazail", "Hassim", "Hilaly", "Hussaini ", "Brahmin", "Lucknawi", "Ludhianvi", "Matloob", "Omar", "Vaishya", "Rahimtoola", "Shafiq", "Shoaib", "Siddiqui", "Siddiqui", "Tikka", "Yasser", ]
 
 #basque and catalan - use Spanish names
-
 
 
 class TextAugmentGPUModel:
@@ -264,7 +265,6 @@ class TextAugment:
   faker_en_list  = None
   kenlm_model = None
   
-
   # see https://www.researchgate.net/publication/259179064_Comparing_Methods_for_Detecting_Child_Exploitation_Content_Online for common CSAM words
   # http://antipaedo.lip6.fr/T12/keywords_cnrs.pdf - for top 20 from table 7 and 8 of the paper, plus other similar words , ignoring stopwords like "tuesday"
   # WARNING: Translations are probably not accurate. TODO to fix.
@@ -716,6 +716,7 @@ class TextAugment:
 
   def do_translations(self, texts, src_lang='en', target_lang='hi', batch_size=16, do_mariam_mt=False):
     print ("do_translations")
+    print ([len(t.split()) for t in texts])
     if not do_mariam_mt:
       m2m_model_name = self.m2m100_lang.get((src_lang, target_lang), self.m2m100_lang[('*', '*')])
       if m2m_model_name != self.m2m_model_name or self.m2m_tokenizer is None:
@@ -1699,7 +1700,7 @@ class TextAugment:
                           backtrans_weight=0.9,
                           do_docs_trim=False,
                           do_kenlm = True,
-                          do_qa_qg_rel=False,
+                          do_qg_rel=False,
                           aug_scope={'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
                           anon_scope={'PERSON', 'ID'},):
     print ("process_ner_chunks_with_trans")
@@ -1964,8 +1965,8 @@ class TextAugment:
             self.hf_ner(ner_pipeline, target_lang, docs, a_batch, stopwords=stopwords2, weight=hf_ner_weight*backtrans_weight*hf_ner_weight2, text_key=target_text_key, \
                         ner_key=target_ner_key, signal=model_name, offset_key=target_offset_key)
 
-    if False: #do_qa_qg_rel and target_lang == 'en':
-      docs, chunks= self.generate_questions_answers_rel(docs, chunks, target_lang, ner_key=target_ner_key)
+    if do_qg_rel and target_lang == 'en':
+      docs = self.generate_questions_answers_rel(docs, chunks, target_lang, ner_key=target_ner_key)
 
     docs = self.collapse_ner(docs, target_ner_key, target_collapse_ner_key, target_text_key, stopwords2, do_cleanup_only=True)
 
@@ -1986,7 +1987,7 @@ class TextAugment:
         public_figures = set(public_figures)
         for ent, aHash in ner.items():
           if ent in public_figures:
-            aHash[('PUBLIC_FIGURE', 'kenlm')] = aHash.get(('PUBLIC_FIGURE', 'kenlm'), 0) + 1.0
+            aHash[('PUBLIC_FIGURE', 'kenlm')] = aHash.get(('PUBLIC_FIGURE', 'kenlm'), 0) + 1.0 # use param kenlm_weight
 
     # this will mess up the items array and the other arrays that depends on mentions unles we do_cleanup_only
     docs = self.collapse_ner(docs, target_ner_key, target_collapse_ner_key, target_text_key, stopwords2, do_cleanup_only=True)
@@ -2237,7 +2238,7 @@ class TextAugment:
 
   def process_ner(self,
               docs,
-              src_lang,
+              src_lang = None,
               do_spacy = True,
               do_hf_ner = True,
               do_ontology = True,
@@ -2257,10 +2258,10 @@ class TextAugment:
               regex_weight=1.5,
               backtrans_weight=0.9,
               do_docs_trim=True,
-              do_qa_qg_rel=False,
+              do_qg_rel=False,
               do_kenlm = True,
               cutoff=None,
-              target_lang='en',
+              target_lang=None,
               domain="",
               aug_scope={'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
               anon_scope={'PERSON', 'ID'}):
@@ -2272,6 +2273,11 @@ class TextAugment:
       Note: This code will have a side-effect on the docs.
       """
       print ("process_ner")
+      if type(docs) is tuple:
+        docs, src_lang, target_lang = docs
+      if target_lang is None:
+        target_lang = "en"
+      assert src_lang, "a source language needs to be specified"
       #print (self.ner_model_name2pipelines)
       src_is_cjk = src_lang in ('zh', 'ko', 'ja')
       if src_is_cjk:
@@ -2308,7 +2314,7 @@ class TextAugment:
       if do_docs_trim:
         docs = [doc for doc in docs if self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, flagged_words=flagged_words1)]
         #print ('trimmed junk', (len_docs-len(docs))/len_docs)
-      len_d = len(docs)
+      len_docs = len(docs)
       
       counter = {}
       chunks = []
@@ -2407,7 +2413,7 @@ class TextAugment:
                           hf_ner_weight=hf_ner_weight,
                           regex_weight=regex_weight,
                           backtrans_weight=backtrans_weight,
-                          do_qa_qg_rel=do_qa_qg_rel and src_lang == 'en',
+                          do_qg_rel=do_qg_rel and src_lang == 'en',
                           do_docs_trim=do_docs_trim)
         if do_docs_trim:
           do_docs_trim = len(docs2) == len(docs)
@@ -2428,7 +2434,7 @@ class TextAugment:
                             do_anonymization=do_anonymization,
                             do_regex = do_regex,
                             do_cleanup = do_cleanup,
-                            do_qa_qg_rel=do_qa_qg_rel and target_lang == 'en',
+                            do_qg_rel=do_qg_rel and target_lang == 'en',
                             do_kenlm = do_kenlm,
                             batch_size = batch_size,
                             ontology_weight=ontology_weight,
@@ -2465,7 +2471,7 @@ class TextAugment:
                             do_anonymization=False,
                             do_regex = do_regex,
                             do_cleanup=do_cleanup,
-                            do_qa_qg_rel=do_qa_qg_rel and augment_lang == 'en',
+                            do_qg_rel=do_qg_rel and augment_lang == 'en',
                             do_kenlm = do_kenlm,
                             batch_size = batch_size,
                             ontology_weight=ontology_weight,
@@ -2476,68 +2482,140 @@ class TextAugment:
                             do_docs_trim=do_docs_trim)
         docs, chunks = docs2, chunks2
 
-      return docs
+      return list(docs.values()) #this is not guaranteed to be ordered
 
   @staticmethod
-  def intialize_docs(docs=None, src_lang=None):
+  def get_docs(src_langs=None, docs=None, max_chunk_size=10000, num_workers=1, cutoff=-1, domain=""):
+      """
+      NOTE: We filter the registry docs if there are no registry label for a doc. This might not be the ideal behaviour.
+      """
       print("Intialize Documents")
-      domain = ""
-      if docs is None:
-        try:
-          domain = 'oscar_registry'
-          d = load_dataset("TurkuNLP/register_oscar", data_files=f"{src_lang}/{src_lang}_00000*")
-          docs = [doc for doc in d['train'] if 'labels' not in doc or doc['labels'] !=[]]
-        except:
+
+      def get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size):
+        suggested_chunk_size = int(len_docs/num_workers)
+        if cutoff is not None and cutoff > 0:
+          suggested_chunk_size = int(num_workers/cutoff)
+          if suggested_chunk_size <= 1:
+              suggested_chunk_size = cutoff
+        return min(max_chunk_size, suggested_chunk_size)
+            
+      if domain:
+          d = load_dataset(domain) 
+          len_docs = len(d)
+          chunk_size = get_chunk_size(cutoff, len_docs, num_workers)
+          curr_recs = 0
+          for i in range(0, len_docs, chunk_size):
+              j = min(i + chunk_size, len_docs)
+              curr_recs += j - i
+              if curr_recs >= cutoff:
+                j -= curr_recs - cutoff
+              if i <= j: yield d['train'][i:j]
+              if curr_recs >= cutoff: break
+      elif docs is None and src_langs is not None:
+        if type(src_langs) is str: src_langs = [src_langs]
+        for src_lang in src_langs:
+          d = None
           try:
-            domain = 'mc4_registry'
-            d = load_dataset("TurkuNLP/register_mc4", data_files=f"{src_lang}/{src_lang}_00000*")
-            docs = [doc for doc in d['train'] if 'labels' not in doc or doc['labels'] !=[]]
+            domain = 'oscar_registry'
+            d = load_dataset("TurkuNLP/register_oscar", data_files=f"{src_lang}/{src_lang}_00000.jsonl.gz")
           except:
-            domain = 'oscar'
-            url = _get_oscar_urls(src_lang)[0]
-            _download_urls([url])
-            docs = [{'text':text}  for text in [try_decode(t) for t in gzip.open(url.split("/")[-1], "rb").readlines()] if text]
             try:
-              domain = 'mc4'
-              d = load_dataset("mc4", src_lang)
-              d = list(d['train'])
+              domain = 'mc4_registry'
+              d = load_dataset("TurkuNLP/register_mc4", data_files=f"{src_lang}/{src_lang}_00000.jsonl.gz")
             except:
               pass
+          if d:  
+            len_docs = len(d['train'])
+            chunk_size = get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size)
+            curr_recs = 0
+            for i in range(0, len_docs, chunk_size):
+              j = min(i + chunk_size, len_docs)
+              curr_recs += j - i
+              if curr_recs >= cutoff:
+                j -= curr_recs - cutoff
+              if i <= j: 
+                yield [doc for doc in [d['train'][k] for k in range(i, j)] if 'labels' not in doc or doc['labels'] !=[]]
+              if curr_recs >= cutoff: break
+          else:
+              try:
+                domain = 'oscar'
+                _file = _download_oscar(src_lang, shard=0)
+              except:
+                _file = None
+              if _file is not None:
+                chunk_size = get_chunk_size(cutoff, 1000000, num_workers, max_chunk_size)
+                cnt = 0
+                ret = []
+                with gzip.open(_file, "rb") as f:
+                  t = f.readline()
+                  text = try_decode(t)
+                  if text:
+                    cnt += 1
+                    if cutoff is not None and cutoff > 0 and cnt > cutoff:
+                      yield ret
+                      ret = []
+                      break
+                    else:
+                      cnt += 1
+                      if cnt +1 % chunk_size == 0:
+                        yield ret
+                        ret = []
+                      ret.append({'text':text})
+                if ret:
+                  yield ret
+                  ret = []
+              else:
+                  domain = 'mc4'
+                  d = load_dataset("mc4", src_lang)
+                  len_docs = len(d['train'])
+                  chunk_size = get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size)
+                  curr_recs = 0
+                  for i in range(0, len_docs, chunk_size):
+                    j = min(i + chunk_size, len_docs)
+                    curr_recs += j - i
+                    if curr_recs >= cutoff:
+                      j -= curr_recs - cutoff
+                    if i <= j: yield [d['train'][k] for k in range(i, j)]
+                    if curr_recs >= cutoff: break
       elif isinstance(docs, str):
-          docs = [{'text': docs}]
+          yield [{'text': docs}]
       elif isinstance(docs, list):
           if isinstance(docs[0], dict):
-            return docs
+            yield docs
           else:
-            return [{'text': t} for t in docs]
-      print(f"Finished intialize Documents from {domain}")
-      return docs
+            yield [{'text': t} for t in docs]
+      elif not docs:
+        yield []
+      else:  
+        yield docs
 
   @staticmethod
-  def preload_cache(src_lang, target_lang):
+  def preload_cache(src_langs=["en"], target_langs=["en"], domain=None):
     print ("preload_cache")
-    #AutoConfig.from_pretrained("sentence-transformers/LaBSE")
-    #AutoTokenizer.from_pretrained("sentence-transformers/LaBSE")
-    #AutoModel.from_pretrained("sentence-transformers/LaBSE")
     SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache")
     en_spacy_nlp = spacy.load('en_core_web_sm')
     try:
       coref = neuralcoref.NeuralCoref(en_spacy_nlp.vocab)
     except:
+      print("neuralcoref not loaded!")
       pass
-    if src_lang:
-      try:
-        load_dataset("TurkuNLP/register_oscar", data_files=f"{src_lang}/{src_lang}_00000*")
-      except:
-          try:
-            load_dataset("TurkuNLP/register_mc4", data_files=f"{src_lang}/{src_lang}_00000*")
-          except:
-            url = _get_oscar_urls(src_lang)[0]
-            _download_urls([url])
+    if domain:
+      d = load_dataset(domain) 
+    for src_lang in list(set(src_langs)):
+      if src_lang:
+        try:
+          load_dataset("TurkuNLP/register_oscar", data_files=f"{src_lang}/{src_lang}_00000.jsonl.gz")
+        except:
             try:
-              load_dataset("mc4", src_lang)
+              load_dataset("TurkuNLP/register_mc4", data_files=f"{src_lang}/{src_lang}_00000.jsonl.gz")
             except:
-              pass
+              try:
+                _file = _download_oscar(src_lang, shard=0)
+              except:
+                try:
+                  load_dataset("mc4", src_lang)
+                except:
+                  pass
     arr2 = []
     for arr in TextAugment.hf_ner_model_map.values():
       for model_name, _, _ in arr:
@@ -2555,7 +2633,15 @@ class TextAugment:
         AutoModel.from_pretrained(model_name)
         AutoTokenizer.from_pretrained(model_name)
         AutoConfig.from_pretrained(model_name)
-
+    seen = {}
+    for src_lang, target_lang in zip(src_langs, target_langs):
+        if (src_lang, target_lang) in seen: continue
+        model_name = mariam_mt.get((src_lang, target_lang))
+        seen[(src_lang, target_lang)] = 1
+        if model_name is not None:
+          AutoModel.from_pretrained(model_name)
+          AutoTokenizer.from_pretrained(model_name)
+          AutoConfig.from_pretrained(model_name)        
     #TODO - get temp dir and move this into the temp dir
     os.system("mkdir -p ./wikipedia")
     if not os.path.exists("./wikipedia/en.arpa.bin"): 
@@ -2570,49 +2656,49 @@ class TextAugment:
       file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
       file = cached_download(file_url)
       os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
-    #kenlm_model = KenlmModel("./wikipedia", "en")
-  
+
 
   @staticmethod
   def multiprocess_ner(docs,
                     outfile,
-                    src_lang=None,
-                    target_lang=None,
+                    src_lang,
+                    target_lang,
                     do_regex=True,
                     do_spacy=True,
                     do_backtrans=True,
                     cutoff=None,
                     batch_size=5,
                     num_workers=2):
+
+    def load_docs(src_langs, target_langs, num_workers, cutoff):
+      for src_lang, target_lang in zip(src_langs, target_langs):
+        for doc in TextAugment.get_docs(src_lang, cutoff=cutoff, num_workers=num_workers):
+          yield (doc, src_lang, target_lang)
+      
     print ("multiprocess_ner")
+    assert num_workers >= 2, "Can't do multiprocessing with less than 2 workers"
     multiprocessing.set_start_method('spawn', force=True)
-    if target_lang is None:
-      target_lang = "en"
-    #TODO create a generator function to return docs_chunks
-    if num_workers > 1:
-        len_docs = len(docs)
-        chunk_size = int(len_docs / num_workers)
-        docs_chunks = [docs[i:min(i + chunk_size, len_docs)] for i in range(0, len_docs, chunk_size)]
-    else:
-      docs_chunks = [docs]
+    if type(src_lang) is str: src_lang = [src_lang]
+    if type(target_lang) is str: target_lang = [target_lang]
+    if src_lang is None: src_lang = ["en"]
+    if target_lang is None: target_lang = ["en"]
     start = time.time()
-    TextAugmentGPUModel.initializer_all(src_langs=[src_lang], target_langs=[target_lang])
+    TextAugmentGPUModel.initializer_all(src_lang=src_lang, target_lang=target_lang)
     processor = TextAugment(single_process=False)
     # processor.initializer()
-    print(len(docs_chunks))
+    pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_gpu_model=TextAugmentGPUModel.available_gpu_models ))      
     with open(outfile, 'w', encoding='utf-8') as file:
         # for i in range(0, num_workers):
-          pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_gpu_model=TextAugmentGPUModel.available_gpu_models ))
           processed_docs = pool.imap_unordered(partial(processor.process_ner,
-                                                      src_lang=src_lang,
-                                                      target_lang=target_lang,
+                                                      src_lang=None,
+                                                      target_lang=None,
                                                       do_regex=do_regex,
                                                       do_spacy=do_spacy,
                                                       do_backtrans=do_backtrans,
                                                       cutoff=cutoff,
                                                       batch_size=batch_size,
                                                        ),
-                                              docs_chunks)
+                                              load_docs(src_lang, target_lang, num_workers, cutoff))
           i = 0
           for  docs in tqdm(processed_docs):
             #print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
@@ -2621,32 +2707,32 @@ class TextAugment:
             # for doc in docs.values():
               file.write(f'{doc}\n')
 
-in_notebook = 'google.colab' in sys.modules
-if not in_notebook:
-  try:
-      get_ipython()
-  except:
-    in_notebook = False
-
-if not in_notebook:
-  parser = argparse.ArgumentParser(description='Text Annotation, Augmentation and Anonymization')
-  parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Language', default=None)
-  parser.add_argument('-target_lang', dest='target_lang', type=str, help='Target Language', default="en")
-  parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
-  parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
-  parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
-  parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default=None)
-  parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
-  parser.add_argument('-preload_cache', dest='preload_cache', action='store_true', help='Preload the cache of models and data', default = False)
-  args = parser.parse_args()
-else:
-  args = None
-
-
 if __name__ == "__main__":
-  if args is not None:
+  in_notebook = 'google.colab' in sys.modules
+  if not in_notebook:
+    try:
+        get_ipython()
+    except:
+      in_notebook = False
+  if not in_notebook:
+    parser = argparse.ArgumentParser(description='Text Annotation, Augmentation and Anonymization')
+    parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Language(s), comma separated', default=None)
+    parser.add_argument('-target_lang', dest='target_lang', type=str, help='Target Language or Languages, comma separated', default="en")
+    parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
+    parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
+    parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
+    parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default=None)
+    parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
+    parser.add_argument('-preload_cache', dest='preload_cache', action='store_true', help='Preload the cache of models and data', default = False)
+    args = parser.parse_args()
     src_lang = args.src_lang
-    target_lang = args.target_lang
+    if src_lang is not None:
+      src_lang = src_lang.split(",")
+    else:
+      src_lang = []
+    target_lang = args.target_lang.split(",")
+    if len(target_lang) < len(src_lang):
+      target_lang.extend([target_lang[0]]*(len(src_lang)-len(target_lang)))
     cutoff = args.cutoff
     batch_size = args.batch_size
     infile = args.infile
@@ -2661,16 +2747,14 @@ if __name__ == "__main__":
         outfile = "out.jsonl"
     docs = TextAugment.deserialize_ner_items(infile=infile) if infile else None
     if args.preload_cache: 
-      TextAugment.preload_cache(src_lang, target_lang)
+      TextAugment.preload_cache(src_lang or ["en"], target_lang)
     #TODO - do multiprocessing
     elif src_lang is not None:
       if num_workers > 1:
-        if not docs:
-          docs = TextAugment.intialize_docs(docs, src_lang)
         TextAugment.multiprocess_ner(docs,
                     outfile,
-                    src_lang=src_lang,
-                    target_lang=target_lang,
+                    src_lang,
+                    target_lang,
                     do_regex=True,
                     do_spacy=True,
                     do_backtrans=True,
@@ -2680,7 +2764,7 @@ if __name__ == "__main__":
       else:
         processor = TextAugment(single_process=True)
         if not docs:
-          docs = processor.intialize_docs(docs, src_lang)
+          docs = next(processor.get_docs(src_lang, docs))
         docs = processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
                                           do_backtrans=True, cutoff=cutoff, batch_size=batch_size)
         docs = processor.serialize_ner_items(docs, outfile=outfile)
