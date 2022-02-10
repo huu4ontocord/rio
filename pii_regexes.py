@@ -609,6 +609,10 @@ regex_rulebase = {
  }
 
 def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, tag_type={'ID'}, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
+      """
+      This function returns a list of 3 tuples, representing an NER detection for [(entity, start, end, tag), ...]
+      NOTE: There may be overlaps
+      """
       global regex_rulebase
       if src_lang in ("zh", "ko", "ja"):
           sentence_set = set(sentence.lower())
