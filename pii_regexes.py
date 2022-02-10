@@ -607,7 +607,7 @@ regex_rulebase = {
     },
  }
 
-def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
+def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, tag_type={'ID'}, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
       global regex_rulebase
       if src_lang in ("zh", "ko", "ja"):
           sentence_set = set(sentence.lower())
@@ -617,6 +617,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, igno
       all_ner = []
       original_sentence = sentence
       for tag, regex_group in regex_rulebase.items():
+          if tag not in tag_type: continue
           for regex_context in regex_group.get(src_lang, []) + regex_group.get("default", []):
               if True:
                   regex, context = regex_context
@@ -634,13 +635,13 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, igno
                   for ent in regex.findall(sentence):
                       if not isinstance(ent, str) or not ent:
                           continue
-                      stnum_type = id_2_stdnum_type(ent)
-                    
-                      #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
-                      #TODO: we couold do a rule where given the language, map to country, and if the country stdnum is matched, 
-                      #we won't skip this ent even if it also matches an ignore_stdnum_type
-                      if any(a for a in stnum_type if a in ignore_stdnum_type):
-                        continue
+                      if tag == 'ID':
+                          stnum_type = id_2_stdnum_type(ent)
+                          #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
+                          #TODO: we couold do a rule where given the language, map to country, and if the country stdnum is matched, 
+                          #we won't skip this ent even if it also matches an ignore_stdnum_type
+                          if any(a for a in stnum_type if a in ignore_stdnum_type):
+                            continue
                       sentence2 = original_sentence
                       delta = 0
                       while True:
