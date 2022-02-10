@@ -2770,7 +2770,7 @@ if __name__ == "__main__":
         for docs, src_lang in all_docs:
             if outfile is None:
                 if _file is not None: _file.close()
-                _file = open(f"(src_lang}_out.jsonl", 'w', encoding='utf-8')
+                _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
             docs = processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
                                                   do_backtrans=True, cutoff=cutoff, batch_size=batch_size)
             for doc in processor.serialize_ner_items(docs):
