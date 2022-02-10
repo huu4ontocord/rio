@@ -2766,7 +2766,7 @@ if __name__ == "__main__":
         if not docs:
             all_docs = [(processor.get_docs(sl, cutoff=cutoff), sl, tl) for sl, tl in zip(src_lang, target_lang)]
         else:
-            all_docs = [([docs], src_lang[0], target_lang[0)]
+            all_docs = [([docs], src_lang[0], target_lang[0])]
         if outfile is not None:
             _file =  open(outfile, 'w', encoding='utf-8')
         else:
