@@ -2741,9 +2741,7 @@ if __name__ == "__main__":
     if cutoff <= 0:
       cutoff = None
     if outfile is None:
-      if src_lang is not None:
-        outfile = f"{src_lang}_out.jsonl"
-      else:
+      if infile is not None:
         outfile = "out.jsonl"
     docs = TextAugment.deserialize_ner_items(infile=infile) if infile else None
     if args.preload_cache: 
@@ -2764,13 +2762,17 @@ if __name__ == "__main__":
       else:
         processor = TextAugment(single_process=True)
         if not docs:
-          all_docs = processor.get_docs(src_lang)
+            all_docs = [(processor.get_docs(sl), sl) for sl in src_lang]
         else:
-            all_docs = [docs]
-        with open(outfile, 'w', encoding='utf-8') as file:
-            for docs in all_docs:
-                docs = processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
+            all_docs = [(docs, src_lang[0])]
+        if outfile is not None:
+            _file =  open(outfile, 'w', encoding='utf-8'):
+        for docs, src_lang in all_docs:
+            if outfile is None:
+                if _file is not None: _file.close()
+                _file = open(f"(src_lang}_out.jsonl, 'w', encoding='utf-8')
+            docs = processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
                                                   do_backtrans=True, cutoff=cutoff, batch_size=batch_size)
-                for doc in processor.serialize_ner_items(docs):
-                # for doc in docs.values():
-                  file.write(f'{doc}\n')
+            for doc in processor.serialize_ner_items(docs):
+                _file.write(f'{doc}\n')
+        if _file is not None: _file.close()
