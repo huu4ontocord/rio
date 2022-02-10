@@ -2681,7 +2681,7 @@ class TextAugment:
     if type(src_lang) is str: src_lang = [src_lang]
     if type(target_lang) is str: target_lang = [target_lang]
     if src_lang is None: src_lang = ["en"]
-    if target_lang is None: target_lang = ["en"]
+    if target_lang is None: target_lang = ["en"]*len(src_lang)
     start = time.time()
     TextAugmentGPUModel.initializer_all(src_lang=src_lang, target_lang=target_lang)
     processor = TextAugment(single_process=False)
@@ -2730,6 +2730,8 @@ if __name__ == "__main__":
       src_lang = src_lang.split(",")
     else:
       src_lang = []
+    if not args.target_lang:
+        target_lang =["en"]
     target_lang = args.target_lang.split(",")
     if len(target_lang) < len(src_lang):
       target_lang.extend([target_lang[0]]*(len(src_lang)-len(target_lang)))
@@ -2761,15 +2763,15 @@ if __name__ == "__main__":
                     num_workers=num_workers)
       else:
         processor = TextAugment(single_process=True)
-        if not docs:
-            all_docs = [(processor.get_docs(sl, cutoff=cutoff), sl) for sl in src_lang]
+        if not docs:_
+            all_docs = [(processor.get_docs(sl, cutoff=cutoff), sl, tl) for sl,tl in zip(src_lang, target_lang)]
         else:
-            all_docs = [([docs], src_lang[0])]
+            all_docs = [([docs], src_lang[0], target_lang[0)]
         if outfile is not None:
             _file =  open(outfile, 'w', encoding='utf-8')
         else:
             _file = None
-        for docs_iter, src_lang in all_docs:
+        for docs_iter, src_lang, target_lang in all_docs:
             if outfile is None:
                 if _file is not None: _file.close()
                 _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
