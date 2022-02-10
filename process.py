@@ -2762,7 +2762,7 @@ if __name__ == "__main__":
       else:
         processor = TextAugment(single_process=True)
         if not docs:
-            all_docs = [(processor.get_docs(sl), sl) for sl in src_lang]
+            all_docs = [(processor.get_docs(sl, cutoff=cutoff), sl) for sl in src_lang]
         else:
             all_docs = [([docs], src_lang[0])]
         if outfile is not None:
@@ -2774,6 +2774,7 @@ if __name__ == "__main__":
                 if _file is not None: _file.close()
                 _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
             for docs in docs2:
+                print(docs)
                 docs =  processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
                                                   do_backtrans=True, cutoff=cutoff, batch_size=batch_size)
                 for doc in processor.serialize_ner_items(docs):
