@@ -2763,8 +2763,8 @@ if __name__ == "__main__":
                     num_workers=num_workers)
       else:
         processor = TextAugment(single_process=True)
-        if not docs:_
-            all_docs = [(processor.get_docs(sl, cutoff=cutoff), sl, tl) for sl,tl in zip(src_lang, target_lang)]
+        if not docs:
+            all_docs = [(processor.get_docs(sl, cutoff=cutoff), sl, tl) for sl, tl in zip(src_lang, target_lang)]
         else:
             all_docs = [([docs], src_lang[0], target_lang[0)]
         if outfile is not None:
