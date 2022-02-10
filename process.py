@@ -2764,17 +2764,18 @@ if __name__ == "__main__":
         if not docs:
             all_docs = [(processor.get_docs(sl), sl) for sl in src_lang]
         else:
-            all_docs = [(docs, src_lang[0])]
+            all_docs = [([docs], src_lang[0])]
         if outfile is not None:
             _file =  open(outfile, 'w', encoding='utf-8')
         else:
             _file = None
-        for docs, src_lang in all_docs:
+        for docs2, src_lang in all_docs:
             if outfile is None:
                 if _file is not None: _file.close()
                 _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
-            docs = processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
+            for docs in docs2:
+                docs =  processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
                                                   do_backtrans=True, cutoff=cutoff, batch_size=batch_size)
-            for doc in processor.serialize_ner_items(docs):
-                _file.write(f'{doc}\n')
+                for doc in processor.serialize_ner_items(docs):
+                    _file.write(f'{doc}\n')
         if _file is not None: _file.close()
