@@ -2767,6 +2767,8 @@ if __name__ == "__main__":
             all_docs = [(docs, src_lang[0])]
         if outfile is not None:
             _file =  open(outfile, 'w', encoding='utf-8')
+        else:
+            _file = None
         for docs, src_lang in all_docs:
             if outfile is None:
                 if _file is not None: _file.close()
