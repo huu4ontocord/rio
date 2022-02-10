@@ -533,6 +533,7 @@ regex_rulebase = {
       "pt": [(re.compile(r"\d{3}\.d{3}\.d{3}-\d{2}|\d{11}"), None),
              (re.compile(r"PT\d{9}"), None),
       ],
+      #from https://github.com/Aggregate-Intellect/bigscience_aisc_pii_detection/blob/main/language/zh/rules.py which is under Apache 2
       "zh": [
           (
               regex.compile(
