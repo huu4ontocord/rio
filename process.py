@@ -592,7 +592,8 @@ class TextAugment:
       default_answers = list(set([a[0] for a in ner.keys()]+default_answers))
       answers1={}
       #ti = time.time()
-      text = text.replace("U.S.","US").replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" , ", ", ") # replace(" He ", " Lincoln ").replace(" he ", " Lincoln ").replace(" him ", " Lincoln ")
+      text = text.replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" , ", ", ")
+      print (text)
       aHash = self.qg(text , default_answers=default_answers)[0]
 
       allqa.append(aHash)
