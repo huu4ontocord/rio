@@ -378,10 +378,10 @@ class TextAugment:
   max_stoword_len_ko = max([0]+[len(a) for a in stopwords.get('ko', [])])
   max_stoword_len_ja = max([0]+[len(a) for a in stopwords.get('ja', [])])
   stopwords_en = set(stopwords.get('en',[]))
+  cache_dir = None
 
-
-  def __init__(self, device=None, single_process=1, available_gpu_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
-    
+  def __init__(self, device=None, single_process=1, available_gpu_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir="~/.cache):
+    if TextAgument.cache_dir is None: TextAugment.cache_dir = cache_dir
     if device is not None:
       TextAugment.device = device
       if device == "cpu": 
@@ -396,9 +396,10 @@ class TextAugment:
         TextAugment.device_id = -1
         TextAugment.device = "cpu"  
     if single_process:
-      self.initializer(available_gpu_model=available_gpu_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
+      self.initializer(available_gpu_model=available_gpu_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model, cache_dir=None)
     
-  def initializer(self, device_id_by_proess_id=True, all_available_gpu_model=None, available_gpu_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+  def initializer(self, device_id_by_proess_id=True, all_available_gpu_model=None, available_gpu_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir=None):
+    if TextAgument.cache_dir is None: TextAugment.cache_dir = cache_dir
     if all_available_gpu_model is not None:
       TextAugmentGPUModel.available_gpu_models  = all_available_gpu_model
     if device is not None:
@@ -472,21 +473,7 @@ class TextAugment:
         
     if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
     if TextAugment.kenlm_model is None: 
-      #TODO - save to temp dir
-      os.system("mkdir -p ./wikipedia")
-      if not os.path.exists("./wikipedia/en.arpa.bin"): 
-        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
-        file = cached_download(file_url)
-        os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
-      if not os.path.exists("./wikipedia/en.sp.model"): 
-        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
-        file = cached_download(file_url)
-        os.system(f"ln -s {file} ./wikipedia/en.sp.model")
-      if not os.path.exists("./wikipedia/en.sp.vocab"):
-        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
-        file = cached_download(file_url)
-        os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
-      TextAugment.kenlm_model = KenlmModel("wikipedia", "en")
+      TextAugment.load_kenlm_model()
     if TextAugment.faker_en_list is None:
       TextAugment.faker_en_list  = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
       for faker_en in faker_en_list:
@@ -499,6 +486,27 @@ class TextAugment:
     #print ("finished load")
     #TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
 
+  @staticmethod
+  def load_kenlm_model(store_model=True):
+      if TextAgument.cache_dir == None:
+        cache_dir = "~/.cache"
+      else:
+        cache_dir = TextAgument.cache_dir
+      os.system(f"mkdir -p {cache_dir}/wikipedia")
+      if not os.path.exists(f"{cache_dir}/wikipedia/en.arpa.bin"): 
+        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
+        file = cached_download(file_url)
+        os.system(f"ln -s {file} {cache_dir}/wikipedia/en.arpa.bin")
+      if not os.path.exists(f"{cache_dir}/wikipedia/en.sp.model"): 
+        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
+        file = cached_download(file_url)
+        os.system(f"ln -s {file} {cache_dir}/wikipedia/en.sp.model")
+      if not os.path.exists(f"{cache_dir}/wikipedia/en.sp.vocab"):
+        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
+        file = cached_download(file_url)
+        os.system(f"ln -s {file} {cache_dir}/wikipedia/en.sp.vocab")
+      if store_model: TextAugment.kenlm_model = KenlmModel("wikipedia", "en")
+               
   def check_good_sentence(self, s, src_lang, stopwords, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
     #basic dejunk
     # for flagged_words, only filter out if the ratio is exceeded AND there exists one banned word
@@ -2650,22 +2658,8 @@ class TextAugment:
           AutoModel.from_pretrained(model_name)
           AutoTokenizer.from_pretrained(model_name)
           AutoConfig.from_pretrained(model_name)        
-    #TODO - get temp dir and move this into the temp dir
-    os.system("mkdir -p ./wikipedia")
-    if not os.path.exists("./wikipedia/en.arpa.bin"): 
-      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
-      file = cached_download(file_url)
-      os.system(f"ln -s {file} ./wikipedia/en.arpa.bin")
-    if not os.path.exists("./wikipedia/en.sp.model"): 
-      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
-      file = cached_download(file_url)
-      os.system(f"ln -s {file} ./wikipedia/en.sp.model")
-    if not os.path.exists("./wikipedia/en.sp.vocab"):
-      file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
-      file = cached_download(file_url)
-      os.system(f"ln -s {file} ./wikipedia/en.sp.vocab")
-
-
+    TextAugment.load_kenlm_model(store_model=False)
+               
   @staticmethod
   def multiprocess_ner(docs,
                     outfile,
