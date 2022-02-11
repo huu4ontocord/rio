@@ -381,7 +381,6 @@ class TextAugment:
 
 
   def __init__(self, device=None, single_process=1, available_gpu_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
-    
     if device is not None:
       TextAugment.device = device
       if device == "cpu": 
@@ -399,6 +398,7 @@ class TextAugment:
       self.initializer(available_gpu_model=available_gpu_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
     
   def initializer(self, device_id_by_proess_id=True, all_available_gpu_model=None, available_gpu_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+    print ("initializer")
     if all_available_gpu_model is not None:
       TextAugmentGPUModel.available_gpu_models  = all_available_gpu_model
     if device is not None:
@@ -502,6 +502,7 @@ class TextAugment:
   def check_good_sentence(self, s, src_lang, stopwords, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
     #basic dejunk
     # for flagged_words, only filter out if the ratio is exceeded AND there exists one banned word
+    print ("check_good_sentence")
     if bannedwords is None:
       bannedwords = self.banned_words.get(src_lang, self.banned_words['default'])
     default_bannedwords = self.banned_words['default']
@@ -573,8 +574,8 @@ class TextAugment:
 
   #WIP - we can use this q/a q/g method to extract people, place and thing, and potentially age/date AND to get a relationship between a person and a PII info
   def generate_questions_answers_rel(self, docs, chunks, src_lang, default_answers=[], text_key=None, ner_key=None, rel_key=None, signal='qg_rel', weight=1.0):
+    print ("generate_questions_answers_rel")
     answers = {}
-
     if ner_key is None:
       ner_key = f'{src_lang}_ner'
     if text_key is None:
@@ -642,7 +643,8 @@ class TextAugment:
               end = start + len(aHash1['answer'])
               pos = end + 1
               mention = (aHash1['answer'], start, end)
-              ner[mention][(label, signal)] = ner[mention].get((label, signal), 0) + weight
+              ner[mention] = aHash2 = ner.get(mention, {})
+              aHash2[(label, signal)] = aHash2.get((label, signal), 0) + weight
 
         for mention in ner:
           ent = mention[0].lower()
