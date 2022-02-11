@@ -472,8 +472,9 @@ class TextAugment:
         TextAugmentGPUModel.available_gpu_models [available_gpu_model.device_id] = available_gpu_model 
         
     if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
-    if TextAugment.kenlm_model is None: 
-      TextAugment.load_kenlm_model()
+    #speed up loading if we don't use kenlm models
+    #if TextAugment.kenlm_model is None: 
+    #  TextAugment.load_kenlm_model()
     if TextAugment.faker_en_list is None:
       TextAugment.faker_en_list  = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
       for faker_en in faker_en_list:
@@ -1784,7 +1785,12 @@ class TextAugment:
           pass
     model = None
     ner_pipelines = []
-
+    
+    # init the kenlm pipeline
+    if do_kenlm and target_lang == 'en':
+        if TextAugment.kenlm_model is None:
+            TextAugment.load_kenlm_model()
+        
     # init hf ner pipelines
     if do_hf_ner:
       for model_name, model_cls, hf_ner_weight2 in self.hf_ner_model_map.get(target_lang, []):
