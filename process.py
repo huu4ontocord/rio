@@ -491,7 +491,7 @@ class TextAugment:
       if TextAugment.cache_dir == None:
         cache_dir = "~/.cache"
       else:
-        cache_dir = TextAgument.cache_dir
+        cache_dir = TextAugment.cache_dir
       os.system(f"mkdir -p {cache_dir}/wikipedia")
       if not os.path.exists(f"{cache_dir}/wikipedia/en.arpa.bin"): 
         file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
