@@ -641,13 +641,14 @@ class TextAugment:
               start = pos + i
               end = start + len(aHash1['answer'])
               pos = end + 1
+              mention = (aHash1['answer'], start, end)
               ner[mention][(label, signal)] = ner[mention].get((label, signal), 0) + weight
 
-          for mention in ner:
-            ent = mention[0].lower()
-            if ent in question:
-              for mention0 in mentions:
-                rel[question] = rel.get(question, []) + [(mention0, mention)]                               
+        for mention in ner:
+          ent = mention[0].lower()
+          if ent in question:
+            for mention0 in mentions:
+              rel[aHash1['question']] = rel.get(aHash1['question'], []) + [(mention0, mention)]                               
     return docs  
 
   @staticmethod
