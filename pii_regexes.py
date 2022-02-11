@@ -712,8 +712,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, max_
                           #simple length test
                           if len(ent) > max_id_length: continue
                           stnum_type = id_2_stdnum_type(ent)
-                          print (ent, stnum_type)
-                          #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
+                          #print (ent, stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
                           found_country_lang_match = False
                           if prioritize_lang_match_over_ignore:
                                 found_country_lang_match = any(a for a in stnum_type if "." in a and country_to_lang.get(a.split(".")[0]) == src_lang)
