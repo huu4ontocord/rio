@@ -586,6 +586,8 @@ class TextAugment:
     allqa = []
     for chunk in chunks:
       text = chunk[text_key]
+      if not text.strip(". "):
+        continue
       _id = chunk['id']
       ner = docs[_id][ner_key] = docs[_id].get(ner_key,{})
       rel = docs[_id][rel_key] = docs[_id].get(rel_key,{})
@@ -593,9 +595,8 @@ class TextAugment:
       answers1={}
       #ti = time.time()
       text = text.replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" , ", ", ")
-      print (text)
       aHash = self.qg(text , default_answers=default_answers)[0]
-
+      print (text, aHash)
       allqa.append(aHash)
       #default_answers = list(set([a['answer'] for a in aHash]+default_answers))
       #print (aHash)
