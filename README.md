@@ -7,12 +7,12 @@ Muliwai was written in part to support the data-tooling efforts of the BigScienc
 There are other features, and we will create documentation soon...
 
 # How it works
-We use a transformer NER model that is good enough for the current language - in this case, a specific model for the language, or a model with some cross-lingual capabilities. Muliwai tags using the transformer, then translates the sentence to a target_lang (e.g., English), and tests to see if the translation preserves the NER tagging, and discoutns or increases the weight of an NER decision accordingly. It then performs NER in the target_lang, and translates to the src_lang. It then matches the translate sentence to the original sentence, to determine which text spans in the *original* src_lang sentence should be NER tagged based on the target_lang NER.
+We use a transformer NER model that is good enough for the current language - in this case, a specific model for the language, or a model with some cross-lingual capabilities. Muliwai tags using the transformer, then translates the sentence to a target_lang (e.g., English), and tests to see if the translation preserves the NER tagging, and discoutns or increases the weight of an NER decision accordingly. It then performs NER in the target_lang, and back translates to the src_lang. It then matches the translate sentence to the original sentence, to determine which text spans in the *original* src_lang sentence should be NER tagged based on the target_lang NER.
 
 We also use spacy and regex as added signals for NER tags.
 
 # What it's meant for
-The technique used are very compute heavy, and not intended to perform fast detection or anonymization of a dataset. Instead, it is intended to be used to create augmented training data to train a relatively fast model (e.g., spacy or transformer model) for languages where there is little or no NER data.
+The translation techniques used are very compute heavy, and not intended to perform fast detection or anonymization of a dataset. Instead, it is intended to be used to create augmented training data to train a relatively fast model (e.g., spacy or transformer model) for languages where there is little or no NER data.
 
 # Installing
 ```
