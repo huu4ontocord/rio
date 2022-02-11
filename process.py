@@ -909,6 +909,7 @@ class TextAugment:
 
       for ner_result in results:
         start = ner_result['start']
+        if start >= len_txt: continue
         if not self.cjk_detect(text[ner_result['start']:ner_result['end']]):
               if text[start] not in self.strip_chars:
                 for j in range(1, start):
@@ -921,16 +922,19 @@ class TextAugment:
         else:
               start = ner_result['start']
               end = ner_result['end']
-        while text[start] in self.strip_chars:
+        len_text = len(text)
+        while text[start] in self.strip_chars and start < len_text:
           start += 1
           if start >= end: break
-        end = start + len(text[start:end].strip(self.strip_chars))
-        ner_result['word'] = text[start:end]
-        ner_result['start'] = start+offset
-        ner_result['end'] = end+offset
+        if start < len_text and start < end:
+            end = start + len(text[start:end].strip(self.strip_chars))
+            ner_result['word'] = text[start:end]
+            ner_result['start'] = start+offset
+            ner_result['end'] = end+offset
         if results2 and results2[-1]['end'] > ner_result['start']:
           continue
-        results2.append(ner_result)
+        if start < len_text and start < end:
+            results2.append(ner_result)
       results_arr2.append(results2)
     results_arr = results_arr2
     for chunk, results in zip(chunks, results_arr):
