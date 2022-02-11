@@ -189,9 +189,57 @@ from stdnum.vn import mst
 from stdnum.za import tin
 from stdnum.za import idnr
 
-country_to_lang = {
-  #TODO
-}
+#This is an incomplete list. TODO - finish it.
+country_to_lang = {'aa': 'ar',
+     'am': 'hy',
+     'at': 'de',
+     'bg': 'bg',
+     'br': 'pt',
+     'ca': 'fr',
+     'ch': 'fr',
+     'cn': 'zh',
+     'cz': 'cs',
+     'de': 'de',
+     'dk': 'dk',
+     'ee': 'et',
+     'es': 'es',
+     'fi': 'fi',
+     'fr': 'fr',
+     'gb': 'en',
+     'ge': 'ka',
+     'gh': 'tw',
+     'gr': 'el',
+     'hr': 'hr',
+     'hu': 'hu',
+     'id': 'id',
+     'ie': 'ga',
+     'il': 'he',
+     'in': 'ta',
+     'ir': 'fa',
+     'it': 'it',
+     'jp': 'ja',
+     'kr': 'ko',
+     'lt': 'lt',
+     'lv': 'lv',
+     'mx': 'es',
+     'nl': 'nl',
+     'no': 'no',
+     'np': 'ne',
+     'nz': 'en',
+     'pl': 'pl',
+     'ps': 'ar',
+     'pt': 'pt',
+     'qc': 'fr',
+     'ro': 'ro',
+     'ru': 'ru',
+     'sa': 'ar',
+     'se': 'sv',
+     'si': 'sl',
+     'th': 'th',
+     'tr': 'tr',
+     'tw': 'zh',
+     'ua': 'uk',
+     'us': 'en'}
 
 stdnum_mapper = {
     'ad.nrt':  stdnum.ad.nrt.validate,
@@ -608,9 +656,9 @@ regex_rulebase = {
     },
  }
 
-def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, tag_type={'ID'}, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
+def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
       """
-      This function returns a list of 3 tuples, representing an NER detection for [(entity, start, end, tag), ...]
+      This function returns a list of 4 tuples, representing an NER detection for [(entity, start, end, tag), ...]
       NOTE: There may be overlaps
       """
       global regex_rulebase
@@ -643,9 +691,10 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, tag_
                       if tag == 'ID':
                           stnum_type = id_2_stdnum_type(ent)
                           #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
-                          #TODO: we couold do a rule where given the language, map to country, and if the country stdnum is matched, 
-                          #we won't skip this ent even if it also matches an ignore_stdnum_type
-                          if any(a for a in stnum_type if a in ignore_stdnum_type):
+                          found_country_lang_match = False
+                          if prioritize_lang_match_over_ignore:
+                                found_country_lang_match = any(a for a in stnum_type if "." in a and country_to_lang([a.split(".")[0]) == src_lang)
+                          if not found_country_lang_match and any(a for a in stnum_type if a in ignore_stdnum_type):
                             continue
                       sentence2 = original_sentence
                       delta = 0
