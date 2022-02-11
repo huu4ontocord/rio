@@ -2504,7 +2504,7 @@ class TextAugment:
       return list(docs.values()) #this is not guaranteed to be ordered
 
   @staticmethod
-  def get_docs(src_langs=None, docs=None, max_chunk_size=10000, num_workers=1, cutoff=-1, domain=""):
+  def get_docs(src_langs=None, docs=None, max_chunk_size=10000, num_workers=1, cutoff=-1, domain="", filter_out_no_registry=True):
       """
       NOTE: We filter the registry docs if there are no registry label for a doc. This might not be the ideal behaviour.
       """
@@ -2553,7 +2553,10 @@ class TextAugment:
               if curr_recs >= cutoff:
                 j -= curr_recs - cutoff
               if i <= j: 
-                yield [doc for doc in [d['train'][k] for k in range(i, j)] if 'labels' not in doc or doc['labels'] !=[]]
+                if filter_out_no_registry:
+                    yield [doc for doc in [d['train'][k] for k in range(i, j)] if 'labels' not in doc or doc['labels'] !=[]]
+                else:
+                    yield [d['train'][k] for k in range(i, j)]
               if curr_recs >= cutoff: break
           else:
               try:
