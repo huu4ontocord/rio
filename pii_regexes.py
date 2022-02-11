@@ -652,11 +652,13 @@ regex_rulebase = {
               (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None),
               # generic government id. consider a more complicated string with \w+ at the beginning or end
               (re.compile(r"\d{8}|\d{9}|\d{10}|\d{11}"), None),
+              # generic user id
+              (re.compile(r"\S*@[a-zA-Z]+\S*"), None),
       ],
     },
  }
 
-def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
+def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
       """
       This function returns a list of 4 tuples, representing an NER detection for [(entity, start, end, tag), ...]
       NOTE: There may be overlaps
@@ -688,7 +690,10 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, tag_
                   for ent in regex.findall(sentence):
                       if not isinstance(ent, str) or not ent:
                           continue
+                      ent = ent.strip()
                       if tag == 'ID':
+                          #simple length test
+                          if len(ent) > max_id_length: continue
                           stnum_type = id_2_stdnum_type(ent)
                           #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
                           found_country_lang_match = False
