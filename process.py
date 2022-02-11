@@ -311,16 +311,15 @@ class TextAugment:
       "ca": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
       "pt": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
       "fr": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
-      #"zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0], ["zh_model", XLMRobertaForTokenClassification, 0.9 ]],
       "zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
-      'vi': [["lhkhiem28/COVID-19-Named-Entity-Recognition-for-Vietnamese", RobertaForTokenClassification, 1.0]],#["jplu/tf-xlm-r-ner-40-lang", None ],
-      'hi': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
-      'ur': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
+      'vi': [["lhkhiem28/COVID-19-Named-Entity-Recognition-for-Vietnamese", RobertaForTokenClassification, 1.0]],#["jplu/tf-xlm-r-ner-40-lang", None ],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
+      'hi': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
+      'ur': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
       'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0]],
       'bn': [["sagorsarker/mbert-bengali-ner", BertForTokenClassification, 1.0]],
 
       # NOT PART OF OUR LANGUAGE SET. EXPERIMENTAL
-      'he': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],
+      'he': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]], # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
       'hr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
       'bs': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
       'sr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
@@ -336,7 +335,7 @@ class TextAugment:
       }
 
   #wikipedia kenlm model based on prompt "f{s} (born"
-  #TODO figure out actual numbers. Also, add languge specific models
+  #TODO figure out actual numbers. Also, add languge specific kenlm models
   public_figure_kenlm_cutoff_map = {('en', 'en'): 450,
                                     ('yo', 'en'): 450,
                                     ('zu', 'en'): 450,
@@ -585,7 +584,7 @@ class TextAugment:
         return True
     return lang == src_lang
 
-  #WIP - we can use this q/a q/g method to extract people, place and thing, and potentially age/date AND to get a relationship between a person and a PII info
+  #WIP - we can use this question generation method to extract people, place and thing, and potentially age/date AND to get a relationship between a person and a PII info
   def generate_questions_answers_rel(self, docs, chunks, src_lang, default_answers=[], text_key=None, ner_key=None, rel_key=None, signal='qg_rel', weight=1.0):
     answers = {}
 
@@ -1424,7 +1423,7 @@ class TextAugment:
             if type(key) is tuple:
               key = key[0]
             labelsHash2[key] = labelsHash2.get(key, 0) + val
-          #do hypo collapse so that loc->address, person->public_figure when there are overlaps, date/id->id
+          #do hypo collapse so that loc->address, person->public_figure when there are overlaps, date/id->date
           if 'PERSON' in labelsHash2 and 'PUBLIC_FIGURE' in labelsHash2:
             labelsHash2['PUBLIC_FIGURE'] = labelsHash2['PUBLIC_FIGURE'] + labelsHash2['PERSON']
             del labelsHash2['PERSON']
@@ -1795,7 +1794,20 @@ class TextAugment:
     if do_kenlm and target_lang == 'en':
         if TextAugment.kenlm_model is None:
             TextAugment.load_kenlm_model()
-        
+            
+    if target_lang != src_lang:
+        if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
+        if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache").half().eval().to(TextAugment.device)
+        if "facebook/m2m100_418M" not in TextAugment.translation_pipelines:
+          TextAugment.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(TextAugment.device)
+        if TextAugment.device_id >= 0:
+            available_gpu_model = TextAugmentGPUModel.available_gpu_models[TextAugment.device_id]
+            if available_gpu_model is not None:
+                if TextAugment.labse  is not None and available_gpu_model.labse is None: available_gpu_model.labse = TextAugment.labse 
+                if TextAugment.qg is not None and available_gpu_model.qg  is None: available_gpu_model.qg = TextAugment.qg
+                if TextAugment.translation_pipelines  is not None and not available_gpu_model.translation_pipelines : available_gpu_model.translation_pipelines = TextAugment.translation_pipelines 
+                if TextAugment.ner_model_name2pipelines is not None and not available_gpu_model.ner_model_name2pipelines: available_gpu_model.ner_model_name2pipelines = TextAugment.ner_model_name2pipelines
+
     # init hf ner pipelines
     if do_hf_ner:
       for model_name, model_cls, hf_ner_weight2 in self.hf_ner_model_map.get(target_lang, []):
