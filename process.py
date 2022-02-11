@@ -380,7 +380,7 @@ class TextAugment:
   stopwords_en = set(stopwords.get('en',[]))
   cache_dir = None
 
-  def __init__(self, device=None, single_process=1, available_gpu_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir="~/.cache):
+  def __init__(self, device=None, single_process=1, available_gpu_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir="~/.cache"):
     if TextAgument.cache_dir is None: TextAugment.cache_dir = cache_dir
     if device is not None:
       TextAugment.device = device
@@ -396,9 +396,9 @@ class TextAugment:
         TextAugment.device_id = -1
         TextAugment.device = "cpu"  
     if single_process:
-      self.initializer(available_gpu_model=available_gpu_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model, cache_dir=None)
+      self.initializer(available_gpu_model=available_gpu_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model, cache_dir=cache_dir)
     
-  def initializer(self, device_id_by_proess_id=True, all_available_gpu_model=None, available_gpu_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir=None):
+  def initializer(self, device_id_by_proess_id=True, all_available_gpu_model=None, available_gpu_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir="~/.cache"):
     if TextAgument.cache_dir is None: TextAugment.cache_dir = cache_dir
     if all_available_gpu_model is not None:
       TextAugmentGPUModel.available_gpu_models  = all_available_gpu_model
