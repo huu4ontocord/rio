@@ -466,7 +466,7 @@ regex_rulebase = {
     },
     "TIME": {
         "default": [(re.compile('\d{1,2}:\d{2} ?(?:[ap]\.?m\.?)?|\d[ap]\.?m\.?', re.IGNORECASE), None),],
-    }
+    },
     "NORP": {
       "en": [(re.compile(r"upper class|middle class|working class|lower class", re.IGNORECASE), None),],
     },
