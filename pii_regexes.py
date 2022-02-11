@@ -660,6 +660,8 @@ regex_rulebase = {
               (re.compile(r"\d{8}|\d{9}|\d{10}|\d{11}"), None),
               # generic user id
               (re.compile(r"\S*@[a-zA-Z]+\S*"), None),
+              # bitcoin
+              (re.compile('(?<![a-km-zA-HJ-NP-Z0-9])[13][a-km-zA-HJ-NP-Z0-9]{26,33}(?![a-km-zA-HJ-NP-Z0-9])'), None),
       ],
     },
  }
