@@ -909,7 +909,7 @@ class TextAugment:
 
       for ner_result in results:
         start = ner_result['start']
-        if start >= len_txt: continue
+        if start >= len_text: continue
         if not self.cjk_detect(text[ner_result['start']:ner_result['end']]):
               if text[start] not in self.strip_chars:
                 for j in range(1, start):
@@ -922,7 +922,6 @@ class TextAugment:
         else:
               start = ner_result['start']
               end = ner_result['end']
-        len_text = len(text)
         while text[start] in self.strip_chars and start < len_text:
           start += 1
           if start >= end: break
