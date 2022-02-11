@@ -381,6 +381,7 @@ class TextAugment:
 
 
   def __init__(self, device=None, single_process=1, available_gpu_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
+    
     if device is not None:
       TextAugment.device = device
       if device == "cpu": 
@@ -398,7 +399,6 @@ class TextAugment:
       self.initializer(available_gpu_model=available_gpu_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model)
     
   def initializer(self, device_id_by_proess_id=True, all_available_gpu_model=None, available_gpu_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None):
-    print ("initializer")
     if all_available_gpu_model is not None:
       TextAugmentGPUModel.available_gpu_models  = all_available_gpu_model
     if device is not None:
@@ -502,7 +502,6 @@ class TextAugment:
   def check_good_sentence(self, s, src_lang, stopwords, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
     #basic dejunk
     # for flagged_words, only filter out if the ratio is exceeded AND there exists one banned word
-    print ("check_good_sentence")
     if bannedwords is None:
       bannedwords = self.banned_words.get(src_lang, self.banned_words['default'])
     default_bannedwords = self.banned_words['default']
@@ -574,8 +573,8 @@ class TextAugment:
 
   #WIP - we can use this q/a q/g method to extract people, place and thing, and potentially age/date AND to get a relationship between a person and a PII info
   def generate_questions_answers_rel(self, docs, chunks, src_lang, default_answers=[], text_key=None, ner_key=None, rel_key=None, signal='qg_rel', weight=1.0):
-    print ("generate_questions_answers_rel", chunks)
     answers = {}
+
     if ner_key is None:
       ner_key = f'{src_lang}_ner'
     if text_key is None:
@@ -586,18 +585,15 @@ class TextAugment:
     allqa = []
     for chunk in chunks:
       text = chunk[text_key]
-      if not text.strip(". "):
-        continue
       _id = chunk['id']
       ner = docs[_id][ner_key] = docs[_id].get(ner_key,{})
       rel = docs[_id][rel_key] = docs[_id].get(rel_key,{})
-      #TODO: Limit to non-persons
       default_answers = list(set([a[0] for a in ner.keys()]+default_answers))
       answers1={}
       #ti = time.time()
-      text = text.replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" , ", ", ")
+      text = text.replace("U.S.","US").replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" , ", ", ") # replace(" He ", " Lincoln ").replace(" he ", " Lincoln ").replace(" him ", " Lincoln ")
       aHash = self.qg(text , default_answers=default_answers)[0]
-      print (text, aHash)
+
       allqa.append(aHash)
       #default_answers = list(set([a['answer'] for a in aHash]+default_answers))
       #print (aHash)
@@ -607,6 +603,7 @@ class TextAugment:
         question=aHash1['question'].lower()
         answer=aHash1['answer'].lower()
         label=None
+        #TODO, use spacy_en to get NER and only fall back to "who", "when", "where" to determine ner if we find nothing
         if quest[0] == "who" and aHash1['answer'][-1] =='s':
           label="ORG"
         elif quest[0] == "who":
@@ -614,7 +611,7 @@ class TextAugment:
           if "'s" in quest:
             for j in range(len(quest)):
               if j > 0 and quest[j-1]=="'s":
-                label = None
+                label = "MISC"
                 break
         elif quest[0] == "where":
           label="LOC"
@@ -626,10 +623,13 @@ class TextAugment:
           label="EVENT"
         elif quest[0] == "how" and quest[1] in ("much", "many"):
           label="ORDINAL"
+        elif quest[0] == "how":
+          label="EVENT"
+        elif quest[0] in ("which", "what") and quest[1] not in self.stopwords_en:
+          label="MISC"
         else:
           label = None
         if label:
-          print ("**fouond", label, aHash1)
           mentions = [mention for mention in ner if (mention[0] == aHash1['answer'] or mention[0].startswith(aHash1['answer']) or aHash1['answer'].startswith(mention[0]))]
           if mentions:
             for mention in mentions:
@@ -641,16 +641,13 @@ class TextAugment:
               start = pos + i
               end = start + len(aHash1['answer'])
               pos = end + 1
-              mention = (aHash1['answer'], start, end)
-              ner[mention] = aHash2 = ner.get(mention, {})
-              aHash2[(label, signal)] = aHash2.get((label, signal), 0) + weight
+              ner[mention][(label, signal)] = ner[mention].get((label, signal), 0) + weight
 
           for mention in ner:
             ent = mention[0].lower()
             if ent in question:
               for mention0 in mentions:
-                rel[aHash1['question']] = rel.get(aHash1['question'], []) + [(mention0, mention)]
-      print (rel)                               
+                rel[question] = rel.get(question, []) + [(mention0, mention)]                               
     return docs  
 
   @staticmethod
@@ -2768,28 +2765,28 @@ if __name__ == "__main__":
     parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
     parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default=None)
     parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
-    parser.add_argument('-do_spacy', dest='do_spacy', type=int, help='Wether or not to apply a spacy model', default = 1)
-    parser.add_argument('-do_skip_src_lang_processing', dest='do_skip_src_lang_processing', type=int, help='Wether or not to skip NER for src_lang (assumes NER is already perfored in the data provided)', default = False)
-    parser.add_argument('-do_hf_ner', dest='do_hf_ner', type=int,  help='Wether or not to apply a huggingface NER model', default = 1)
-    #parser.add_argument('-do_ontology', dest='do_ontology', action='store_true', help='Wether or not to use an ontology', default = 1)
-    parser.add_argument('-do_backtrans', dest='do_backtrans', type=int, help='Wether or not to do back translation', default = 1)
-    parser.add_argument('-do_augment', dest='do_augment', type=int, help='Wether or not to do translation augmentation', default = 0)
-    parser.add_argument('-do_anonymization', dest='do_anonymization', action='store_true', help='Wether or not to anonymize the src_lang', default = 0)
-    parser.add_argument('-do_regex', dest='do_regex', type=int, help='Wether or not to apply regex models', default = 1)
-    parser.add_argument('-do_cleanup', dest='do_cleanup', type=int, help='Wether or not to cleanup NERs that are just stopwords or small number', default = 1)
-    parser.add_argument('-do_marian_mt', dest='do_marian_mt', type=int, help='Wether or not to use marianMT for translation instead of M2M100', default = 0)
+    parser.add_argument('-do_spacy', dest='do_spacy', action='store_true', help='Wether or not to apply a spacy model', default = True)
+    parser.add_argument('-do_skip_src_lang_processing', dest='do_skip_src_lang_processing', action='store_true', help='Wether or not to skip NER for src_lang (assumes NER is already perfored in the data provided)', default = False)
+    parser.add_argument('-do_hf_ner', dest='do_hf_ner', action='store_true', help='Wether or not to apply a huggingface NER model', default = True)
+    #parser.add_argument('-do_ontology', dest='do_ontology', action='store_true', help='Wether or not to use an ontology', default = True)
+    parser.add_argument('-do_backtrans', dest='do_backtrans', action='store_true', help='Wether or not to do back translation', default = True)
+    parser.add_argument('-do_augment', dest='do_augment', action='store_true', help='Wether or not to do translation augmentation', default = False)
+    parser.add_argument('-do_anonymization', dest='do_anonymization', action='store_true', help='Wether or not to anonymize the src_lang', default = False)
+    parser.add_argument('-do_regex', dest='do_regex', action='store_true', help='Wether or not to apply regex models', default = True)
+    parser.add_argument('-do_cleanup', dest='do_cleanup', action='store_true', help='Wether or not to cleanup NERs that are just stopwords or small number', default = True)
+    parser.add_argument('-do_marian_mt', dest='do_marian_mt', action='store_true', help='Wether or not to use marianMT for translation instead of M2M100', default = False)
     parser.add_argument('-num_words_per_chunk', dest='num_words_per_chunk', type=int, help='number of words per chunk', default=70)
     #parser.add_argument('-ontology_weight', dest='ontology_weight', type=float, help='batch size', default=0.85)
-    parser.add_argument('-spacy_weight', dest='spacy_weight', type=int, type=float, help='weight given to a spacy decision', default=1.00)
+    parser.add_argument('-spacy_weight', dest='spacy_weight', type=float, help='weight given to a spacy decision', default=1.00)
     parser.add_argument('-hf_ner_weight', dest='hf_ner_weight', type=float, help='weight given to a hf model decision', default=1.25)
     parser.add_argument('-regex_weight', dest='regex_weight', type=float, help='weight given to a regex decision', default=1.5)
     parser.add_argument('-backtrans_weight', dest='backtrans_weight', type=float, help='weight given to back tranlation decisions', default=0.9)
-    parser.add_argument('-do_docs_trim', dest='do_docs_trim', action='store_true', help='Wether or not to filter out documents with no mentions of persons, or high ratios of junk, or CSAM', default = 1)
-    parser.add_argument('-do_kenlm', dest='do_kenlm', action='store_true', help='Wether or not to apply a KenLM model to decide if a name is a common person name', default = 1)
-    parser.add_argument('-do_qg_rel', dest='do_qg_rel', action='store_true', help='Wether or not to infer a relationship between PII entities based an question generation', default = 1)
+    parser.add_argument('-do_docs_trim', dest='do_docs_trim', action='store_true', help='Wether or not to filter out documents with no mentions of persons, or high ratios of junk, or CSAM', default = True)
+    parser.add_argument('-do_kenlm', dest='do_kenlm', action='store_true', help='Wether or not to apply a KenLM model to decide if a name is a common person name', default = True)
+    parser.add_argument('-do_qg_rel', dest='do_qg_rel', action='store_true', help='Wether or not to infer a relationship between PII entities based an question generation', default = True)
     parser.add_argument('-aug_scope', dest='aug_scope', type=str, help='tag types for augmentation', default="ADDRESS,ORG,PERSON,LOC,ID")
     parser.add_argument('-anon_scope', dest='anon_scope', type=str, help='tag types for anonymization', default='PERSON,ID')
-    parser.add_argument('-preload_cache', dest='preload_cache', action='store_true', help='Preload the cache of models and data', default = 0)
+    parser.add_argument('-preload_cache', dest='preload_cache', action='store_true', help='Preload the cache of models and data', default = False)
     args = parser.parse_args()
     args.anon_scope = set(args.anon_scope.split(","))
     args.aug_scope = set(args.aug_scope.split(","))
