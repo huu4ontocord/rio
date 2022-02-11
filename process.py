@@ -605,7 +605,6 @@ class TextAugment:
         question=aHash1['question'].lower()
         answer=aHash1['answer'].lower()
         label=None
-        #TODO, use spacy_en to get NER and only fall back to "who", "when", "where" to determine ner if we find nothing
         if quest[0] == "who" and aHash1['answer'][-1] =='s':
           label="ORG"
         elif quest[0] == "who":
@@ -613,7 +612,7 @@ class TextAugment:
           if "'s" in quest:
             for j in range(len(quest)):
               if j > 0 and quest[j-1]=="'s":
-                label = "MISC"
+                label = None
                 break
         elif quest[0] == "where":
           label="LOC"
@@ -625,13 +624,10 @@ class TextAugment:
           label="EVENT"
         elif quest[0] == "how" and quest[1] in ("much", "many"):
           label="ORDINAL"
-        elif quest[0] == "how":
-          label="EVENT"
-        elif quest[0] in ("which", "what") and quest[1] not in self.stopwords_en:
-          label="MISC"
         else:
           label = None
         if label:
+          print ("**fouond", label, aHash1)
           mentions = [mention for mention in ner if (mention[0] == aHash1['answer'] or mention[0].startswith(aHash1['answer']) or aHash1['answer'].startswith(mention[0]))]
           if mentions:
             for mention in mentions:
