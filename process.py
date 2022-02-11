@@ -65,7 +65,7 @@ from faker import Faker
 from faker.providers import person, company, geo, address, ssn, internet
 import qg_pipeline
 
-from mariam_mt import mariam_mt
+from marian_mt import marian_mt
 try:
   import neuralcoref
 except:
@@ -208,7 +208,7 @@ class TextAugmentGPUModel:
     self.qg  = None
     self.translation_pipelines = None
     self.ner_model_name2pipelines = None
-    self.mariam_mt = None
+    self.marian_mt = None
 
   @staticmethod
   def initializer_all(src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
@@ -235,7 +235,7 @@ class TextAugmentGPUModel:
     if not hasattr(self, 'translation_pipelines') or self.translation_pipelines is None: 
       self.translation_pipelines  = {}
       self.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
-      #TODO - do MariamMT model load, other m2m models
+      #TODO - do marianMT model load, other m2m models
     for target_lang in list(set(target_langs + src_langs + aug_langs)):
       for model_name, model_cls, hf_ner_weight2 in TextAugment.hf_ner_model_map.get(target_lang, []):
           if model_name not in self.ner_model_name2pipelines:
@@ -462,7 +462,7 @@ class TextAugment:
       TextAugment.translation_pipelines  = {}
     if "facebook/m2m100_418M" not in TextAugment.translation_pipelines:
       TextAugment.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(TextAugment.device)
-    #TODO MariamMT in global context
+    #TODO marianMT in global context
     if available_gpu_model is not None:
         if TextAugment.labse  is not None: available_gpu_model.labse = TextAugment.labse 
         if TextAugment.qg is not None: available_gpu_model.qg = TextAugment.qg
@@ -714,10 +714,10 @@ class TextAugment:
     score = float(matchLen+1)/float(nonMatchLen+1)
     return (blocks2, score+score)
 
-  def do_translations(self, texts, src_lang='en', target_lang='hi', batch_size=16, do_mariam_mt=False):
+  def do_translations(self, texts, src_lang='en', target_lang='hi', batch_size=16, do_marian_mt=False):
     print ("do_translations")
     print ([len(t.split()) for t in texts])
-    if not do_mariam_mt:
+    if not do_marian_mt:
       m2m_model_name = self.m2m100_lang.get((src_lang, target_lang), self.m2m100_lang[('*', '*')])
       if m2m_model_name != self.m2m_model_name or self.m2m_tokenizer is None:
         self.m2m_tokenizer = M2M100Tokenizer.from_pretrained(m2m_model_name)
@@ -725,9 +725,9 @@ class TextAugment:
         self.m2m_tokenizer.src_lang = src_lang
         target_lang_bos_token = self.m2m_tokenizer.get_lang_id(target_lang)
       except:
-        do_mariam_mt = True
+        do_marian_mt = True
         pass
-      if not do_mariam_mt:
+      if not do_marian_mt:
         if m2m_model_name != self.m2m_model_name or self.m2m_model is None:
           if m2m_model_name in  self.translation_pipelines:
             self.m2m_model =  self.translation_pipelines[m2m_model_name]
@@ -739,18 +739,18 @@ class TextAugment:
           try:
             batch = self.m2m_tokenizer(src_text_list, return_tensors="pt", padding=True, truncation=True).to(self.device)
           except:
-            do_mariam_mt = True
+            do_marian_mt = True
             break
 
           gen = self.m2m_model.generate(**batch, forced_bos_token_id=target_lang_bos_token, no_repeat_ngram_size=4, ) #
           outputs = self.m2m_tokenizer.batch_decode(gen, skip_special_tokens=True)
           translations.extend(outputs)
-        if not do_mariam_mt:
+        if not do_marian_mt:
           return translations
 
     translations = []
-    #mariam_mt = self.mariam_mt
-    model_name = mariam_mt.get((src_lang, target_lang))
+    #marian_mt = self.marian_mt
+    model_name = marian_mt.get((src_lang, target_lang))
     mt_pipeline = None
     if model_name is not None and model_name not in self.translation_pipelines:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -1694,7 +1694,7 @@ class TextAugment:
                           do_anonymization=False,
                           do_regex = True,
                           do_cleanup=True,
-                          do_mariam_mt=False,
+                          do_marian_mt=False,
                           batch_size = 5,
                           num_words_per_chunk=70,
                           ontology_weight=0.85,
@@ -1847,7 +1847,7 @@ class TextAugment:
                                                                          text_key=f'{src_lang}_text', replace_text_key=f'{src_lang}_tmp_text', \
                                                                          offset_key=f'{src_lang}_offset')
         chunks2 = [chunk[f'{src_lang}_tmp_text'] for chunk in chunks]
-        text2 = self.do_translations(chunks2, src_lang=src_lang, target_lang=target_lang, batch_size=batch_size, do_mariam_mt=do_mariam_mt)
+        text2 = self.do_translations(chunks2, src_lang=src_lang, target_lang=target_lang, batch_size=batch_size, do_marian_mt=do_marian_mt)
         for chunk, trans_text in zip(chunks, text2):
           #TODO: fix translations which sometimes doesn't split sentences on "."
           #langid check
@@ -2250,7 +2250,7 @@ class TextAugment:
               do_backtrans=False,
               do_augment=False,
               do_anonymization=False,
-              do_mariam_mt=False,
+              do_marian_mt=False,
               copy_anon_to_text=True, # if we do_anonymize, we will copy {src_lang}_text_anon -> text
               augment_lang="es",
               do_cleanup=True,
@@ -2410,7 +2410,7 @@ class TextAugment:
                           do_augment=False,
                           do_anonymization=do_anonymization if target_lang == src_lang else False,
                           do_kenlm = do_kenlm,
-                          do_mariam_mt=do_mariam_mt,
+                          do_marian_mt=do_marian_mt,
                           do_regex = do_regex,
                           do_cleanup=do_cleanup,
                           batch_size = batch_size,
@@ -2442,7 +2442,7 @@ class TextAugment:
                             do_cleanup = do_cleanup,
                             do_qg_rel=do_qg_rel and target_lang == 'en',
                             do_kenlm = do_kenlm,
-                            do_mariam_mt=do_mariam_mt,
+                            do_marian_mt=do_marian_mt,
                             batch_size = batch_size,
                             ontology_weight=ontology_weight,
                             spacy_weight=spacy_weight,
@@ -2475,7 +2475,7 @@ class TextAugment:
                             do_ontology = do_ontology,
                             do_backtrans=False,
                             do_augment=do_augment,
-                            do_mariam_mt=do_mariam_mt,
+                            do_marian_mt=do_marian_mt,
                             do_anonymization=False,
                             do_regex = do_regex,
                             do_cleanup=do_cleanup,
@@ -2644,7 +2644,7 @@ class TextAugment:
     seen = {}
     for src_lang, target_lang in zip(src_langs, target_langs):
         if (src_lang, target_lang) in seen: continue
-        model_name = mariam_mt.get((src_lang, target_lang))
+        model_name = marian_mt.get((src_lang, target_lang))
         seen[(src_lang, target_lang)] = 1
         if model_name is not None:
           AutoModel.from_pretrained(model_name)
@@ -2774,7 +2774,7 @@ if __name__ == "__main__":
     parser.add_argument('-do_anonymization', dest='do_anonymization', action='store_true', help='Wether or not to anonymize the src_lang', default = False)
     parser.add_argument('-do_regex', dest='do_regex', action='store_true', help='Wether or not to apply regex models', default = True)
     parser.add_argument('-do_cleanup', dest='do_cleanup', action='store_true', help='Wether or not to cleanup NERs that are just stopwords or small number', default = True)
-    parser.add_argument('-do_mariam_mt', dest='do_mariam_mt', action='store_true', help='Wether or not to use MariamMT for translation instead of M2M100', default = False)
+    parser.add_argument('-do_marian_mt', dest='do_marian_mt', action='store_true', help='Wether or not to use marianMT for translation instead of M2M100', default = False)
     parser.add_argument('-num_words_per_chunk', dest='num_words_per_chunk', type=int, help='number of words per chunk', default=70)
     #parser.add_argument('-ontology_weight', dest='ontology_weight', type=float, help='batch size', default=0.85)
     parser.add_argument('-spacy_weight', dest='spacy_weight', type=float, help='weight given to a spacy decision', default=1.00)
