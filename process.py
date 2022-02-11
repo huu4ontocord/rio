@@ -156,7 +156,7 @@ def _get_oscar_urls(language, shuffled="unshuffled", deduplicated="deduplicated"
 
 def _download_oscar(language, shard=0, cache_dir=None, shuffled="unshuffled", deduplicated="deduplicated"):
   if cache_dir is None: 
-    cache_dir = "~/.cache/transformers"
+    cache_dir = os.path.expanduser ('~')+"/.cache/transformers"
   os.system(f"mkdir -p {cache_dir}")
   _file = f"{cache_dir}/OSCAR_{language}_{shard}.jsonl"
   if not os.path.exists(_file):
@@ -230,7 +230,7 @@ class TextAugmentGPUModel:
       self.device = self.device
       self.device_id = self.device_id
     if not hasattr(self, 'qg') or self.qg is None: self.qg = qg_pipeline.pipeline("multitask-qa-qg", device=self.device) # TODO make sure it's running in half mode
-    if not hasattr(self, 'labse') or self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache").half().eval().to(self.device)
+    if not hasattr(self, 'labse') or self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache").half().eval().to(self.device)
     if not hasattr(self, 'ner_model_name2pipelines') or self.ner_model_name2pipelines is None: self.ner_model_name2pipelines = {}
     if not hasattr(self, 'translation_pipelines') or self.translation_pipelines is None: 
       self.translation_pipelines  = {}
@@ -380,8 +380,11 @@ class TextAugment:
   stopwords_en = set(stopwords.get('en',[]))
   cache_dir = None
 
-  def __init__(self, device=None, single_process=1, available_gpu_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir="~/.cache"):
-    if TextAugment.cache_dir is None: TextAugment.cache_dir = cache_dir
+  def __init__(self, device=None, single_process=1, available_gpu_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir=None):
+    if cache_dir is None: 
+        cache_dir = os.path.expanduser ('~')+"/.cache"
+    if TextAugment.cache_dir is None: 
+        TextAugment.cache_dir = cache_dir
     if device is not None:
       TextAugment.device = device
       if device == "cpu": 
@@ -398,7 +401,9 @@ class TextAugment:
     if single_process:
       self.initializer(available_gpu_model=available_gpu_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model, cache_dir=cache_dir)
     
-  def initializer(self, device_id_by_proess_id=True, all_available_gpu_model=None, available_gpu_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir="~/.cache"):
+  def initializer(self, device_id_by_proess_id=True, all_available_gpu_model=None, available_gpu_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir=None):
+    if cache_dir is None: 
+        cache_dir = os.path.expanduser ('~')+"/.cache"
     if TextAugment.cache_dir is None: TextAugment.cache_dir = cache_dir
     if all_available_gpu_model is not None:
       TextAugmentGPUModel.available_gpu_models  = all_available_gpu_model
@@ -457,7 +462,7 @@ class TextAugment:
         pass
     
     if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
-    if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache").half().eval().to(TextAugment.device)
+    if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache").half().eval().to(TextAugment.device)
     if TextAugment.ner_model_name2pipelines is None: TextAugment.ner_model_name2pipelines = {}
     if TextAugment.translation_pipelines is None: 
       TextAugment.translation_pipelines  = {}
@@ -490,7 +495,7 @@ class TextAugment:
   @staticmethod
   def load_kenlm_model(store_model=True):
       if TextAugment.cache_dir == None:
-        cache_dir = "~/.cache"
+        cache_dir = os.path.expanduser ('~')+"/.cache"
       else:
         cache_dir = TextAugment.cache_dir
       os.system(f"mkdir -p {cache_dir}/wikipedia")
@@ -2614,7 +2619,7 @@ class TextAugment:
   @staticmethod
   def preload_cache(src_langs=["en"], target_langs=["en"], domain=None):
     print ("preload_cache")
-    SentenceTransformer("sentence-transformers/LaBSE", cache_folder="~/.cache")
+    SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache")
     en_spacy_nlp = spacy.load('en_core_web_sm')
     try:
       coref = neuralcoref.NeuralCoref(en_spacy_nlp.vocab)
