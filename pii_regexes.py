@@ -190,7 +190,15 @@ from stdnum.za import tin
 from stdnum.za import idnr
 
 #This is an incomplete list. TODO - finish it.
-country_to_lang = {'aa': 'ar',
+country_to_lang = {'ar': 'es',
+     'ae': 'ar',
+     'iq': 'ar',
+     'dz': 'ar',
+     'eg': 'ar',
+     'sd': 'ar',
+     'au': 'en',
+     'ad': 'ca',
+     'aa': 'ar',
      'am': 'hy',
      'at': 'de',
      'bg': 'bg',
@@ -214,7 +222,7 @@ country_to_lang = {'aa': 'ar',
      'id': 'id',
      'ie': 'ga',
      'il': 'he',
-     'in': 'ta',
+     'in_': 'ta',
      'ir': 'fa',
      'it': 'it',
      'jp': 'ja',
@@ -626,6 +634,8 @@ regex_rulebase = {
               ),
               None,
           ),
+          #phone
+          (re.compile(r"\d{4}-\d{8}"), None),
       ],
       "default": [
               #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py ssn
@@ -702,6 +712,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, max_
                           #simple length test
                           if len(ent) > max_id_length: continue
                           stnum_type = id_2_stdnum_type(ent)
+                          print (ent, stnum_type)
                           #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
                           found_country_lang_match = False
                           if prioritize_lang_match_over_ignore:
@@ -733,4 +744,6 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, max_
                           all_ner.append((ent, delta+i, delta+j, tag))
                           delta += j
                           idx += 1
+      all_ner = list(set(all_ner))
+      all_ner.sort(key=lambda a: a[1])
       return all_ner
