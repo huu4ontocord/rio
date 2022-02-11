@@ -461,6 +461,12 @@ def id_2_stdnum_type(text):
 # we do regex in this order in order to not capture ner inside domain names and email addresses.
 #NORP, AGE and DISEASE regexes are just test cases. We will use transformers and rules to detect these.
 regex_rulebase = {
+    "DATE": {
+        "default": [(re.compile('(?:(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)|(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)\s+(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?)(?:\,)?\s*(?:\d{4})?|[0-3]?\d[-\./][0-3]?\d[-\./]\d{2,4}', re.IGNORECASE), None),],
+    },
+    "TIME": {
+        "default": [(re.compile('\d{1,2}:\d{2} ?(?:[ap]\.?m\.?)?|\d[ap]\.?m\.?', re.IGNORECASE), None),],
+    }
     "NORP": {
       "en": [(re.compile(r"upper class|middle class|working class|lower class", re.IGNORECASE), None),],
     },
