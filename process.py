@@ -1694,8 +1694,9 @@ class TextAugment:
                           do_anonymization=False,
                           do_regex = True,
                           do_cleanup=True,
+                          do_mariam_mt=False,
                           batch_size = 5,
-                          batch_window=70,
+                          num_words_per_chunk=70,
                           ontology_weight=0.85,
                           spacy_weight=1.00,
                           hf_ner_weight=1.25,
@@ -1846,7 +1847,7 @@ class TextAugment:
                                                                          text_key=f'{src_lang}_text', replace_text_key=f'{src_lang}_tmp_text', \
                                                                          offset_key=f'{src_lang}_offset')
         chunks2 = [chunk[f'{src_lang}_tmp_text'] for chunk in chunks]
-        text2 = self.do_translations(chunks2, src_lang=src_lang, target_lang=target_lang, batch_size=batch_size)
+        text2 = self.do_translations(chunks2, src_lang=src_lang, target_lang=target_lang, batch_size=batch_size, do_mariam_mt=do_mariam_mt)
         for chunk, trans_text in zip(chunks, text2):
           #TODO: fix translations which sometimes doesn't split sentences on "."
           #langid check
@@ -2249,12 +2250,13 @@ class TextAugment:
               do_backtrans=False,
               do_augment=False,
               do_anonymization=False,
+              do_mariam_mt=False,
               copy_anon_to_text=True, # if we do_anonymize, we will copy {src_lang}_text_anon -> text
               augment_lang="es",
               do_cleanup=True,
               do_regex = True,
               batch_size = 5,
-              batch_window=70,
+              num_words_per_chunk=70,
               ontology_weight=0.85,
               spacy_weight=1.00,
               hf_ner_weight=1.25,
@@ -2366,8 +2368,8 @@ class TextAugment:
         doc[f'{src_lang}_text'] = sep.join(text)
         len_text = len(text)
         src_text = ""
-        while len_text > batch_window:
-            for j in range(batch_window-1, len_text):
+        while len_text > num_words_per_chunk:
+            for j in range(num_words_per_chunk-1, len_text):
               if (src_is_cjk and text[j] in self.punc_char+' ') or \
                   (not src_is_cjk and text[j][-1] in self.punc_char):
                 break
@@ -2408,6 +2410,7 @@ class TextAugment:
                           do_augment=False,
                           do_anonymization=do_anonymization if target_lang == src_lang else False,
                           do_kenlm = do_kenlm,
+                          do_mariam_mt=do_mariam_mt,
                           do_regex = do_regex,
                           do_cleanup=do_cleanup,
                           batch_size = batch_size,
@@ -2439,6 +2442,7 @@ class TextAugment:
                             do_cleanup = do_cleanup,
                             do_qg_rel=do_qg_rel and target_lang == 'en',
                             do_kenlm = do_kenlm,
+                            do_mariam_mt=do_mariam_mt,
                             batch_size = batch_size,
                             ontology_weight=ontology_weight,
                             spacy_weight=spacy_weight,
@@ -2471,6 +2475,7 @@ class TextAugment:
                             do_ontology = do_ontology,
                             do_backtrans=False,
                             do_augment=do_augment,
+                            do_mariam_mt=do_mariam_mt,
                             do_anonymization=False,
                             do_regex = do_regex,
                             do_cleanup=do_cleanup,
@@ -2666,11 +2671,26 @@ class TextAugment:
                     outfile,
                     src_lang,
                     target_lang,
-                    do_regex=True,
-                    do_spacy=True,
-                    do_backtrans=True,
-                    cutoff=None,
-                    batch_size=5,
+                    do_spacy = True,
+                    do_hf_ner = True,
+                    do_ontology = True,
+                    do_skip_src_lang_processing=False,
+                    do_backtrans=False,
+                    do_augment=False,
+                    do_anonymization=False,
+                    augment_lang=None,
+                    do_cleanup=True,
+                    do_regex = True,
+                    batch_size = 5,
+                    num_words_per_chunk=70,
+                    ontology_weight=0.85,
+                    spacy_weight=1.00,
+                    hf_ner_weight=1.25,
+                    regex_weight=1.5,
+                    backtrans_weight=0.9,
+                    do_docs_trim=True,
+                    do_qg_rel=False,
+                    do_kenlm = True,
                     num_workers=2):
 
     def load_docs(src_langs, target_langs, num_workers, cutoff):
@@ -2695,9 +2715,25 @@ class TextAugment:
           processed_docs = pool.imap_unordered(partial(processor.process_ner,
                                                       src_lang=None,
                                                       target_lang=None,
-                                                      do_regex=do_regex,
-                                                      do_spacy=do_spacy,
+                                                      do_spacy = do_spacy ,
+                                                      do_hf_ner = do_hf_ner ,
+                                                      #do_ontology = True,
+                                                      do_skip_src_lang_processing=do_skip_src_lang_processing,
                                                       do_backtrans=do_backtrans,
+                                                      do_augment=do_augment,
+                                                      do_anonymization=do_anonymization,
+                                                      augment_lang=augment_lang,
+                                                      do_cleanup=do_cleanup,
+                                                      do_regex = do_regex ,
+                                                      num_words_per_chunk=num_words_per_chunk,
+                                                      ontology_weight=ontology_weight,
+                                                      spacy_weight=spacy_weight,
+                                                      hf_ner_weight=hf_ner_weight,
+                                                      regex_weight=regex_weight,
+                                                      backtrans_weight=backtrans_weight,
+                                                      do_docs_trim=do_docs_trim,
+                                                      do_qg_rel=do_qg_rel,
+                                                      do_kenlm = do_kenlm,
                                                       cutoff=cutoff,
                                                       batch_size=batch_size,
                                                        ),
@@ -2721,13 +2757,37 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Text Annotation, Augmentation and Anonymization')
     parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Language(s), comma separated', default=None)
     parser.add_argument('-target_lang', dest='target_lang', type=str, help='Target Language or Languages, comma separated', default="en")
+    parser.add_argument('-augment_lang', dest='augment_lang', type=str, help='Translate to this Language for text augmentation', default="en")
     parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
     parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
     parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
     parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default=None)
     parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
+    parser.add_argument('-do_spacy', dest='do_spacy', action='store_true', help='Wether or not to apply a spacy model', default = True)
+    parser.add_argument('-do_skip_src_lang_processing', dest='do_skip_src_lang_processing', action='store_true', help='Wether or not to skip NER for src_lang (assumes NER is already perfored in the data provided)', default = False)
+    parser.add_argument('-do_hf_ner', dest='do_hf_ner', action='store_true', help='Wether or not to apply a huggingface NER model', default = True)
+    #parser.add_argument('-do_ontology', dest='do_ontology', action='store_true', help='Wether or not to use an ontology', default = True)
+    parser.add_argument('-do_backtrans', dest='do_backtrans', action='store_true', help='Wether or not to do back translation', default = True)
+    parser.add_argument('-do_augment', dest='do_augment', action='store_true', help='Wether or not to do translation augmentation', default = False)
+    parser.add_argument('-do_anonymization', dest='do_anonymization', action='store_true', help='Wether or not to anonymize the src_lang', default = False)
+    parser.add_argument('-do_regex', dest='do_regex', action='store_true', help='Wether or not to apply regex models', default = True)
+    parser.add_argument('-do_cleanup', dest='do_cleanup', action='store_true', help='Wether or not to cleanup NERs that are just stopwords or small number', default = True)
+    parser.add_argument('-do_mariam_mt', dest='do_mariam_mt', action='store_true', help='Wether or not to use MariamMT for translation instead of M2M100', default = False)
+    parser.add_argument('-num_words_per_chunk', dest='num_words_per_chunk', type=int, help='number of words per chunk', default=70)
+    #parser.add_argument('-ontology_weight', dest='ontology_weight', type=float, help='batch size', default=0.85)
+    parser.add_argument('-spacy_weight', dest='spacy_weight', type=float, help='weight given to a spacy decision', default=1.00)
+    parser.add_argument('-hf_ner_weight', dest='hf_ner_weight', type=float, help='weight given to a hf model decision', default=1.25)
+    parser.add_argument('-regex_weight', dest='regex_weight', type=float, help='weight given to a regex decision', default=1.5)
+    parser.add_argument('-backtrans_weight', dest='backtrans_weight', type=float, help='weight given to back tranlation decisions', default=0.9)
+    parser.add_argument('-do_docs_trim', dest='do_docs_trim', action='store_true', help='Wether or not to filter out documents with no mentions of persons, or high ratios of junk, or CSAM', default = True)
+    parser.add_argument('-do_kenlm', dest='do_kenlm', action='store_true', help='Wether or not to apply a KenLM model to decide if a name is a common person name', default = True)
+    parser.add_argument('-do_qg_rel', dest='do_qg_rel', action='store_true', help='Wether or not to infer a relationship between PII entities based an question generation', default = True)
+    parser.add_argument('-aug_scope', dest='aug_scope', type=str, help='tag types for augmentation', default="ADDRESS,ORG,PERSON,LOC,ID")
+    parser.add_argument('-anon_scope', dest='anon_scope', type=str, help='tag types for anonymization', default='PERSON,ID')
     parser.add_argument('-preload_cache', dest='preload_cache', action='store_true', help='Preload the cache of models and data', default = False)
     args = parser.parse_args()
+    args.anon_scope = set(args.anon_scope.split(","))
+    args.aug_scope = set(args.aug_scope.split(","))
     src_lang = args.src_lang
     if src_lang is not None:
       src_lang = src_lang.split(",")
@@ -2756,11 +2816,27 @@ if __name__ == "__main__":
       if num_workers > 1:
         TextAugment.multiprocess_ner(docs,
                     outfile,
-                    src_lang,
-                    target_lang,
-                    do_regex=True,
-                    do_spacy=True,
-                    do_backtrans=True,
+                    src_lang=src_lang,
+                    target_lang=target_lang,
+                    do_spacy = args.do_spacy ,
+                    do_hf_ner = args.do_hf_ner ,
+                    #do_ontology = True,
+                    do_skip_src_lang_processing=args.do_skip_src_lang_processing,
+                    do_backtrans=args.do_backtrans,
+                    do_augment=args.do_augment,
+                    do_anonymization=args.do_anonymization,
+                    augment_lang=args.augment_lang,
+                    do_cleanup=args.do_cleanup,
+                    do_regex = args.do_regex ,
+                    num_words_per_chunk=args.num_words_per_chunk,
+                    ontology_weight=args.ontology_weight,
+                    spacy_weight=args.spacy_weight,
+                    hf_ner_weight=args.hf_ner_weight,
+                    regex_weight=args.regex_weight,
+                    backtrans_weight=args.backtrans_weight,
+                    do_docs_trim=args.do_docs_trim,
+                    do_qg_rel=args.do_qg_rel,
+                    do_kenlm = args.do_kenlm,
                     cutoff=cutoff,
                     batch_size=batch_size,
                     num_workers=num_workers)
@@ -2781,8 +2857,30 @@ if __name__ == "__main__":
             print(docs_iter)
             for docs in docs_iter:
                 print(docs)
-                docs =  processor.process_ner(docs=docs, src_lang=src_lang, target_lang=target_lang, do_regex=True, do_spacy=True,
-                                                  do_backtrans=True, cutoff=cutoff, batch_size=batch_size)
+                docs =  processor.process_ner(docs=docs, 
+                    src_lang=src_lang,
+                    target_lang=target_lang,
+                    do_spacy = args.do_spacy ,
+                    do_hf_ner = args.do_hf_ner ,
+                    #do_ontology = True,
+                    do_skip_src_lang_processing=args.do_skip_src_lang_processing,
+                    do_backtrans=args.do_backtrans,
+                    do_augment=args.do_augment,
+                    do_anonymization=args.do_anonymization,
+                    augment_lang=args.augment_lang,
+                    do_cleanup=args.do_cleanup,
+                    do_regex = args.do_regex ,
+                    num_words_per_chunk=args.num_words_per_chunk,
+                    ontology_weight=args.ontology_weight,
+                    spacy_weight=args.spacy_weight,
+                    hf_ner_weight=args.hf_ner_weight,
+                    regex_weight=args.regex_weight,
+                    backtrans_weight=args.backtrans_weight,
+                    do_docs_trim=args.do_docs_trim,
+                    do_qg_rel=args.do_qg_rel,
+                    do_kenlm = args.do_kenlm,
+                    cutoff=cutoff,
+                    batch_size=batch_size)
                 for doc in processor.serialize_ner_items(docs):
                     _file.write(f'{doc}\n')
         if _file is not None: _file.close()
