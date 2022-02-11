@@ -574,7 +574,7 @@ class TextAugment:
 
   #WIP - we can use this q/a q/g method to extract people, place and thing, and potentially age/date AND to get a relationship between a person and a PII info
   def generate_questions_answers_rel(self, docs, chunks, src_lang, default_answers=[], text_key=None, ner_key=None, rel_key=None, signal='qg_rel', weight=1.0):
-    print ("generate_questions_answers_rel")
+    print ("generate_questions_answers_rel", chunks)
     answers = {}
     if ner_key is None:
       ner_key = f'{src_lang}_ner'
