@@ -698,7 +698,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, max_
                           #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
                           found_country_lang_match = False
                           if prioritize_lang_match_over_ignore:
-                                found_country_lang_match = any(a for a in stnum_type if "." in a and country_to_lang([a.split(".")[0]) == src_lang)
+                                found_country_lang_match = any(a for a in stnum_type if "." in a and country_to_lang(a.split(".")[0]) == src_lang)
                           if not found_country_lang_match and any(a for a in stnum_type if a in ignore_stdnum_type):
                             continue
                       sentence2 = original_sentence
