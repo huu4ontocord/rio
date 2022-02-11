@@ -505,7 +505,7 @@ class TextAugment:
         file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
         file = cached_download(file_url)
         os.system(f"ln -s {file} {cache_dir}/wikipedia/en.sp.vocab")
-      if store_model: TextAugment.kenlm_model = KenlmModel("wikipedia", "en")
+      if store_model: TextAugment.kenlm_model = KenlmModel(f"{cache_dir}/wikipedia", "en")
                
   def check_good_sentence(self, s, src_lang, stopwords, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
     #basic dejunk
