@@ -718,10 +718,11 @@ class TextAugment:
                 self.translation_pipelines[m2m_model_name] = self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval().half().to(self.device)
         self.m2m_model_name = m2m_model_name
         translations = []
-        for src_text_list in self.batch(texts, batch_size):
+        for src_text_list in tqdm(self.batch(texts, batch_size)):
           try:
             batch = self.m2m_tokenizer(src_text_list, return_tensors="pt", padding=True, truncation=True).to(self.device)
           except:
+            print ("could not tokenize m2m batch. falling back to marian_mt")
             do_marian_mt = True
             break
 
@@ -750,7 +751,7 @@ class TextAugment:
     if not mt_pipeline:
         raise RuntimeError("no translation pipeline") # we could do multi-step translation where there are no pairs
     mt_pipeline = self.translation_pipelines[model_name]
-    for src_text_list in self.batch(texts, batch_size):
+    for src_text_list in tqdm(self.batch(texts, batch_size)):
         outputs = [t['translation_text'] for t in mt_pipeline(src_text_list, batch_size=batch_size)]
         translations.extend(outputs)
     return translations
