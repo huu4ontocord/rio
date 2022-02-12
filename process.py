@@ -737,7 +737,7 @@ class TextAugment:
     mt_pipeline = None
     if model_name is not None and model_name not in self.translation_pipelines:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        if device == "cpu":
+        if self.device == "cpu":
           model = MarianMTModel.from_pretrained(model_name).eval()
           model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
         else:
