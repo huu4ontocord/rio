@@ -765,7 +765,6 @@ class TextAugment:
     lst = list(lst)
     for i in range(0, len(lst), n):
         yield lst[i: i + n]
-      """
 
   def apply_regex_ner(self, src_lang, docs, context_window = 20, weight = 1.0, text_key=None, ner_key=None, signal='regex'):
     """
