@@ -2855,9 +2855,9 @@ if __name__ == "__main__":
             if outfile is None:
                 if _file is not None: _file.close()
                 _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
-            print(docs_iter)
+            #print(docs_iter)
             for docs in docs_iter:
-                print(docs)
+                #print(docs)
                 docs =  processor.process_ner(docs=docs, 
                     src_lang=src_lang,
                     target_lang=target_lang,
