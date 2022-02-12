@@ -37,10 +37,20 @@ class QGPipeline:
         self.qg_format = qg_format
         self.default_answers = default_answers
         self.device = device
-        self.model.to(self.device)
+        if self.model.device != self.device:
+            self.model.to(self.device).eval()
+            if device == "cpu":
+                self.model = torch.quantization.quantize_dynamic(self.model.float(), {torch.nn.Linear}, dtype=torch.qint8)
+             else:  
+                self.model = self.model.half().to(device)
 
         if self.ans_model is not self.model:
-            self.ans_model.to(self.device)
+            if self.ans_model.device != self.device:
+                self.ans_model.to(self.device).eval()
+                if device == "cpu":
+                    self.ans_model = torch.quantization.quantize_dynamic(self.ans_model.float(), {torch.nn.Linear}, dtype=torch.qint8)
+                 else:  
+                    self.ans_model = self.ans_model.half().to(device)
 
         assert self.model.__class__.__name__ in ["T5ForConditionalGeneration", "BartForConditionalGeneration"]
         
@@ -341,7 +351,7 @@ def pipeline(
     qg_format: Optional[str] = "highlight",
     ans_model: Optional = None,
     ans_tokenizer: Optional[Union[str, PreTrainedTokenizer]] = None,
-    device: str,
+    device: str = "cpu",
     **kwargs,
 ):
 
