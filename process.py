@@ -1672,7 +1672,7 @@ class TextAugment:
                           do_anonymization=False,
                           do_regex = True,
                           do_cleanup=True,
-                          do_marian_mt=False,
+                          do_marian_mt=True,
                           batch_size = 5,
                           num_words_per_chunk=70,
                           ontology_weight=0.85,
@@ -2246,7 +2246,7 @@ class TextAugment:
               do_backtrans=False,
               do_augment=False,
               do_anonymization=False,
-              do_marian_mt=False,
+              do_marian_mt=True,
               copy_anon_to_text=True, # if we do_anonymize, we will copy {src_lang}_text_anon -> text
               augment_lang="es",
               do_cleanup=True,
@@ -2667,7 +2667,7 @@ class TextAugment:
                     augment_lang=None,
                     do_cleanup=True,
                     do_regex = True,
-                    do_marian_mt = False,
+                    do_marian_mt = True,
                     batch_size = 5,
                     num_words_per_chunk=70,
                     #ontology_weight=0.85,
@@ -2764,7 +2764,7 @@ if __name__ == "__main__":
     parser.add_argument('-do_anonymization', dest='do_anonymization', type=int, help='Wether or not to anonymize the src_lang', default = 0)
     parser.add_argument('-do_regex', dest='do_regex', type=int, help='Wether or not to apply regex models', default = 1)
     parser.add_argument('-do_cleanup', dest='do_cleanup', type=int, help='Wether or not to cleanup NERs that are just stopwords or small number', default = 1)
-    parser.add_argument('-do_marian_mt', dest='do_marian_mt', type=int, help='Wether or not to use marianMT for translation instead of M2M100', default = 0)
+    parser.add_argument('-do_marian_mt', dest='do_marian_mt', type=int, help='Wether or not to use marianMT for translation instead of M2M100', default = 1)
     parser.add_argument('-do_docs_trim', dest='do_docs_trim', type=int, help='Wether or not to filter out documents with no mentions of persons, or high ratios of junk, or CSAM', default = 0)
     parser.add_argument('-do_kenlm', dest='do_kenlm', type=int, help='Wether or not to apply a KenLM model to decide if a name is a common person name', default = 0)
     parser.add_argument('-do_qg_rel', dest='do_qg_rel', type=int, help='Wether or not to infer a relationship between PII entities based an question generation (EXPERIMENTAL)', default = 0)
