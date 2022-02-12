@@ -562,7 +562,7 @@ class TextAugment:
       rel_key = f'{src_lang}_rel'
     i= 0
     allqa = []
-    for chunk in chunks:
+    for chunk in tqdm(chunks):
       text = chunk[text_key]
       _id = chunk['id']
       ner = docs[_id][ner_key] = docs[_id].get(ner_key,{})
