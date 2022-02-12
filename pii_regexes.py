@@ -678,7 +678,7 @@ regex_rulebase = {
 
 strip_chars = " ,،、{}[]|()\"'“”《》«»!:;?。.…．"
 #cusip number probaly PII?
-def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
+def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
       """
       This function returns a list of 4 tuples, representing an NER detection for [(entity, start, end, tag), ...]
       NOTE: There may be overlaps
@@ -693,7 +693,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, max_
       original_sentence = sentence
       len_sentence = len(sentence)
       for tag, regex_group in regex_rulebase.items():
-          if tag not in tag_type: continue
+          if tag_type and tag not in tag_type: continue
           for regex_context in regex_group.get(src_lang, []) + regex_group.get("default", []):
               if True:
                   regex, context = regex_context
