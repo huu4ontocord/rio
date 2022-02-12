@@ -786,7 +786,7 @@ class TextAugment:
       ner_key = f'{src_lang}_ner'
     if text_key is None:
       text_key = f'{src_lang}_text'
-    for doc in docs.values():
+    for doc in tqdm(docs.values()):
       ner = doc[ner_key] = doc.get(ner_key, {})
       sentence = doc[text_key]
       all_ner = detect_ner_with_regex_and_context(sentence, src_lang, context_window=context_window)
