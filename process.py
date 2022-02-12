@@ -711,7 +711,7 @@ class TextAugment:
           if m2m_model_name in  self.translation_pipelines:
             self.m2m_model =  self.translation_pipelines[m2m_model_name]
           else:
-            if self.device == "cpu:
+            if self.device == "cpu":
                 self.translation_pipelines[m2m_model_name] = self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval()
                 self.translation_pipelines[m2m_model_name] = self.m2m_model = torch.quantization.quantize_dynamic(self.m2m_model, {torch.nn.Linear}, dtype=torch.qint8)
             else:
