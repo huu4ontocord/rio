@@ -442,8 +442,8 @@ def pipeline(
                     ans_model = ans_model.half().to(device)
     
     if task == "e2e-qg":
-        return task_class(model=model, tokenizer=tokenizer, device)
+        return task_class(model=model, tokenizer=tokenizer, device=device)
     elif task == "question-generation":
-        return task_class(model=model, tokenizer=tokenizer, ans_model=ans_model, ans_tokenizer=ans_tokenizer, qg_format=qg_format, device)
+        return task_class(model=model, tokenizer=tokenizer, ans_model=ans_model, ans_tokenizer=ans_tokenizer, qg_format=qg_format, device=device)
     else:
-        return task_class(model=model, tokenizer=tokenizer, ans_model=model, ans_tokenizer=tokenizer, qg_format=qg_format, device)
+        return task_class(model=model, tokenizer=tokenizer, ans_model=model, ans_tokenizer=tokenizer, qg_format=qg_format, device=device)
