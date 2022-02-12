@@ -736,7 +736,11 @@ class TextAugment:
     mt_pipeline = None
     if model_name is not None and model_name not in self.translation_pipelines:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = MarianMTModel.from_pretrained(model_name).half().eval().to(self.device)
+        if device == "cpu":
+          model = MarianMTModel.from_pretrained(model_name).eval()
+          model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
+        else:
+          model = MarianMTModel.from_pretrained(model_name).eval().half().to(self.device)
         if self.device == 'cpu':
           mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer)
         else:
@@ -1715,9 +1719,18 @@ class TextAugment:
             
     if target_lang != src_lang:
         if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
-        if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache").half().eval().to(TextAugment.device)
+        if TextAugment.labse is None: 
+            TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache").eval()
+            if self.device == "cpu":
+              TextAugment.labse  = torch.quantization.quantize_dynamic(TextAugment.labse , {torch.nn.Linear}, dtype=torch.qint8)
+            else:
+              TextAugment.labse  = TextAugment.labse.half().to(TextAugment.device)
         if "facebook/m2m100_418M" not in TextAugment.translation_pipelines:
-          TextAugment.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(TextAugment.device)
+          TextAugment.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval()
+          if self.device == "cpu":
+              TextAugment.translation_pipelines["facebook/m2m100_418M"] =  torch.quantization.quantize_dynamic(TextAugment.translation_pipelines["facebook/m2m100_418M"] , {torch.nn.Linear}, dtype=torch.qint8)
+          else
+              TextAugment.translation_pipelines["facebook/m2m100_418M"] =  TextAugment.translation_pipelines["facebook/m2m100_418M"].half().to(TextAugment.device)
         if TextAugment.device_id >= 0:
             available_gpu_model = TextAugmentGPUModel.available_gpu_models[TextAugment.device_id]
             if available_gpu_model is not None:
@@ -1732,7 +1745,11 @@ class TextAugment:
         if model_name not in self.ner_model_name2pipelines:
           #print ("setting")
           try:
-            model = model_cls.from_pretrained(model_name).half().eval().to(self.device)
+            if self.device == 'cpu':
+                model = model_cls.from_pretrained(model_name).eval()
+                model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
+            else:
+                model = model_cls.from_pretrained(model_name).half().eval().to(self.device)
             tokenizer = AutoTokenizer.from_pretrained(model_name)
             if self.device == 'cpu':
               ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer)
