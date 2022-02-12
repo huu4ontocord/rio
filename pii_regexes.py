@@ -667,7 +667,7 @@ regex_rulebase = {
               #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
               (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None),
               # generic government id. consider a more complicated string with \w+ at the beginning or end
-              (re.compile(r"\d{7,12}|[૦-૯]{7,12}|[೦-೯]{7,12}|[൦-൯]{7,12}|[୦-୯]{7,12}|[௦-௯]{7,12}|[۰-۹]{7,12}|[[০-৯]{7,12}|[٠-٩]{7,12}|[壹-玖〡-〩零〇-九十廿卅卌百千万亿兆]{7,12}"), None),
+              (re.compile(r"\d{7,12}|[૦-૯]{7,12}|[೦-೯]{7,12}|[൦-൯]{7,12}|[୦-୯]{7,12}|[௦-௯]{7,12}|[۰-۹]{7,12}|[০-৯]{7,12}|[٠-٩]{7,12}|[壹-玖〡-〩零〇-九十廿卅卌百千万亿兆]{7,12}"), None),
               # generic user id
               (re.compile(r"\S*@[a-zA-Z]+\S*"), None),
               # bitcoin
