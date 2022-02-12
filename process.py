@@ -710,7 +710,11 @@ class TextAugment:
           if m2m_model_name in  self.translation_pipelines:
             self.m2m_model =  self.translation_pipelines[m2m_model_name]
           else:
-            self.translation_pipelines[m2m_model_name] = self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval().half().to(self.device)
+            if self.device == "cpu:
+                self.translation_pipelines[m2m_model_name] = self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval()
+                self.translation_pipelines[m2m_model_name] = self.m2m_model = torch.quantization.quantize_dynamic(self.m2m_model, {torch.nn.Linear}, dtype=torch.qint8)
+            else:
+                self.translation_pipelines[m2m_model_name] = self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval().half().to(self.device)
         self.m2m_model_name = m2m_model_name
         translations = []
         for src_text_list in self.batch(texts, batch_size):
