@@ -450,17 +450,15 @@ stdnum_mapper = {
     'vatin':  stdnum.vatin.validate,
 }
 
-def id_2_stdnum_type(text):
-  #not PII = isil, isbn, isan, imo, gs1_128, grid, figi, ean, casrn, 
-  #cusip number probaly PII?
+def ent_2_stdnum_type(text):
   stdnum_type = []
-  for id_type, validate in stdnum_mapper.items():
+  for ent_type, validate in stdnum_mapper.items():
     try:
       found = validate(text)
     except:
       found = False
     if found:
-      stdnum_type.append (id_type)
+      stdnum_type.append (ent_type)
   return stdnum_type
 
 #from https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py which is under the MIT License
@@ -468,9 +466,11 @@ def id_2_stdnum_type(text):
 # we do regex in this order in order to not capture ner inside domain names and email addresses.
 #NORP, AGE, ADDRESS and DISEASE regexes are just test cases. We will use transformers and rules to detect these.
 regex_rulebase = {
+    #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
     "DATE": {
         "default": [(re.compile('(?:(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)|(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)\s+(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?)(?:\,)?\s*(?:\d{4})?|[0-3]?\d[-\./][0-3]?\d[-\./]\d{2,4}', re.IGNORECASE), None),],
     },
+    #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
     "TIME": {
         "default": [(re.compile('\d{1,2}:\d{2} ?(?:[ap]\.?m\.?)?|\d[ap]\.?m\.?', re.IGNORECASE), None),],
     },
@@ -498,11 +498,12 @@ regex_rulebase = {
                   ),
                   None,
               ),
+             #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
               (
                   re.compile(r"P\.? ?O\.? Box \d+"), None
               )
       ],
-
+      #from https://github.com/Aggregate-Intellect/bigscience_aisc_pii_detection/blob/main/language/zh/rules.py which is under Apache 2
       "zh": [
           (
               regex.compile(
@@ -666,7 +667,7 @@ regex_rulebase = {
               #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
               (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None),
               # generic government id. consider a more complicated string with \w+ at the beginning or end
-              (re.compile(r"\d{8,12}|[૦-૯]{7,12}|[೦-೯]{7,12}|[൦-൯]{7,12}|[୦-୯]{7,12}|[௦-௯]{7,12}|[۰-۹]{7,12}|[[০	-৯]{8,12}|[٠-٩]{8,12}|[壹-玖〡-〩零〇-九十廿卅卌百千万亿兆]{8,12}"), None),
+              (re.compile(r"\d{7,12}|[૦-૯]{7,12}|[೦-೯]{7,12}|[൦-൯]{7,12}|[୦-୯]{7,12}|[௦-௯]{7,12}|[۰-۹]{7,12}|[[০-৯]{7,12}|[٠-٩]{7,12}|[壹-玖〡-〩零〇-九十廿卅卌百千万亿兆]{7,12}"), None),
               # generic user id
               (re.compile(r"\S*@[a-zA-Z]+\S*"), None),
               # bitcoin
@@ -675,19 +676,22 @@ regex_rulebase = {
     },
  }
 
+strip_chars = " ,،、{}[]|()\"'“”《》«»!:;?。.…．"
+#cusip number probaly PII?
 def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
       """
       This function returns a list of 4 tuples, representing an NER detection for [(entity, start, end, tag), ...]
       NOTE: There may be overlaps
       """
       global regex_rulebase
-      if src_lang in ("zh", "ko", "ja"):
+      is_cjk = src_lang in ("zh", "ko", "ja")
+      if is_cjk:
           sentence_set = set(sentence.lower())
       else:
           sentence_set = set(sentence.lower().split(" "))
-      idx = 0
       all_ner = []
       original_sentence = sentence
+      len_sentence = len(sentence)
       for tag, regex_group in regex_rulebase.items():
           if tag not in tag_type: continue
           for regex_context in regex_group.get(src_lang, []) + regex_group.get("default", []):
@@ -711,7 +715,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, max_
                       if tag == 'ID':
                           #simple length test
                           if len(ent) > max_id_length: continue
-                          stnum_type = id_2_stdnum_type(ent)
+                          stnum_type = ent_2_stdnum_type(ent)
                           #print (ent, stnum_type)
                           #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
                           found_country_lang_match = False
@@ -725,6 +729,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, max_
                         if ent not in sentence2:
                           break
                         else:
+                          
                           i = sentence2.index(ent)
                           j = i + len(ent)
                           if found_context:
@@ -738,12 +743,13 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, max_
                                     found_context = True
                                     break
                               if not found_context:
+                                delta += j
                                 sentence2 = sentence2[i+len(ent):]
                                 continue
+                          if is_cjk or ((i+delta == 0 or sentence2[i-1+delta]  in strip_chars) and (j+delta >= len_sentence-1 or sentence2[j+delta] in strip_chars)): 
+                            all_ner.append((ent, delta+i, delta+j, tag))
                           sentence2 = sentence2[i+len(ent):]
-                          all_ner.append((ent, delta+i, delta+j, tag))
                           delta += j
-                          idx += 1
       all_ner = list(set(all_ner))
       all_ner.sort(key=lambda a: a[1])
       return all_ner
