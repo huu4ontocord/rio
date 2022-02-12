@@ -466,7 +466,7 @@ def id_2_stdnum_type(text):
 #from https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py which is under the MIT License
 # see also for ICD https://stackoverflow.com/questions/5590862/icd9-regex-pattern - but this could be totally wrong!
 # we do regex in this order in order to not capture ner inside domain names and email addresses.
-#NORP, AGE and DISEASE regexes are just test cases. We will use transformers and rules to detect these.
+#NORP, AGE, ADDRESS and DISEASE regexes are just test cases. We will use transformers and rules to detect these.
 regex_rulebase = {
     "DATE": {
         "default": [(re.compile('(?:(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)|(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)\s+(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?)(?:\,)?\s*(?:\d{4})?|[0-3]?\d[-\./][0-3]?\d[-\./]\d{2,4}', re.IGNORECASE), None),],
@@ -666,7 +666,7 @@ regex_rulebase = {
               #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
               (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None),
               # generic government id. consider a more complicated string with \w+ at the beginning or end
-              (re.compile(r"\d{8}|\d{9}|\d{10}|\d{11}"), None),
+              (re.compile(r"\d{8,12}|[૦-૯]{7,12}|[೦-೯]{7,12}|[൦-൯]{7,12}|[୦-୯]{7,12}|[௦-௯]{7,12}|[۰-۹]{7,12}|[[০	-৯]{8,12}|[٠-٩]{8,12}|[壹-玖〡-〩零〇-九十廿卅卌百千万亿兆]{8,12}"), None),
               # generic user id
               (re.compile(r"\S*@[a-zA-Z]+\S*"), None),
               # bitcoin
@@ -712,7 +712,8 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, max_
                           #simple length test
                           if len(ent) > max_id_length: continue
                           stnum_type = id_2_stdnum_type(ent)
-                          #print (ent, stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
+                          #print (ent, stnum_type)
+                          #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
                           found_country_lang_match = False
                           if prioritize_lang_match_over_ignore:
                                 found_country_lang_match = any(a for a in stnum_type if "." in a and country_to_lang.get(a.split(".")[0]) == src_lang)
