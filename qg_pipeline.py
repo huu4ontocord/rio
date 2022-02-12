@@ -49,7 +49,7 @@ class QGPipeline:
                 self.ans_model.to(self.device).eval()
                 if device == "cpu":
                     self.ans_model = torch.quantization.quantize_dynamic(self.ans_model.float(), {torch.nn.Linear}, dtype=torch.qint8)
-                 else:  
+                else:  
                     self.ans_model = self.ans_model.half().to(device)
 
         assert self.model.__class__.__name__ in ["T5ForConditionalGeneration", "BartForConditionalGeneration"]
