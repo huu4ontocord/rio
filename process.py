@@ -1730,7 +1730,7 @@ class TextAugment:
           TextAugment.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval()
           if self.device == "cpu":
               TextAugment.translation_pipelines["facebook/m2m100_418M"] =  torch.quantization.quantize_dynamic(TextAugment.translation_pipelines["facebook/m2m100_418M"] , {torch.nn.Linear}, dtype=torch.qint8)
-          else
+          else:
               TextAugment.translation_pipelines["facebook/m2m100_418M"] =  TextAugment.translation_pipelines["facebook/m2m100_418M"].half().to(TextAugment.device)
         if TextAugment.device_id >= 0:
             available_gpu_model = TextAugmentGPUModel.available_gpu_models[TextAugment.device_id]
