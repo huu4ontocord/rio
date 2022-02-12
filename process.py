@@ -439,22 +439,7 @@ class TextAugment:
         #we could potentially add new items to the vocabulary to improve coref.
     except:
         pass
-    
-    if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
-    if TextAugment.labse is None: TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache").half().eval().to(TextAugment.device)
-    if TextAugment.ner_model_name2pipelines is None: TextAugment.ner_model_name2pipelines = {}
-    if TextAugment.translation_pipelines is None: 
-      TextAugment.translation_pipelines  = {}
-    if "facebook/m2m100_418M" not in TextAugment.translation_pipelines:
-      TextAugment.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(TextAugment.device)
-    #TODO marianMT in global context
-    if available_gpu_model is not None:
-        if TextAugment.labse  is not None: available_gpu_model.labse = TextAugment.labse 
-        if TextAugment.qg is not None: available_gpu_model.qg = TextAugment.qg
-        if TextAugment.translation_pipelines  is not None: available_gpu_model.translation_pipelines = TextAugment.translation_pipelines 
-        if TextAugment.ner_model_name2pipelines is not None: available_gpu_model.ner_model_name2pipelines = TextAugment.ner_model_name2pipelines
-        TextAugmentGPUModel.available_gpu_models [available_gpu_model.device_id] = available_gpu_model 
-        
+
     if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
     #speed up loading if we don't use kenlm models
     #if TextAugment.kenlm_model is None: 
@@ -2537,6 +2522,7 @@ class TextAugment:
           try:
             domain = 'oscar_registry'
             d = load_dataset("TurkuNLP/register_oscar", data_files=f"{src_lang}/{src_lang}_00000.jsonl.gz")
+            print (f"loaded {src_lang}/{src_lang}_00000.jsonl.gz")
           except:
             try:
               domain = 'mc4_registry'
@@ -2742,10 +2728,9 @@ class TextAugment:
                                               load_docs(src_lang, target_lang, num_workers, cutoff))
           i = 0
           for  docs in tqdm(processed_docs):
-            #print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
+            print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
             i += 1
             for doc in processor.serialize_ner_items(docs):
-            # for doc in docs.values():
               file.write(f'{doc}\n')
 
 if __name__ == "__main__":
