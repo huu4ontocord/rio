@@ -41,7 +41,7 @@ class QGPipeline:
             self.model.to(self.device).eval()
             if device == "cpu":
                 self.model = torch.quantization.quantize_dynamic(self.model.float(), {torch.nn.Linear}, dtype=torch.qint8)
-             else:  
+            else:  
                 self.model = self.model.half().to(device)
 
         if self.ans_model is not self.model:
