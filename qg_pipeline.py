@@ -25,7 +25,7 @@ class QGPipeline:
         ans_model: PreTrainedModel,
         ans_tokenizer: PreTrainedTokenizer,
         qg_format: str,
-        use_cuda: bool,
+        device: str,
         default_answers = None,
     ):
         self.model = model
@@ -36,7 +36,7 @@ class QGPipeline:
 
         self.qg_format = qg_format
         self.default_answers = default_answers
-        self.device = "cuda" if torch.cuda.is_available() and use_cuda else "cpu"
+        self.device = device
         self.model.to(self.device)
 
         if self.ans_model is not self.model:
@@ -231,13 +231,13 @@ class E2EQGPipeline:
         self,
         model: PreTrainedModel,
         tokenizer: PreTrainedTokenizer,
-        use_cuda: bool
+        device: str,
     ) :
 
         self.model = model
         self.tokenizer = tokenizer
 
-        self.device = "cuda" if torch.cuda.is_available() and use_cuda else "cpu"
+        self.device = device
         self.model.to(self.device)
 
         assert self.model.__class__.__name__ in ["T5ForConditionalGeneration", "BartForConditionalGeneration"]
@@ -341,10 +341,10 @@ def pipeline(
     qg_format: Optional[str] = "highlight",
     ans_model: Optional = None,
     ans_tokenizer: Optional[Union[str, PreTrainedTokenizer]] = None,
-    use_cuda: Optional[bool] = True,
+    device: str,
     **kwargs,
 ):
-    use_cuda = torch.cuda.is_available() and use_cuda
+
     # Retrieve the task
     if task not in SUPPORTED_TASKS:
         raise KeyError("Unknown task {}, available tasks are {}".format(task, list(SUPPORTED_TASKS.keys())))
@@ -380,8 +380,12 @@ def pipeline(
     
     # Instantiate model if needed
     if isinstance(model, str):
-        model = AutoModelForSeq2SeqLM.from_pretrained(model).half().to("cuda" if use_cuda else "cpu")
-    
+        model = AutoModelForSeq2SeqLM.from_pretrained(model).eval()
+        if device == "cpu":
+            model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
+        else:
+            model = model.half().to(device)
+                
     if task == "question-generation":
         if ans_model is None:
             # load default ans model
@@ -390,7 +394,12 @@ def pipeline(
             if models_same:
               ans_model = model
             else:
-              ans_model = AutoModelForSeq2SeqLM.from_pretrained(ans_model).half().to("cuda" if use_cuda else "cpu")
+              ans_model = AutoModelForSeq2SeqLM.from_pretrained(ans_model).eval()
+              if device == "cpu":
+                ans_model = torch.quantization.quantize_dynamic(ans_model, {torch.nn.Linear}, dtype=torch.qint8)
+              else:
+                ans_model = ans_model.half().to(device)
+                
         else:
             # Try to infer tokenizer from model or config name (if provided as str)
             if models_same:
@@ -416,11 +425,15 @@ def pipeline(
             if models_same:
               ans_model = model
             elif isinstance(ans_model, str):
-                ans_model = AutoModelForSeq2SeqLM.from_pretrained(ans_model).half().to("cuda" if use_cuda else "cpu")
+                ans_model = AutoModelForSeq2SeqLM.from_pretrained(ans_model).eval()
+                if device == "cpu":
+                    ans_model = torch.quantization.quantize_dynamic(ans_model, {torch.nn.Linear}, dtype=torch.qint8)
+                else:
+                    ans_model = ans_model.half().to(device)
     
     if task == "e2e-qg":
-        return task_class(model=model, tokenizer=tokenizer, use_cuda=use_cuda)
+        return task_class(model=model, tokenizer=tokenizer, device)
     elif task == "question-generation":
-        return task_class(model=model, tokenizer=tokenizer, ans_model=ans_model, ans_tokenizer=ans_tokenizer, qg_format=qg_format, use_cuda=use_cuda)
+        return task_class(model=model, tokenizer=tokenizer, ans_model=ans_model, ans_tokenizer=ans_tokenizer, qg_format=qg_format, device)
     else:
-        return task_class(model=model, tokenizer=tokenizer, ans_model=model, ans_tokenizer=tokenizer, qg_format=qg_format, use_cuda=use_cuda)
+        return task_class(model=model, tokenizer=tokenizer, ans_model=model, ans_tokenizer=tokenizer, qg_format=qg_format, device)
