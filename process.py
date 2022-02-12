@@ -377,6 +377,7 @@ class TextAugment:
       else:
         TextAugment.device_id = -1
         TextAugment.device = "cpu"  
+    print ('running on ', self.device)
     if single_process:
       self.initializer(available_gpu_model=available_gpu_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model, cache_dir=cache_dir)
     
