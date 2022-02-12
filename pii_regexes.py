@@ -746,7 +746,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                                 delta += j
                                 sentence2 = sentence2[i+len(ent):]
                                 continue
-                          if is_cjk or ((i+delta == 0 or sentence2[i-1+delta]  in strip_chars) and (j+delta >= len_sentence-1 or sentence2[j+delta] in strip_chars)): 
+                          if is_cjk or ((i+delta == 0 or sentence2[i-1]  in strip_chars) and (j+delta >= len_sentence-1 or sentence2[j] in strip_chars)): 
                             all_ner.append((ent, delta+i, delta+j, tag))
                           sentence2 = sentence2[i+len(ent):]
                           delta += j
