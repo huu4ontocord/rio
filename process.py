@@ -49,7 +49,7 @@ except:
   neuralcoref = None
   pass
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),                         
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))                         
 from edugp_kenlm_model import *
 from fake_names import *
 from pii_regexes import *
