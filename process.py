@@ -484,24 +484,23 @@ class TextAugment:
         file = cached_download(file_url)
         os.system(f"ln -s {file} {cache_dir}/wikipedia/en.sp.vocab")
       if store_model: TextAugment.kenlm_model = KenlmModel(f"{cache_dir}/wikipedia", "en")
-               
-  def check_good_sentence(self, s, src_lang, stopwords, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
+  
+  @staticmethod
+  def check_good_sentence(s, src_lang, stopwords, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
     #basic dejunk
     # for flagged_words, only filter out if the ratio is exceeded AND there exists one banned word
     if bannedwords is None:
-      bannedwords = self.banned_words.get(src_lang, self.banned_words['default'])
-    default_bannedwords = self.banned_words['default']
+      bannedwords = TextAugment.banned_words.get(src_lang, TextAugment.banned_words['default'])
+    default_bannedwords = TextAugment.banned_words['default']
     s = s.lower().strip()
     if not s: return False
-    #print ([s2 for s2 in s if s2 in self.junk])
-    #print (len([s2 for s2 in s if s2 in self.junk]), len(s))
-    jr = len([s2 for s2 in s if s2 in self.junk])/len(s)
+    jr = len([s2 for s2 in s if s2 in TextAugment.junk])/len(s)
     if jr >= junk_ratio:
       return False
     if src_lang in ("ja", "ko", "zh"):
       sArr = s
     else:
-      sArr = [s2.strip(self.special_char) for s2 in s.lower().split() if s2.strip(self.special_char)]
+      sArr = [s2.strip(TextAugment.special_char) for s2 in s.lower().split() if s2.strip(TextAugment.special_char)]
     if len(sArr) == 0:
       return False
     #stopword check
@@ -512,11 +511,11 @@ class TextAugment:
         return False
       if src_lang in ("ja", "ko", "zh"):
         if src_lang == "zh":
-          max_stoword = self.max_stoword_len_zh
+          max_stoword = TextAugment.max_stoword_len_zh
         elif src_lang == "ko":
-          max_stoword = self.max_stoword_len_ko
+          max_stoword = TextAugment.max_stoword_len_ko
         elif src_lang == "ja":
-          max_stoword = self.max_stoword_len_ja
+          max_stoword = TextAugment.max_stoword_len_ja
         len_s = len(s)
         stop_cnt = 0
         total_cnt = 0
