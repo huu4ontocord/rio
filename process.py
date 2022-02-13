@@ -34,15 +34,25 @@ import re, regex
 import itertools
 import torch
 from torch import multiprocessing
-from edugp_kenlm_model import *
-from huggingface_hub import hf_hub_url, cached_download
 import sys
+from huggingface_hub import hf_hub_url, cached_download
 import argparse
 from torch import multiprocessing
 import time
 from functools import partial
-from pii_regexes import *
+from faker import Faker
+from faker.providers import person, company, geo, address, ssn, internet
+from marian_mt import marian_mt
+try:
+  import neuralcoref
+except:
+  neuralcoref = None
+  pass
 import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),                         
+from edugp_kenlm_model import *
+from fake_names import *
+from pii_regexes import *
 try:
   if not stopwords:
     from stopwords import stopwords
@@ -60,18 +70,7 @@ except:
   except:
     english_flagged_words = {}
     flagged_words = {}
-
-from faker import Faker
-from faker.providers import person, company, geo, address, ssn, internet
 import qg_pipeline
-
-from marian_mt import marian_mt
-try:
-  import neuralcoref
-except:
-  neuralcoref = None
-  pass
-
 def try_decode(text):
    try:
      return text.decode().strip()
@@ -166,8 +165,6 @@ def _download_oscar(language, shard=0, cache_dir=None, shuffled="unshuffled", de
   return _file
 
 trannum = str.maketrans("0123456789", "1111111111")
-from fake_names import *
-
 
 class TextAugmentGPUModel:
 
@@ -225,12 +222,9 @@ class TextAugmentGPUModel:
               ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=self.device_id)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
             except:
-              try:
-                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=self.device_id)
-                self.ner_model_name2pipelines[model_name] = ner_pipeline
-              except:
-                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), framework="tf",  device=self.device_id)
-                self.ner_model_name2pipelines[model_name] = ner_pipeline
+              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=self.device_id)
+              self.ner_model_name2pipelines[model_name] = ner_pipeline
+
 
 class TextAugment:
   device_id = None
@@ -377,18 +371,30 @@ class TextAugment:
       else:
         TextAugment.device_id = -1
         TextAugment.device = "cpu"  
-    print ('running on ', self.device)
+    print ('running on ', TextAugment.device)
     if single_process:
       self.initializer(available_gpu_model=available_gpu_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model, cache_dir=cache_dir)
     
   def initializer(self, device_id_by_proess_id=True, all_available_gpu_model=None, available_gpu_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir=None):
     if cache_dir is None: 
         cache_dir = os.path.expanduser ('~')+"/.cache"
-    if TextAugment.cache_dir is None: TextAugment.cache_dir = cache_dir
-    if all_available_gpu_model is not None:
-      TextAugmentGPUModel.available_gpu_models  = all_available_gpu_model
+    if TextAugment.cache_dir is None: 
+        TextAugment.cache_dir = cache_dir
     if device is not None:
       TextAugment.device = device
+      if device == "cpu": 
+        TextAugment.device_id = -1
+      else:
+        TextAugment.device_id = int(device.split(":")[-1])
+    else:
+      if TextAugmentGPUModel.available_gpus:
+        TextAugment.device_id = random.choice(TextAugmentGPUModel.available_gpus)
+        TextAugment.device = "cuda:"+str(TextAugment.device_id) 
+      else:
+        TextAugment.device_id = -1
+        TextAugment.device = "cpu" 
+    if all_available_gpu_model is not None:
+      TextAugmentGPUModel.available_gpu_models  = all_available_gpu_model
     device = TextAugment.device
     if available_gpu_model is not None:
       TextAugmentGPUModel.available_gpu_models [available_gpu_model.device_id] = available_gpu_model
@@ -708,14 +714,14 @@ class TextAugment:
         pass
       if not do_marian_mt:
         if m2m_model_name != self.m2m_model_name or self.m2m_model is None:
-          if m2m_model_name in  self.translation_pipelines:
-            self.m2m_model =  self.translation_pipelines[m2m_model_name]
+          if m2m_model_name in  TextAugment.translation_pipelines:
+            self.m2m_model =  TextAugment.translation_pipelines[m2m_model_name]
           else:
             if self.device == "cpu":
-                self.translation_pipelines[m2m_model_name] = self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval()
-                self.translation_pipelines[m2m_model_name] = self.m2m_model = torch.quantization.quantize_dynamic(self.m2m_model, {torch.nn.Linear}, dtype=torch.qint8)
+                TextAugment.translation_pipelines[m2m_model_name] = self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval()
+                TextAugment.translation_pipelines[m2m_model_name] = self.m2m_model = torch.quantization.quantize_dynamic(self.m2m_model, {torch.nn.Linear}, dtype=torch.qint8)
             else:
-                self.translation_pipelines[m2m_model_name] = self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval().half().to(self.device)
+                TextAugment.translation_pipelines[m2m_model_name] = self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval().half().to(self.device)
         self.m2m_model_name = m2m_model_name
         translations = []
         for src_text_list in tqdm(self.batch(texts, batch_size)):
@@ -736,7 +742,7 @@ class TextAugment:
     #marian_mt = self.marian_mt
     model_name = marian_mt.get((src_lang, target_lang))
     mt_pipeline = None
-    if model_name is not None and model_name not in self.translation_pipelines:
+    if model_name is not None and model_name not in TextAugment.translation_pipelines:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         if self.device == "cpu":
           model = MarianMTModel.from_pretrained(model_name).eval()
@@ -747,8 +753,10 @@ class TextAugment:
           mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer)
         else:
           mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=self.device_id)
-        self.translation_pipelines[model_name] = mt_pipeline
+        TextAugment.translation_pipelines[model_name] = mt_pipeline
+        print (mt_pipeline)
     if not mt_pipeline:
+        print (mt_pipeline)
         raise RuntimeError("no translation pipeline") # we could do multi-step translation where there are no pairs
     mt_pipeline = self.translation_pipelines[model_name]
     for src_text_list in tqdm(self.batch(texts, batch_size)):
@@ -1573,8 +1581,8 @@ class TextAugment:
                 ner_items = doc[ner_key]
                 serialize_items = []
                 for (text, start, end), ner_value in ner_items.items():
-                    ner_value = [{'label': label, "score": score} for label, score in ner_value.items()]
-                    ner_dict = {'text': text, 'start': start, 'end': end, 'ner_values': ner_value}
+                    ner_value = list(ner_value.items())
+                    ner_dict = [text, start, end, ner_value]
                     serialize_items.append(ner_dict)
                 doc[ner_key] = serialize_items
         if outfile:       
@@ -1598,8 +1606,8 @@ class TextAugment:
                 if ner_items and type(ner_items) is list and 'ner_values' in ner_items[0]:
                   deserialize_items = {}
                   for item in ner_items:
-                    mention = (item['text'], item['start'], item['end'])
-                    aHash = dict([(tuple(a['label']) if type(a['label']) is list else a['label'], float(a['score'])) for a in item['ner_values']])
+                    mention = (item[0], item[1], item[2])
+                    aHash = dict([(tuple(a[0]) if type(a[0]) is list else a[0], float(a[1])) for a in item[3]])
                     deserialize_items[mention] = aHash
                   doc[ner_key] = deserialize_items
     print ("deserialize_ner_items")
@@ -1644,7 +1652,7 @@ class TextAugment:
                           do_qg_rel=False,
                           aug_scope={'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
                           anon_scope={'PERSON', 'ID'},):
-    print ("process_ner_chunks_with_trans")
+    print ("process_ner_chunks_with_trans:", self.device, self.device_id)
     if do_augment and do_backtrans:
       assert False, "Only augment or backtrans can be performed at a time, not both"
     if do_augment and do_anonymization:
@@ -1759,18 +1767,11 @@ class TextAugment:
               ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=self.device_id)
             self.ner_model_name2pipelines[model_name] = ner_pipeline
           except:
-            try:
-              if self.device == 'cpu':
-                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},))
-              else:
-                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=self.device_id)
-              self.ner_model_name2pipelines[model_name] = ner_pipeline
-            except:
-              if self.device == 'cpu':
-                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), framework="tf")
-              else:
-                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), framework="tf", device=self.device_id)
-              self.ner_model_name2pipelines[model_name] = ner_pipeline
+            if self.device == 'cpu':
+              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},))
+            else:
+              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=self.device_id)
+            self.ner_model_name2pipelines[model_name] = ner_pipeline
         ner_pipelines.append((model_name, self.ner_model_name2pipelines[model_name], hf_ner_weight2))
     target_is_cjk = target_lang in ('zh', 'ko', 'ja')
     src_is_cjk = src_lang in ('zh', 'ko', 'ja')
@@ -2246,6 +2247,8 @@ class TextAugment:
       Note: This code will have a side-effect on the docs.
       """
       print ("process_ner")
+      if TextAugment.device is None:
+        self.initializer()
       if type(docs) is tuple:
         docs, src_lang, target_lang = docs
       if target_lang is None:
@@ -2658,6 +2661,8 @@ class TextAugment:
           yield (doc, src_lang, target_lang)
       
     print ("multiprocess_ner")
+    if TextAugment.device is None:
+      self.initializer()
     assert num_workers >= 2, "Can't do multiprocessing with less than 2 workers"
     multiprocessing.set_start_method('spawn', force=True)
     if type(src_lang) is str: src_lang = [src_lang]
