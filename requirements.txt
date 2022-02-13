@@ -13,3 +13,4 @@ sentence-transformers
 nltk
 protobuf
 python-stdnum
+dateparse
