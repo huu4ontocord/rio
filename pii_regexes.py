@@ -12,6 +12,8 @@ limitations under the License.
 """
 import stdnum
 import re, regex
+import dateparser
+
 from stdnum import (bic, bitcoin, casrn, cusip, ean, figi, grid, gs1_128, iban, \
                     imei, imo, imsi, isan, isbn, isil, isin, ismn, iso11649, iso6346, \
                     iso9362, isrc, issn, lei,  mac, meid, vatin)
@@ -189,7 +191,7 @@ from stdnum.vn import mst
 from stdnum.za import tin
 from stdnum.za import idnr
 
-#This is an incomplete list. TODO - finish it.
+#This is an incomplete list. TODO - adapt from https://github.com/scrapinghub/dateparser/blob/master/dateparser/data/languages_info.py
 country_to_lang = {'ar': 'es',
      'ae': 'ar',
      'iq': 'ar',
@@ -461,6 +463,7 @@ def ent_2_stdnum_type(text):
       stdnum_type.append (ent_type)
   return stdnum_type
 
+year_re = re.compile('^\d{4}\s|\s\d{4}$|\s\d{4}\s')
 #from https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py which is under the MIT License
 # see also for ICD https://stackoverflow.com/questions/5590862/icd9-regex-pattern - but this could be totally wrong!
 # we do regex in this order in order to not capture ner inside domain names and email addresses.
@@ -468,7 +471,10 @@ def ent_2_stdnum_type(text):
 regex_rulebase = {
     #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
     "DATE": {
-        "default": [(re.compile('(?:(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)|(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)\s+(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?)(?:\,)?\s*(?:\d{4})?|[0-3]?\d[-\./][0-3]?\d[-\./]\d{2,4}', re.IGNORECASE), None),],
+        "default": [
+            (re.compile('^\d{4}\s|\s\d{4}$|\s\d{4}\s'), None),
+            (re.compile('(?:(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)|(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)\s+(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?)(?:\,)?\s*(?:\d{4})?|[0-3]?\d[-\./][0-3]?\d[-\./]\d{2,4}', re.IGNORECASE), None),
+        ],
     },
     #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
     "TIME": {
@@ -635,6 +641,7 @@ regex_rulebase = {
               ),
               None,
           ),
+          #consider whether we want to make PHONE a separate tag, that collapses to ID
           #phone
           (re.compile(r"\d{4}-\d{8}"), None),
       ],
@@ -690,8 +697,8 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
       else:
           sentence_set = set(sentence.lower().split(" "))
       all_ner = []
-      original_sentence = sentence
       len_sentence = len(sentence)
+
       for tag, regex_group in regex_rulebase.items():
           if tag_type and tag not in tag_type: continue
           for regex_context in regex_group.get(src_lang, []) + regex_group.get("default", []):
@@ -716,15 +723,60 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                           #simple length test
                           if len(ent) > max_id_length: continue
                           stnum_type = ent_2_stdnum_type(ent)
-                          #print (ent, stnum_type)
-                          #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
                           found_country_lang_match = False
+                          #if the stdnum is one of the non PII types, we will ignore it
                           if prioritize_lang_match_over_ignore:
                                 found_country_lang_match = any(a for a in stnum_type if "." in a and country_to_lang.get(a.split(".")[0]) == src_lang)
                           if not found_country_lang_match and any(a for a in stnum_type if a in ignore_stdnum_type):
                             continue
-                      sentence2 = original_sentence
+                      sentence2 = sentence
                       delta = 0
+                      if tag in ('ID', 'DATE', ):
+                          #make sure an ID is not a date/time. If a date/time then assign it to 'DATE'.
+                          #TODO - map non arabic #s to 0-9
+                          is_date_time =  dateparser.parse(ent, languages=[src_lang])
+                          ent_is_year=False
+                          if len(ent) == 4:
+                            try:
+                              int(ent)
+                              ent_is_year=True
+                            except:
+                              ent_is_year=False
+                          #print (ent, ent_is_year, tag, is_date_time)
+                          if (ent_is_year and tag != 'ID') or (is_date_time and tag == 'ID'):
+                                i = sentence.index(ent)
+                                len_ent = len(ent)
+                                j = i + len_ent
+                                ent_spans = [(0, 1), (0, 2), (0, 3), (-1,0), (-1, 1), (-1, 2), (-1, 3), (-2,0), (-2, 1), (-2, 2), (-2, 3), (-3,0), (-3, 1), (-3, 2), (-3, 3)]
+                                before = sentence[:i]
+                                after = sentence[j:]
+                                if  not is_cjk:
+                                    before = before.split()
+                                    after = after.split()
+                                len_after = len(after)
+                                len_before = len(before)
+                                for before_words, after_words in ent_spans:
+                                    if after_words > len_after: continue
+                                    if -before_words > len_before: continue 
+                                    if before_words == 0: 
+                                        before1 = []
+                                    else:
+                                        before1 = before[max(-len_before,before_words):]
+                                    after1 = after[:min(len_after,after_words)]
+                                    if is_cjk:
+                                        ent2 = "".join(before1)+ent+"".join(after1)
+                                    else:
+                                        ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
+                                    if ent2.strip() == ent: continue
+                                    is_date_time = dateparser.parse(ent2, languages=[src_lang])
+                                    if is_date_time:
+                                      ent = ent2
+                                      break
+                                if is_date_time:
+                                    tag = 'DATE'
+                                else:
+                                    tag = 'ID'
+                      
                       while True:
                         if ent not in sentence2:
                           break
