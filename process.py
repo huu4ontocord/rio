@@ -42,14 +42,15 @@ import time
 from functools import partial
 from faker import Faker
 from faker.providers import person, company, geo, address, ssn, internet
-from marian_mt import marian_mt
+
 try:
   import neuralcoref
 except:
   neuralcoref = None
   pass
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__)))                         
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))         
+from marian_mt import marian_mt
 from edugp_kenlm_model import *
 from fake_names import *
 from pii_regexes import *
@@ -460,7 +461,7 @@ class TextAugment:
           faker_en.add_provider(geo)
           faker_en.add_provider(internet)
           faker_en.add_provider(company)
-    #print ("finished load")
+    print ("finished load")
     #TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
 
   @staticmethod
@@ -576,7 +577,7 @@ class TextAugment:
       default_answers = list(set([a[0] for a in ner.keys()]+default_answers))
       answers1={}
       #ti = time.time()
-      text = text.replace("U.S.","US").replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" , ", ", ") # replace(" He ", " Lincoln ").replace(" he ", " Lincoln ").replace(" him ", " Lincoln ")
+      text = text.replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" , ", ", ") 
       aHash = self.qg(text , default_answers=default_answers)[0]
 
       allqa.append(aHash)
@@ -754,10 +755,8 @@ class TextAugment:
         else:
           mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=self.device_id)
         TextAugment.translation_pipelines[model_name] = mt_pipeline
-        print (mt_pipeline)
-    if not mt_pipeline:
-        print (mt_pipeline)
-        raise RuntimeError("no translation pipeline") # we could do multi-step translation where there are no pairs
+        if mt_pipeline is None:
+          raise RuntimeError("no translation pipeline") # we could do multi-step translation where there are no pairs
     mt_pipeline = self.translation_pipelines[model_name]
     for src_text_list in tqdm(self.batch(texts, batch_size)):
         outputs = [t['translation_text'] for t in mt_pipeline(src_text_list, batch_size=batch_size)]
