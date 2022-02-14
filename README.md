@@ -26,15 +26,18 @@ python -m spacy download en_core_web_sm
 # Running
 ```
 cd muliwai
-python processor.py -src_lang zh
+python processor.py -src_lang zh -infile turkunlp_data/zh_data.jsonl.gz -cutoff 30
 ```
 If you have more than one GPU
 ```
 cd muliwai
-python processor.py -src_lang zh -num_workers=2
+python processor.py -src_lang zh  -infile turkunlp_data/zh_data.jsonl.gz -num_workers=2 -cutoff 30
 ```
 
 # Preloading the cache
+- This will load the various models needed to run the code for the specific language. 
+- The huggingface models will be stored in ~/.cache/huggingface and ~/.cache/transformers.
+- NOTE: the nlkt_data and en_core_web_sm are not stored in ~/.cache directory and will vary based on your system. See the documentation for spacy and nltk for their location.
 ```
 cd muliwai
 python processor.py -src_lang zh -preload_cache
