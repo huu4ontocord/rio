@@ -471,8 +471,8 @@ class TextAugment:
       lang_groups = ['ig', 'sn', 'ny', 'st', 'zu', 'xh', 'rw', 'sw', 'yo']  
     elif src_lang in ('mr', 'ne', 'hi', ):
       lang_groups = ['mr', 'ne', 'hi', ]  
-    elif src_lang in ('pt',):
-      lang_groups = ['pt','la' ]  
+    elif src_lang in ('pt', 'gl'):
+      lang_groups = ['pt','gl','la' ]  
     elif src_lang in ('fr', 'br'):
       lang_groups = ['fr','la', 'br' ]  
     elif src_lang in ('es', 'oc', 'ca', 'eu', 'an', 'gl' ):
@@ -549,6 +549,7 @@ class TextAugment:
     if flagged_words:
       if src_lang not in ("ja", "ko", "zh") and len([s2 for s2 in sArr if s2 in flagged_words])/len(sArr) > badword_ratio_cutoff:
         if any(s2 for s2 in sArr if s2 in bannedwords) or any(s2 for s2 in sArr if s2 in default_bannedwords):
+          #print ('bw', len([s2 for s2 in sArr if s2 in flagged_words])/len(sArr))
           return False
         else:
           bad_score = len([s2 for s2 in sArr if s2 in flagged_words])/len(sArr)
