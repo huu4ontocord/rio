@@ -2561,22 +2561,20 @@ class TextAugment:
                 cnt = 0
                 ret = []
                 with gzip.open(_file, "rb") as f:
-                  while True:
-                    t = f.readline().decode()
-                    if not t: break
+                  for t in f:
+                    t = t.decode()
                     dat = load_py_from_str(t, {})
                     if dat:
-                      cnt += 1
-                      if cutoff is not None and cutoff > 0 and cnt > cutoff:
+                      if cutoff is not None and cutoff > 0 and cnt >= cutoff:
                         yield ret
                         ret = []
                         break
                       else:
-                        cnt += 1
-                        if cnt % chunk_size == 0:
+                        if cnt  % chunk_size == 0 and ret:
                           yield ret
                           ret = []
                         ret.append(dat)
+                        cnt += 1
                 if ret:
                   yield ret
                   ret = []
@@ -2631,13 +2629,20 @@ class TextAugment:
         AutoConfig.from_pretrained(model_name)
     seen = {}
     for src_lang, target_lang in zip(src_langs, target_langs):
-        if (src_lang, target_lang) in seen: continue
-        model_name = marian_mt.get((src_lang, target_lang))
-        seen[(src_lang, target_lang)] = 1
-        if model_name is not None:
-          AutoModel.from_pretrained(model_name)
-          AutoTokenizer.from_pretrained(model_name)
-          AutoConfig.from_pretrained(model_name)        
+        if (src_lang, target_lang) not in seen: 
+          model_name = marian_mt.get((src_lang, target_lang))
+          seen[(src_lang, target_lang)] = 1
+          if model_name is not None:
+            AutoModel.from_pretrained(model_name)
+            AutoTokenizer.from_pretrained(model_name)
+            AutoConfig.from_pretrained(model_name)
+        if (target_lang, src_lang) not in seen: 
+          model_name = marian_mt.get((target_lang, src_lang))
+          seen[(target_lang, src_lang)] = 1
+          if model_name is not None:
+            AutoModel.from_pretrained(model_name)
+            AutoTokenizer.from_pretrained(model_name)
+            AutoConfig.from_pretrained(model_name)                
     TextAugment.load_kenlm_model(store_model=False)
                
   @staticmethod
@@ -2676,7 +2681,7 @@ class TextAugment:
       
     print ("multiprocess_ner")
     if TextAugment.device is None:
-      self.initializer()
+      TextAugment.initializer()
     assert num_workers >= 2, "Can't do multiprocessing with less than 2 workers"
     multiprocessing.set_start_method('spawn', force=True)
     if type(src_lang) is str: src_lang = [src_lang]
@@ -2867,9 +2872,10 @@ if __name__ == "__main__":
       else:
         processor = TextAugment(single_process=True)
         if not docs:
-            all_docs = [(processor.get_docs(sl, cutoff=cutoff), sl, tl) for sl, tl in zip(src_lang, target_lang)]
+            all_docs = [(list(processor.get_docs(sl, cutoff=cutoff)), sl, tl) for sl, tl in zip(src_lang, target_lang)]
         else:
             all_docs = [([docs], src_lang[0], target_lang[0])]
+
         if outfile is not None:
             _file =  open(outfile, 'w', encoding='utf-8')
         else:
