@@ -675,8 +675,8 @@ regex_rulebase = {
               (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None),
               # generic government id. consider a more complicated string with \w+ at the beginning or end
               (re.compile(r"\d{7,12}|[૦-૯]{7,12}|[೦-೯]{7,12}|[൦-൯]{7,12}|[୦-୯]{7,12}|[௦-௯]{7,12}|[۰-۹]{7,12}|[০-৯]{7,12}|[٠-٩]{7,12}|[壹-玖〡-〩零〇-九十廿卅卌百千万亿兆]{7,12}"), None),
-              #
-              (re.compile(r"\b[A-Za-z]*(?:[- ]*\d){6,9}$"), None),
+              # generic id with dashes
+              (re.compile('[A-Z]{0,3}(?:[- ]*\d){6,13}'), None),
               # generic user id
               (re.compile(r"\S*@[a-zA-Z]+\S*"), None),
               # bitcoin
@@ -692,6 +692,51 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
       This function returns a list of 4 tuples, representing an NER detection for [(entity, start, end, tag), ...]
       NOTE: There may be overlaps
       """
+      def test_date_time_or_id(ent, tag, sentence):
+        is_date_time =  dateparser.parse(ent, languages=[src_lang])
+        ent_is_year=False
+        if len(ent) == 4:
+          try:
+            int(ent)
+            ent_is_year=True
+          except:
+            ent_is_year=False
+          #print (ent, ent_is_year, tag, is_date_time)
+          if (ent_is_year and tag != 'ID') or (is_date_time and tag == 'ID'):
+            i = sentence.index(ent)
+            len_ent = len(ent)
+            j = i + len_ent
+            ent_spans = [(0, 1), (0, 2), (0, 3), (-1,0), (-1, 1), (-1, 2), (-1, 3), (-2,0), (-2, 1), (-2, 2), (-2, 3), (-3,0), (-3, 1), (-3, 2), (-3, 3)]
+            before = sentence[:i]
+            after = sentence[j:]
+            if  not is_cjk:
+              before = before.split()
+              after = after.split()
+            len_after = len(after)
+            len_before = len(before)
+            for before_words, after_words in ent_spans:
+              if after_words > len_after: continue
+              if -before_words > len_before: continue 
+              if before_words == 0: 
+                  before1 = []
+              else:
+                  before1 = before[max(-len_before,before_words):]
+              after1 = after[:min(len_after,after_words)]
+              if is_cjk:
+                ent2 = "".join(before1)+ent+"".join(after1)
+              else:
+                ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
+              if ent2.strip() == ent: continue
+              is_date_time = dateparser.parse(ent2, languages=[src_lang])
+              if is_date_time:
+                ent = ent2.strip()
+                break
+            if is_date_time:
+              tag = 'DATE'
+            else:
+              tag = 'ID'
+        return ent, tag
+        
       global regex_rulebase
       is_cjk = src_lang in ("zh", "ko", "ja")
       if is_cjk:
@@ -738,48 +783,26 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                       if tag in ('ID', 'DATE', ):
                           #make sure an ID is not a date/time. If a date/time then assign it to 'DATE'.
                           #TODO - map non arabic #s to 0-9 ??
-                          is_date_time =  dateparser.parse(ent, languages=[src_lang])
-                          ent_is_year=False
-                          if len(ent) == 4:
+                          range_matched=False
+                          ent_no_spaces = ent.replace(" - ", "-").split(" ")[-1]
+                          if len(ent_no_spaces) == 9 and ent_no_spaces[4] == "-":  
                             try:
-                              int(ent)
-                              ent_is_year=True
+                              year1 = int(ent_no_spaces[:4])
+                              year2 = int(ent_no_spaces[-4:])
                             except:
-                              ent_is_year=False
-                          #print (ent, ent_is_year, tag, is_date_time)
-                          if (ent_is_year and tag != 'ID') or (is_date_time and tag == 'ID'):
-                                i = sentence.index(ent)
-                                len_ent = len(ent)
-                                j = i + len_ent
-                                ent_spans = [(0, 1), (0, 2), (0, 3), (-1,0), (-1, 1), (-1, 2), (-1, 3), (-2,0), (-2, 1), (-2, 2), (-2, 3), (-3,0), (-3, 1), (-3, 2), (-3, 3)]
-                                before = sentence[:i]
-                                after = sentence[j:]
-                                if  not is_cjk:
-                                    before = before.split()
-                                    after = after.split()
-                                len_after = len(after)
-                                len_before = len(before)
-                                for before_words, after_words in ent_spans:
-                                    if after_words > len_after: continue
-                                    if -before_words > len_before: continue 
-                                    if before_words == 0: 
-                                        before1 = []
-                                    else:
-                                        before1 = before[max(-len_before,before_words):]
-                                    after1 = after[:min(len_after,after_words)]
-                                    if is_cjk:
-                                        ent2 = "".join(before1)+ent+"".join(after1)
-                                    else:
-                                        ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
-                                    if ent2.strip() == ent: continue
-                                    is_date_time = dateparser.parse(ent2, languages=[src_lang])
-                                    if is_date_time:
-                                      ent = ent2.strip()
-                                      break
-                                if is_date_time:
-                                    tag = 'DATE'
+                              year1 = year2 = None
+                            if year1 is not None:
+                              range_matched= year1 > 1000 and year1 < 2090 and year2 > 1000 and year2 < 2090
+                              if range_matched:
+                                ent2, tag2 = test_date_time_or_id(ent_no_spaces[:4], tag, sentence)
+                                if tag2 == 'DATE':
+                                  ent = ent2.replace(ent_no_spaces[:4], ent)
+                                  tag = tag2
                                 else:
-                                    tag = 'ID'
+                                  range_matched = False
+                          if not range_matched:
+                            ent, tag = test_date_time_or_id(ent, tag, sentence)
+
                                     
                       #if we changed the tag type and it's not a type we are looking for, ignore it.
                       if tag_type and tag not in tag_type: continue     
