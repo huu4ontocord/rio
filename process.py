@@ -2517,7 +2517,7 @@ class TextAugment:
       return list(docs.values()) #this is not guaranteed to be ordered
 
   @staticmethod
-  def get_docs(src_langs=None, docs=None, max_chunk_size=10000, num_workers=1, cutoff=-1, domain="", filter_out_no_registry=True):
+  def get_docs(src_langs=None, docs=None, max_chunk_size=10000, num_workers=1, cutoff=-1, dataset_name="", filter_out_no_registry=True):
       """
       NOTE: We filter the registry docs if there are no registry label for a doc. This might not be the ideal behaviour.
       """
@@ -2530,9 +2530,16 @@ class TextAugment:
           if suggested_chunk_size <= 1:
               suggested_chunk_size = cutoff
         return min(max_chunk_size, suggested_chunk_size)
-            
-      if domain:
-          d = load_dataset(domain) 
+      
+      def load_py_from_str(s, default=None):
+        if not s.strip(): return default
+        ret = {'__ret': None}
+        exec("__ret= "+s, ret)
+        return ret['__ret']
+
+
+      if dataset_name:
+          d = load_dataset(*dataset_name.split(",")) 
           len_docs = len(d)
           chunk_size = get_chunk_size(cutoff, len_docs, num_workers)
           curr_recs = 0
@@ -2543,52 +2550,22 @@ class TextAugment:
                 j -= curr_recs - cutoff
               if i <= j: yield d['train'][i:j]
               if cutoff > 0 and curr_recs >= cutoff: break
-      elif docs is None and src_langs is not None:
+      elif not docs and src_langs is not None:
         if type(src_langs) is str: src_langs = [src_langs]
+        
+        # we will load the data from turkunlp_data
         for src_lang in src_langs:
-          d = None
-          try:
-            domain = 'oscar_registry'
-            d = load_dataset("TurkuNLP/register_oscar", data_files=f"{src_lang}/{src_lang}_00000.jsonl.gz")
-            print (f"loaded {src_lang}/{src_lang}_00000.jsonl.gz")
-          except:
-            try:
-              domain = 'mc4_registry'
-              d = load_dataset("TurkuNLP/register_mc4", data_files=f"{src_lang}/{src_lang}_00000.jsonl.gz")
-            except:
-              pass
-          if d:  
-            len_docs = len(d['train'])
-            chunk_size = get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size)
-            curr_recs = 0
-            for i in range(0, len_docs, chunk_size):
-              j = min(i + chunk_size, len_docs)
-              curr_recs += j - i
-              if cutoff > 0 and curr_recs >= cutoff:
-                j -= curr_recs - cutoff
-              if i <= j: 
-                if filter_out_no_registry:
-                    yield [doc for doc in [d['train'][k] for k in range(i, j)] if 'labels' not in doc or doc['labels'] !=[]]
-                else:
-                    yield [d['train'][k] for k in range(i, j)]
-              if cutoff > 0 and curr_recs >= cutoff: break
-          else:
-              try:
-                domain = 'oscar'
-                _file = _download_oscar(src_lang, shard=0)
-              except:
-                _file = None
-              if _file is not None:
+          _file = os.path.abspath(os.path.dirname(__file__))+f"/turkunlp_data/{src_lang}_data.jsonl.gz"
+          if os.path.exists(_file):
                 chunk_size = get_chunk_size(cutoff, 1000000, num_workers, max_chunk_size)
                 cnt = 0
                 ret = []
                 with gzip.open(_file, "rb") as f:
                   while True:
-                    t = f.readline()
+                    t = f.readline().decode()
                     if not t: break
-                    text = try_decode(t)
-                    #print (text)
-                    if text:
+                    dat = load_py_from_str(t, {})
+                    if dat:
                       cnt += 1
                       if cutoff is not None and cutoff > 0 and cnt > cutoff:
                         yield ret
@@ -2599,23 +2576,12 @@ class TextAugment:
                         if cnt % chunk_size == 0:
                           yield ret
                           ret = []
-                        ret.append({'text':text})
+                        ret.append(dat)
                 if ret:
                   yield ret
                   ret = []
-              else:
-                  domain = 'mc4'
-                  d = load_dataset("mc4", src_lang)
-                  len_docs = len(d['train'])
-                  chunk_size = get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size)
-                  curr_recs = 0
-                  for i in range(0, len_docs, chunk_size):
-                    j = min(i + chunk_size, len_docs)
-                    curr_recs += j - i
-                    if cutoff > 0 and curr_recs >= cutoff:
-                      j -= curr_recs - cutoff
-                    if i <= j: yield [d['train'][k] for k in range(i, j)]
-                    if cutoff > 0 and curr_recs >= cutoff: break
+          else:
+            raise RuntimeError("can't load dataset")
       elif isinstance(docs, str):
           yield [{'text': docs}]
       elif isinstance(docs, list):
