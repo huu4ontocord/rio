@@ -675,6 +675,8 @@ regex_rulebase = {
               (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None),
               # generic government id. consider a more complicated string with \w+ at the beginning or end
               (re.compile(r"\d{7,12}|[૦-૯]{7,12}|[೦-೯]{7,12}|[൦-൯]{7,12}|[୦-୯]{7,12}|[௦-௯]{7,12}|[۰-۹]{7,12}|[০-৯]{7,12}|[٠-٩]{7,12}|[壹-玖〡-〩零〇-九十廿卅卌百千万亿兆]{7,12}"), None),
+              #
+              (re.compile(r"\b[A-Za-z]*(?:[- ]*\d){6,9}$"), None),
               # generic user id
               (re.compile(r"\S*@[a-zA-Z]+\S*"), None),
               # bitcoin
@@ -685,7 +687,7 @@ regex_rulebase = {
 
 strip_chars = " ,،、{}[]|()\"'“”《》«»!:;?。.…．"
 #cusip number probaly PII?
-def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
+def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }):
       """
       This function returns a list of 4 tuples, representing an NER detection for [(entity, start, end, tag), ...]
       NOTE: There may be overlaps
@@ -722,6 +724,8 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                       if tag == 'ID':
                           #simple length test
                           if len(ent) > max_id_length: continue
+                          #check if this is really a non PII stdnum, unless it's specifically an ID for a country using this src_lang. 
+                          #TODO - complete the country to src_lang dict above. 
                           stnum_type = ent_2_stdnum_type(ent)
                           found_country_lang_match = False
                           #if the stdnum is one of the non PII types, we will ignore it
@@ -733,7 +737,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                       delta = 0
                       if tag in ('ID', 'DATE', ):
                           #make sure an ID is not a date/time. If a date/time then assign it to 'DATE'.
-                          #TODO - map non arabic #s to 0-9
+                          #TODO - map non arabic #s to 0-9 ??
                           is_date_time =  dateparser.parse(ent, languages=[src_lang])
                           ent_is_year=False
                           if len(ent) == 4:
@@ -770,13 +774,14 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                                     if ent2.strip() == ent: continue
                                     is_date_time = dateparser.parse(ent2, languages=[src_lang])
                                     if is_date_time:
-                                      ent = ent2
+                                      ent = ent2.strip()
                                       break
                                 if is_date_time:
                                     tag = 'DATE'
                                 else:
                                     tag = 'ID'
-                      
+                                    
+                      #now let's turn all occurances of ent in this sentence into a span mention
                       while True:
                         if ent not in sentence2:
                           break
@@ -798,10 +803,13 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                                 delta += j
                                 sentence2 = sentence2[i+len(ent):]
                                 continue
+                          #check to see if the entity is really a standalone word or part of another longer word. we don't match embedded IDs:
+                          #e.g., MyIDis555-555-5555. 
                           if is_cjk or ((i+delta == 0 or sentence2[i-1]  in strip_chars) and (j+delta >= len_sentence-1 or sentence2[j] in strip_chars)): 
                             all_ner.append((ent, delta+i, delta+j, tag))
                           sentence2 = sentence2[i+len(ent):]
                           delta += j
+                            
       all_ner = list(set(all_ner))
       all_ner.sort(key=lambda a: a[1])
       return all_ner
