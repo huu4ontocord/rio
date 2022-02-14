@@ -2672,6 +2672,7 @@ class TextAugment:
                     do_docs_filter=False,
                     do_qg_rel=False,
                     do_kenlm = True,
+                    cutoff=None,
                     num_workers=2):
 
     def load_docs(src_langs, target_langs, num_workers, cutoff):
@@ -2680,8 +2681,6 @@ class TextAugment:
           yield (doc, src_lang, target_lang)
       
     print ("multiprocess_ner")
-    if TextAugment.device is None:
-      TextAugment.initializer()
     assert num_workers >= 2, "Can't do multiprocessing with less than 2 workers"
     multiprocessing.set_start_method('spawn', force=True)
     if type(src_lang) is str: src_lang = [src_lang]
@@ -2689,7 +2688,7 @@ class TextAugment:
     if src_lang is None: src_lang = ["en"]
     if target_lang is None: target_lang = ["en"]*len(src_lang)
     start = time.time()
-    TextAugmentGPUModel.initializer_all(src_lang=src_lang, target_lang=target_lang)
+    TextAugmentGPUModel.initializer_all(src_langs=src_lang, target_langs=target_lang)
     processor = TextAugment(single_process=False)
     # processor.initializer()
     pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_gpu_model=TextAugmentGPUModel.available_gpu_models ))      
