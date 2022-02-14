@@ -51,7 +51,9 @@ Yago is licensed under CC BY 4.0. https://yago-knowledge.org/
 
 ## Conceptnet 5 Licensing Info
 
-This work includes data from ConceptNet 5, which was compiled by the Commonsense Computing Initiative. ConceptNet 5 is freely available under the Creative Commons Attribution-ShareAlike license (CC BY SA 3.0) from http://conceptnet.io.
+Below is information on the licensing of Conceptnet 5 from the authors of Conceptnet 5:
+```
+This work includes data from ConceptNet 5, which was compiled by the Commonsense Computing Initiative. ConceptNet 5 is freely available under the Creative Commons Attribution-ShareAlike license (CC BY SA 4.0) from http://conceptnet.io.
 
 The included data was created by contributors to Commonsense Computing projects, contributors to Wikimedia projects, DBPedia, OpenCyc, Games with a Purpose, Princeton University's WordNet, Francis Bond's Open Multilingual WordNet, and Jim Breen's JMDict. Credits and acknowledgements ConceptNet has been developed by:
 
@@ -94,3 +96,4 @@ THIS SOFTWARE AND DATABASE IS PROVIDED "AS IS" AND PRINCETON UNIVERSITY MAKES NO
 The name of Princeton University or Princeton may not be used in advertising or publicity pertaining to distribution of the software and/or database. Title to copyright in this software, database and any associated documentation shall at all times remain with Princeton University and LICENSEE agrees to preserve same.
 
 Open Multilingual WordNet Open Multilingual WordNet was compiled by Francis Bond, Kyonghee Paik, and Ryan Foster, from data provided by many multilingual WordNet projects. Here is the complete list of references to the projects that created the data.
+```
