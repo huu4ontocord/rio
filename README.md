@@ -1,5 +1,5 @@
 # Intro
-Muliwai (pronounced: mu-lee-why, meaning river in Hawaiian) is a library for text pre-processing, augmentation, anonymization, synthesis and generalization. It is intended to be used to process text datasets for training NLP models.
+Muliwai (pronounced: mu-lee-why, meaning river in Hawaiian) is a library for text pre-processing, augmentation, anonymization, and synthesis. It is intended to be used to process text datasets for training NLP models.
 
 # What is it
 Muliwai was written in part to support the data-tooling efforts of the BigScience workshop, but has grown beyond this. There are several utilities for performing NER and assocaited augmentation and anonymization. In theory, Muliwai can do NER in most of the languages supported by XLMRoberta & M2M100 (100+ languages). However, we have not tested various languages beyond: ar, ur, bn, hi, eu, ca, vi, zh, fr, id, es, pt,  sw, yo. 
