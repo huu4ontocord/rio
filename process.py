@@ -486,14 +486,15 @@ class TextAugment:
       if store_model: TextAugment.kenlm_model = KenlmModel(f"{cache_dir}/wikipedia", "en")
   
   @staticmethod
-  def check_good_sentence(s, src_lang, stopwords, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
+  def check_good_sentence(s, src_lang, stopwords, show_err=False, lang_groups=[], ret_score=False, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
     #basic dejunk
     # for flagged_words, only filter out if the ratio is exceeded AND there exists one banned word
     if bannedwords is None:
       bannedwords = TextAugment.banned_words.get(src_lang, TextAugment.banned_words['default'])
     default_bannedwords = TextAugment.banned_words['default']
     s = s.lower().strip()
-    if not s: return False
+    if not s: 
+       return False
     jr = len([s2 for s2 in s if s2 in TextAugment.junk])/len(s)
     if jr >= junk_ratio:
       return False
@@ -503,11 +504,37 @@ class TextAugment:
       sArr = [s2.strip(TextAugment.special_char) for s2 in s.lower().split() if s2.strip(TextAugment.special_char)]
     if len(sArr) == 0:
       return False
+    bad_score = 0.0
+    if flagged_words:
+      if src_lang not in ("ja", "ko", "zh") and len([s2 for s2 in sArr if s2 in flagged_words])/len(sArr) > badword_ratio_cutoff:
+        if any(s2 for s2 in sArr if s2 in bannedwords) or any(s2 for s2 in sArr if s2 in default_bannedwords):
+          return False
+        else:
+          bad_score = len([s2 for s2 in sArr if s2 in flagged_words])/len(sArr)
+      if src_lang in ("ja", "ko", "zh"):
+        badword_ratio_cutoff /= 100
+        len_s = len(s)
+        bad_cnt = 0
+        total_cnt = 0
+        for i in range(len_s):
+          for j in range(i+1,min(len_s, i+max_badword_len)):
+            if s[i:j] in flagged_words:
+              bad_cnt += 1
+            total_cnt += 1
+        bad_score = (bad_cnt/total_cnt)
+        if bad_score > badword_ratio_cutoff:
+          for bword in bannedwords:
+            if bword in s:
+              return False
+          for bword in default_bannedwords:
+            if bword in s:
+              return False
+          
     #stopword check
-    if stopwords is not None:
+    if stopwords:
       #TODO: catch multi word with spaces
-      #print ('sw', len([s2 for s2 in sArr if s2 in stopwords])/len(sArr))
       if src_lang not in ("ja", "ko", "zh") and len([s2 for s2 in sArr if s2 in stopwords])/len(sArr) < stopword_ratio_cutoff:
+        #print ('sw', len([s2 for s2 in sArr if s2 in stopwords])/len(sArr))
         return False
       if src_lang in ("ja", "ko", "zh"):
         if src_lang == "zh":
@@ -527,34 +554,15 @@ class TextAugment:
         #print ('stopword', (stop_cnt/total_cnt) )
         if (stop_cnt/total_cnt) < stopword_ratio_cutoff:
           return False
-    if flagged_words is not None:
-      #print ('bw', len([s2 for s2 in sArr if s2 in flagged_words])/len(sArr))
-      if src_lang not in ("ja", "ko", "zh") and len([s2 for s2 in sArr if s2 in flagged_words])/len(sArr) > badword_ratio_cutoff:
-        if any(s2 for s2 in sArr if s2 in bannedwords) or any(s2 for s2 in sArr if s2 in default_bannedwords):
-          return False
-      if src_lang in ("ja", "ko", "zh"):
-        badword_ratio_cutoff /= 100
-        len_s = len(s)
-        bad_cnt = 0
-        total_cnt = 0
-        for i in range(len_s):
-          for j in range(i+1,min(len_s, i+max_badword_len)):
-            if s[i:j] in flagged_words:
-              bad_cnt += 1
-            total_cnt += 1
-        if (bad_cnt/total_cnt) > badword_ratio_cutoff:
-          for bword in bannedwords:
-            if bword in s:
-              return False
-          for bword in default_bannedwords:
-            if bword in s:
-              return False
     #langid check
     try:
         lang =  langid.classify(s)[0]
     except:
         return True
-    return lang == src_lang
+    if show_err and lang != src_lang and lang not in lang_groups:
+      print (src_lang, lang)
+    if ret_score: return lang == src_lang or lang in lang_groups, bad_score
+    return lang == src_lang or lang in lang_groups
 
   #WIP - we can use this question generation method to extract people, place and thing, and potentially age/date AND to get a relationship between a person and a PII info
   def generate_questions_answers_rel(self, docs, chunks, src_lang, default_answers=[], text_key=None, ner_key=None, rel_key=None, signal='qg_rel', weight=1.0):
@@ -2484,10 +2492,10 @@ class TextAugment:
           for i in range(0, len_docs, chunk_size):
               j = min(i + chunk_size, len_docs)
               curr_recs += j - i
-              if curr_recs >= cutoff:
+              if cutoff > 0 and curr_recs >= cutoff:
                 j -= curr_recs - cutoff
               if i <= j: yield d['train'][i:j]
-              if curr_recs >= cutoff: break
+              if cutoff > 0 and curr_recs >= cutoff: break
       elif docs is None and src_langs is not None:
         if type(src_langs) is str: src_langs = [src_langs]
         for src_lang in src_langs:
@@ -2509,14 +2517,14 @@ class TextAugment:
             for i in range(0, len_docs, chunk_size):
               j = min(i + chunk_size, len_docs)
               curr_recs += j - i
-              if curr_recs >= cutoff:
+              if cutoff > 0 and curr_recs >= cutoff:
                 j -= curr_recs - cutoff
               if i <= j: 
                 if filter_out_no_registry:
                     yield [doc for doc in [d['train'][k] for k in range(i, j)] if 'labels' not in doc or doc['labels'] !=[]]
                 else:
                     yield [d['train'][k] for k in range(i, j)]
-              if curr_recs >= cutoff: break
+              if cutoff > 0 and curr_recs >= cutoff: break
           else:
               try:
                 domain = 'oscar'
@@ -2528,20 +2536,23 @@ class TextAugment:
                 cnt = 0
                 ret = []
                 with gzip.open(_file, "rb") as f:
-                  t = f.readline()
-                  text = try_decode(t)
-                  if text:
-                    cnt += 1
-                    if cutoff is not None and cutoff > 0 and cnt > cutoff:
-                      yield ret
-                      ret = []
-                      break
-                    else:
+                  while True:
+                    t = f.readline()
+                    if not t: break
+                    text = try_decode(t)
+                    #print (text)
+                    if text:
                       cnt += 1
-                      if cnt +1 % chunk_size == 0:
+                      if cutoff is not None and cutoff > 0 and cnt > cutoff:
                         yield ret
                         ret = []
-                      ret.append({'text':text})
+                        break
+                      else:
+                        cnt += 1
+                        if cnt % chunk_size == 0:
+                          yield ret
+                          ret = []
+                        ret.append({'text':text})
                 if ret:
                   yield ret
                   ret = []
@@ -2554,10 +2565,10 @@ class TextAugment:
                   for i in range(0, len_docs, chunk_size):
                     j = min(i + chunk_size, len_docs)
                     curr_recs += j - i
-                    if curr_recs >= cutoff:
+                    if cutoff > 0 and curr_recs >= cutoff:
                       j -= curr_recs - cutoff
                     if i <= j: yield [d['train'][k] for k in range(i, j)]
-                    if curr_recs >= cutoff: break
+                    if cutoff > 0 and curr_recs >= cutoff: break
       elif isinstance(docs, str):
           yield [{'text': docs}]
       elif isinstance(docs, list):
@@ -2580,23 +2591,6 @@ class TextAugment:
     except:
       print("neuralcoref not loaded!")
       pass
-    if domain:
-      d = load_dataset(domain) 
-    for src_lang in list(set(src_langs)):
-      if src_lang:
-        try:
-          load_dataset("TurkuNLP/register_oscar", data_files=f"{src_lang}/{src_lang}_00000.jsonl.gz")
-        except:
-            try:
-              load_dataset("TurkuNLP/register_mc4", data_files=f"{src_lang}/{src_lang}_00000.jsonl.gz")
-            except:
-              try:
-                _file = _download_oscar(src_lang, shard=0)
-              except:
-                try:
-                  load_dataset("mc4", src_lang)
-                except:
-                  pass
     arr2 = []
     for arr in TextAugment.hf_ner_model_map.values():
       for model_name, _, _ in arr:
