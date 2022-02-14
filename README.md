@@ -55,7 +55,7 @@ Yago is licensed under CC BY 4.0. https://yago-knowledge.org/
 
 ## Conceptnet 5 Licensing Info
 
-Below is information on the licensing of Conceptnet 5 from the authors of Conceptnet 5 generally under a CC BY SA 4.0:
+Below is information on the licensing of Conceptnet 5 from the authors of Conceptnet 5 generally under a CC BY SA 4.0 (http://conceptnet.io):
 ```
 This work includes data from ConceptNet 5, which was compiled by the Commonsense Computing Initiative. ConceptNet 5 is freely available under the Creative Commons Attribution-ShareAlike license (CC BY SA 4.0) from http://conceptnet.io.
 
