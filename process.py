@@ -2648,8 +2648,8 @@ class TextAugment:
   @staticmethod
   def multiprocess_ner(docs,
                     outfile,
-                    src_lang,
-                    target_lang,
+                    src_langs,
+                    target_langs,
                     do_spacy = True,
                     do_hf_ner = True,
                     do_ontology = True,
@@ -2675,28 +2675,32 @@ class TextAugment:
                     cutoff=None,
                     num_workers=2):
 
-    def load_docs(src_langs, target_langs, num_workers, cutoff):
-      for src_lang, target_lang in zip(src_langs, target_langs):
-        for doc in TextAugment.get_docs(src_lang, cutoff=cutoff, num_workers=num_workers):
-          yield (doc, src_lang, target_lang)
-      
-    print ("multiprocess_ner")
+    print ("multiprocess_ner ", outfile, src_langs)
     assert num_workers >= 2, "Can't do multiprocessing with less than 2 workers"
     multiprocessing.set_start_method('spawn', force=True)
-    if type(src_lang) is str: src_lang = [src_lang]
-    if type(target_lang) is str: target_lang = [target_lang]
-    if src_lang is None: src_lang = ["en"]
-    if target_lang is None: target_lang = ["en"]*len(src_lang)
+    if type(src_langs) is str: src_langs = [src_langs]
+    if type(target_langs) is str: target_langs = [target_langs]
+    if src_langs is None: src_langs = ["en"]
+    if target_langs is None: target_langs = ["en"]*len(src_langs)
     start = time.time()
-    TextAugmentGPUModel.initializer_all(src_langs=src_lang, target_langs=target_lang)
+    TextAugmentGPUModel.initializer_all(src_langs=src_langs, target_langs=target_langs)
     processor = TextAugment(single_process=False)
     # processor.initializer()
     pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_gpu_model=TextAugmentGPUModel.available_gpu_models ))      
-    with open(outfile, 'w', encoding='utf-8') as file:
-        # for i in range(0, num_workers):
-          processed_docs = pool.imap_unordered(partial(processor.process_ner,
-                                                      src_lang=None,
-                                                      target_lang=None,
+    if outfile is not None:
+      _file =  open(outfile, 'w', encoding='utf-8')
+    else:
+      _file = None
+    for src_lang, target_lang in zip(src_langs, target_langs):
+      if outfile is None:
+        if _file is not None: _file.close()
+        _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
+      docs = TextAugment.get_docs(src_lang, cutoff=cutoff, num_workers=num_workers)
+
+      # for i in range(0, num_workers):
+      processed_docs = pool.imap_unordered(partial(processor.process_ner,
+                                                      src_lang=src_lang,
+                                                      target_lang=target_lang,
                                                       do_spacy = do_spacy ,
                                                       do_hf_ner = do_hf_ner ,
                                                       #do_ontology = True,
@@ -2721,13 +2725,14 @@ class TextAugment:
                                                       cutoff=cutoff,
                                                       batch_size=batch_size,
                                                        ),
-                                              load_docs(src_lang, target_lang, num_workers, cutoff))
-          i = 0
-          for  docs in tqdm(processed_docs):
-            print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
-            i += 1
-            for doc in processor.serialize_ner_items(docs):
-              file.write(f'{doc}\n')
+                                              docs)
+      i = 0
+      for  docs in tqdm(processed_docs):
+          print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
+          i += 1
+          for doc in processor.serialize_ner_items(docs):
+            _file.write(f'{doc}\n')
+      if _file is not None: _file.close()
 
 if __name__ == "__main__":
   in_notebook = 'google.colab' in sys.modules
@@ -2842,8 +2847,8 @@ if __name__ == "__main__":
       if num_workers > 1:
         TextAugment.multiprocess_ner(docs,
                     outfile,
-                    src_lang=src_lang,
-                    target_lang=target_lang,
+                    src_langs=src_lang,
+                    target_langs=target_lang,
                     do_spacy = args.do_spacy ,
                     do_hf_ner = args.do_hf_ner ,
                     #do_ontology = True,
