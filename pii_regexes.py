@@ -610,16 +610,72 @@ regex_rulebase = {
               #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
               (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None),
               # generic government id. consider a more complicated string with \w+ at the beginning or end
-              (re.compile(r"\d{8}|\d{9}|\d{10}|\d{11}"), None),
+              (re.compile(r"\d{7,12}|[૦-૯]{7,12}|[೦-೯]{7,12}|[൦-൯]{7,12}|[୦-୯]{7,12}|[௦-௯]{7,12}|[۰-۹]{7,12}|[০-৯]{7,12}|[٠-٩]{7,12}|[壹-玖〡-〩零〇-九十廿卅卌百千万亿兆]{7,12}"), None),
+              # generic id with dashes
+              (re.compile('[A-Z]{0,3}(?:[- ]*\d){6,13}'), None),
+              # generic user id
+              (re.compile(r"\S*@[a-zA-Z]+\S*"), None),
+              # bitcoin
+              (re.compile('(?<![a-km-zA-HJ-NP-Z0-9])[13][a-km-zA-HJ-NP-Z0-9]{26,33}(?![a-km-zA-HJ-NP-Z0-9])'), None),
+
       ],
     },
  }
 
-def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, tag_type={'ID'}, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
+
+strip_chars = " ,،、{}[]|()\"'“”《》«»!:;?。.…．"
+#cusip number probaly PII?
+def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }):
+
       """
       This function returns a list of 3 tuples, representing an NER detection for [(entity, start, end, tag), ...]
       NOTE: There may be overlaps
       """
+      def test_date_time_or_id(ent, tag, sentence):
+        is_date_time =  dateparser.parse(ent) # use src_lang to make it faster, languages=[src_lang])
+        ent_is_year=False
+        if len(ent) == 4:
+          try:
+            int(ent)
+            ent_is_year=True
+          except:
+            ent_is_year=False
+          #we use dateparse to find context words around the ID/date to determine if its a date or not.
+          if (ent_is_year and tag != 'ID') or (is_date_time and tag == 'ID'):
+            i = sentence.index(ent)
+            len_ent = len(ent)
+            j = i + len_ent
+            ent_spans = [(0, 1), (0, 2), (0, 3), (-1,0), (-1, 1), (-1, 2), (-1, 3), (-2,0), (-2, 1), (-2, 2), (-2, 3), (-3,0), (-3, 1), (-3, 2), (-3, 3)]
+            before = sentence[:i]
+            after = sentence[j:]
+            if  not is_cjk:
+              before = before.split()
+              after = after.split()
+            len_after = len(after)
+            len_before = len(before)
+            for before_words, after_words in ent_spans:
+              if after_words > len_after: continue
+              if -before_words > len_before: continue 
+              if before_words == 0: 
+                  before1 = []
+              else:
+                  before1 = before[max(-len_before,before_words):]
+              after1 = after[:min(len_after,after_words)]
+              if is_cjk:
+                ent2 = "".join(before1)+ent+"".join(after1)
+              else:
+                ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
+              if ent2.strip() == ent: continue
+              is_date_time = dateparser.parse(ent2)# use src_lang to make it faster, languages=[src_lang])
+              if is_date_time:
+                ent = ent2.strip()
+                break
+            if is_date_time:
+              tag = 'DATE'
+            else:
+              tag = 'ID'
+        return ent, tag
+        
       global regex_rulebase
       if src_lang in ("zh", "ko", "ja"):
           sentence_set = set(sentence.lower())
@@ -648,14 +704,51 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, tag_
                       if not isinstance(ent, str) or not ent:
                           continue
                       if tag == 'ID':
-                          stnum_type = id_2_stdnum_type(ent)
-                          #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
-                          #TODO: we couold do a rule where given the language, map to country, and if the country stdnum is matched, 
-                          #we won't skip this ent even if it also matches an ignore_stdnum_type
-                          if any(a for a in stnum_type if a in ignore_stdnum_type):
+
+                          #simple length test
+                          if len(ent) > max_id_length: continue
+                          #check if this is really a non PII stdnum, unless it's specifically an ID for a country using this src_lang. 
+                          #TODO - complete the country to src_lang dict above. 
+                          stnum_type = ent_2_stdnum_type(ent)
+                          found_country_lang_match = False
+                          #if the stdnum is one of the non PII types, we will ignore it
+                          if prioritize_lang_match_over_ignore:
+                                found_country_lang_match = any(a for a in stnum_type if "." in a and country_to_lang.get(a.split(".")[0]) == src_lang)
+                          if not found_country_lang_match and any(a for a in stnum_type if a in ignore_stdnum_type):
+
                             continue
                       sentence2 = original_sentence
                       delta = 0
+
+                      if tag in ('ID', 'DATE', ):
+                          #make sure an ID is not a date/time. If a date/time then assign it to 'DATE'.
+                          #TODO - map non arabic #s to 0-9 ??
+                          range_matched=False
+                          ent_no_spaces = ent.replace(" - ", "-").split(" ")[-1]
+                          if len(ent_no_spaces) == 9 and ent_no_spaces[4] == "-":  
+                            try:
+                              year1 = int(ent_no_spaces[:4])
+                              year2 = int(ent_no_spaces[-4:])
+                            except:
+                              year1 = year2 = None
+                            if year1 is not None:
+                              range_matched= year1 > 1000 and year1 < 2090 and year2 > 1000 and year2 < 2090
+                              if range_matched:
+                                ent2, tag2 = test_date_time_or_id(ent_no_spaces[:4], tag, sentence)
+                                if tag2 == 'DATE':
+                                  ent = ent2.replace(ent_no_spaces[:4], ent)
+                                  tag = tag2
+                                else:
+                                  range_matched = False
+                          if not range_matched:
+                            ent, tag = test_date_time_or_id(ent, tag, sentence)
+
+                                    
+                      #if we changed the tag type and it's not a type we are looking for, ignore it.
+                      if tag_type and tag not in tag_type: continue     
+                            
+                      #now let's turn all occurances of ent in this sentence into a span mention
+
                       while True:
                         if ent not in sentence2:
                           break
@@ -675,8 +768,15 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, tag_
                               if not found_context:
                                 sentence2 = sentence2[i+len(ent):]
                                 continue
+                          #check to see if the entity is really a standalone word or part of another longer word. we don't match embedded IDs:
+                          #e.g., MyIDis555-555-5555. 
+                          if is_cjk or ((i+delta == 0 or sentence2[i-1]  in strip_chars) and (j+delta >= len_sentence-1 or sentence2[j] in strip_chars)): 
+                            all_ner.append((ent, delta+i, delta+j, tag))
                           sentence2 = sentence2[i+len(ent):]
                           all_ner.append((ent, delta+i, delta+j, tag))
                           delta += j
-                          idx += 1
+         
+      all_ner = list(set(all_ner))
+      all_ner.sort(key=lambda a: a[1])
       return all_ner
+
