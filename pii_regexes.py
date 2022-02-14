@@ -781,6 +781,9 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                                 else:
                                     tag = 'ID'
                                     
+                      #if we changed the tag type and it's not a type we are looking for, ignore it.
+                      if tag_type and tag not in tag_type: continue     
+                            
                       #now let's turn all occurances of ent in this sentence into a span mention
                       while True:
                         if ent not in sentence2:
