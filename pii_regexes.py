@@ -693,7 +693,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
       NOTE: There may be overlaps
       """
       def test_date_time_or_id(ent, tag, sentence):
-        is_date_time =  dateparser.parse(ent, languages=[src_lang])
+        is_date_time =  dateparser.parse(ent) # use src_lang to make it faster, languages=[src_lang])
         ent_is_year=False
         if len(ent) == 4:
           try:
@@ -701,7 +701,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
             ent_is_year=True
           except:
             ent_is_year=False
-          #print (ent, ent_is_year, tag, is_date_time)
+          #we use dateparse to find context words around the ID/date to determine if its a date or not.
           if (ent_is_year and tag != 'ID') or (is_date_time and tag == 'ID'):
             i = sentence.index(ent)
             len_ent = len(ent)
@@ -727,7 +727,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
               else:
                 ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
               if ent2.strip() == ent: continue
-              is_date_time = dateparser.parse(ent2, languages=[src_lang])
+              is_date_time = dateparser.parse(ent2)# use src_lang to make it faster, languages=[src_lang])
               if is_date_time:
                 ent = ent2.strip()
                 break
