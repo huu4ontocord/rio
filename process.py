@@ -465,6 +465,47 @@ class TextAugment:
     #TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
 
   @staticmethod
+  def get_lang_groups(src_lang):
+    lang_groups=[src_lang]
+    if src_lang in ('ig', 'sn', 'ny', 'st', 'zu', 'xh', 'rw', 'sw', 'yo'):
+      lang_groups = ['ig', 'sn', 'ny', 'st', 'zu', 'xh', 'rw', 'sw', 'yo']  
+    elif src_lang in ('mr', 'ne', 'hi', ):
+      lang_groups = ['mr', 'ne', 'hi', ]  
+    elif src_lang in ('pt',):
+      lang_groups = ['pt','la' ]  
+    elif src_lang in ('fr', 'br'):
+      lang_groups = ['fr','la', 'br' ]  
+    elif src_lang in ('es', 'oc', 'ca', 'eu', 'an', 'gl' ):
+      lang_groups = ['es', 'oc', 'ca', 'eu', 'an', 'gl', 'la' ]  
+    elif src_lang in ('arz', 'ar', 'fa', 'ur', 'az', 'azb', 'ckb' ):
+      lang_groups = ['arz', 'ar', 'fa', 'ur', 'az', 'azb', 'ckb' ]  
+    elif src_lang in ('id', 'ms', ):
+      lang_groups = ['id', 'ms',]  
+    elif src_lang in ('as', 'bn', 'bpy'):
+      lang_groups = ['as', 'bn', 'bpy']  
+    elif src_lang in ('af', 'nl', ):
+      lang_groups = ['af', 'nl',]  
+    elif src_lang in ('bo', 'dz', ):
+      lang_groups = ['bo', 'dz',]  
+    elif src_lang in ('bs', 'hr', ):
+      lang_groups = ['bs', 'hr',]  
+    elif src_lang in ('bxr', 'mn', ):
+      lang_groups = ['bxr', 'mn',]  
+    elif src_lang in ('ceb', 'tl', ):
+      lang_groups = ['ceb', 'tl',]  
+    elif src_lang in ('cs', 'sk', ):
+      lang_groups = ['cs', 'sk',]  
+    elif src_lang in ('da', 'no', ):
+      lang_groups = ['da', 'no',] 
+    elif src_lang in ('eml', 'wa', ):
+      lang_groups = ['eml', 'wa',] 
+    elif src_lang in ('de', 'lb', 'pl', 'dsb'):
+      lang_groups = ['de', 'lb', 'pl', 'dsb'] 
+    elif src_lang in ('av', 'ru', 'bg', 'ba', 'kk', 'uk', 'be', 'ce', 'cv'):
+      lang_groups = ['av', 'ru', 'bg', 'ba', 'kk', 'uk', 'be', 'ce', 'cv']  
+    return set(lang_groups)
+
+  @staticmethod
   def load_kenlm_model(store_model=True):
       if TextAugment.cache_dir == None:
         cache_dir = os.path.expanduser ('~')+"/.cache"
@@ -1653,7 +1694,7 @@ class TextAugment:
                           hf_ner_weight=1.25,
                           regex_weight=1.5,
                           backtrans_weight=0.9,
-                          do_docs_trim=False,
+                          do_docs_trim_for_person=False,
                           do_kenlm = True,
                           do_qg_rel=False,
                           aug_scope={'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
@@ -1949,7 +1990,7 @@ class TextAugment:
 
     docs = self.collapse_ner(docs, target_ner_key, target_collapse_ner_key, target_text_key, stopwords2, do_cleanup_only=True)
 
-    if do_docs_trim:
+    if do_docs_trim_for_person:
       docs, chunks = self.trim_to_prefer_person(docs, chunks)
 
     if do_kenlm and target_lang == 'en':
@@ -2237,7 +2278,8 @@ class TextAugment:
               hf_ner_weight=1.25,
               regex_weight=1.5,
               backtrans_weight=0.9,
-              do_docs_trim=True,
+              do_docs_trim_for_person=False,
+              do_docs_filter=False,
               do_qg_rel=False,
               do_kenlm = True,
               cutoff=None,
@@ -2269,8 +2311,8 @@ class TextAugment:
       if type(docs) is dict:
         docs = list(docs.values())      
       #for testing only
-      if cutoff is not None and len(docs) > cutoff:
-        docs = docs[:cutoff]
+      if cutoff is not None and cutoff > 0 and len(docs) > cutoff:
+        docs = docs[:cutoff*3]
       #print (docs)
       len_docs = len(docs)
       _id = 0
@@ -2293,9 +2335,13 @@ class TextAugment:
 
       flagged_words1 = set([s for s in flagged_words.get(src_lang, []) if len(s) < 5])
       stopwords1 = set(stopwords.get(src_lang, []))
-      if do_docs_trim:
-        docs = [doc for doc in docs if self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, stopwords=stopwords1, flagged_words=flagged_words1)]
+      if do_docs_filter:
+        lang_groups=TextAugment.get_lang_groups(src_lang)
+        docs = [doc for doc in docs if self.check_good_sentence(doc[f'{src_lang}_text'], src_lang, lang_groups=lang_groups, stopwords=stopwords1, flagged_words=flagged_words1)]
         #print ('trimmed junk', (len_docs-len(docs))/len_docs)
+            #for testing only
+      if cutoff is not None and cutoff > 0 and len(docs) > cutoff:
+        docs = docs[:cutoff*3]
       len_docs = len(docs)
       
       counter = {}
@@ -2363,9 +2409,9 @@ class TextAugment:
       
       # store as a dictionary for easy lookup
       docs = dict([(doc['id'], doc) for doc in docs])
-      if do_docs_trim:
+      if do_docs_trim_for_person:
         docs2, chunks2 = self.trim_to_prefer_person(docs, chunks)
-        do_docs_trim = len(docs2) == len(docs)
+        do_docs_trim_for_person = len(docs2) == len(docs)
         docs, chunks = docs2, chunks2
 
       # we do this here because we don't want to trim  ner items that are considered empty.
@@ -2397,9 +2443,9 @@ class TextAugment:
                           regex_weight=regex_weight,
                           backtrans_weight=backtrans_weight,
                           do_qg_rel=do_qg_rel and src_lang == 'en',
-                          do_docs_trim=do_docs_trim)
-        if do_docs_trim:
-          do_docs_trim = len(docs2) == len(docs)
+                          do_docs_trim_for_person=do_docs_trim_for_person)
+        if do_docs_trim_for_person:
+          do_docs_trim_for_person = len(docs2) == len(docs)
         docs, chunks = docs2, chunks2
 
       if target_lang != src_lang:
@@ -2426,7 +2472,7 @@ class TextAugment:
                             hf_ner_weight=hf_ner_weight,
                             regex_weight=regex_weight,
                             backtrans_weight=backtrans_weight,
-                            do_docs_trim=do_docs_trim)
+                            do_docs_trim_for_person=do_docs_trim_for_person)
         docs, chunks = docs2, chunks2
 
       #TODO: do the case where we only anonymize
@@ -2464,7 +2510,7 @@ class TextAugment:
                             hf_ner_weight=hf_ner_weight,
                             regex_weight=regex_weight,
                             backtrans_weight=backtrans_weight,
-                            do_docs_trim=do_docs_trim)
+                            do_docs_trim_for_person=do_docs_trim_for_person)
         docs, chunks = docs2, chunks2
 
       return list(docs.values()) #this is not guaranteed to be ordered
@@ -2573,9 +2619,17 @@ class TextAugment:
           yield [{'text': docs}]
       elif isinstance(docs, list):
           if isinstance(docs[0], dict):
-            yield docs
+            len_docs=len(docs)
+            chunk_size = get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size)
+            for i in range(0, len_docs, chunk_size):
+                j = min(i + chunk_size, len_docs)
+                yield docs[i:j]
           else:
-            yield [{'text': t} for t in docs]
+            len_docs=len(docs)
+            chunk_size = get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size)
+            for i in range(0, len_docs, chunk_size):
+                j = min(i + chunk_size, len_docs)
+                yield [{'text': t} for t in docs[i:j]]
       elif not docs:
         yield []
       else:  
@@ -2642,7 +2696,8 @@ class TextAugment:
                     hf_ner_weight=1.25,
                     regex_weight=1.5,
                     backtrans_weight=0.9,
-                    do_docs_trim=True,
+                    do_docs_trim_for_person=False,
+                    do_docs_filter=False,
                     do_qg_rel=False,
                     do_kenlm = True,
                     num_workers=2):
@@ -2688,7 +2743,8 @@ class TextAugment:
                                                       hf_ner_weight=hf_ner_weight,
                                                       regex_weight=regex_weight,
                                                       backtrans_weight=backtrans_weight,
-                                                      do_docs_trim=do_docs_trim,
+                                                      do_docs_trim_for_person=do_docs_trim_for_person,
+                                                      do_docs_filter=do_docs_filter,
                                                       do_qg_rel=do_qg_rel,
                                                       do_kenlm = do_kenlm,
                                                       cutoff=cutoff,
@@ -2734,7 +2790,8 @@ if __name__ == "__main__":
     parser.add_argument('-do_regex', dest='do_regex', type=int, help='Wether or not to apply regex models', default = 1)
     parser.add_argument('-do_cleanup', dest='do_cleanup', type=int, help='Wether or not to cleanup NERs that are just stopwords or small number', default = 1)
     parser.add_argument('-do_marian_mt', dest='do_marian_mt', type=int, help='Wether or not to use marianMT for translation instead of M2M100', default = 1)
-    parser.add_argument('-do_docs_trim', dest='do_docs_trim', type=int, help='Wether or not to filter out documents with no mentions of persons, or high ratios of junk, or CSAM', default = 1)
+    parser.add_argument('-do_docs_trim_for_person', dest='do_docs_trim_for_person', type=int, help='Wether or not to filter out documents with no mentions of persons', default = 0)
+    parser.add_argument('-do_docs_filter', dest='do_docs_filter', type=int, help='Wether or not to filter out documents with high ratios of junk, or CSAM', default = 0)
     parser.add_argument('-do_kenlm', dest='do_kenlm', type=int, help='Wether or not to apply a KenLM model to decide if a name is a common person name', default = 0)
     parser.add_argument('-do_qg_rel', dest='do_qg_rel', type=int, help='Wether or not to infer a relationship between PII entities based an question generation (EXPERIMENTAL)', default = 0)
     parser.add_argument('-num_words_per_chunk', dest='num_words_per_chunk', type=int, help='number of words per chunk', default=70)
@@ -2833,7 +2890,8 @@ if __name__ == "__main__":
                     hf_ner_weight=args.hf_ner_weight,
                     regex_weight=args.regex_weight,
                     backtrans_weight=args.backtrans_weight,
-                    do_docs_trim=args.do_docs_trim,
+                    do_docs_trim_for_person=args.do_docs_trim_for_person,
+                    do_docs_filter=args.do_docs_filter,
                     do_qg_rel=args.do_qg_rel,
                     do_kenlm = args.do_kenlm,
                     cutoff=cutoff,
@@ -2876,7 +2934,8 @@ if __name__ == "__main__":
                     hf_ner_weight=args.hf_ner_weight,
                     regex_weight=args.regex_weight,
                     backtrans_weight=args.backtrans_weight,
-                    do_docs_trim=args.do_docs_trim,
+                    do_docs_trim_for_person=args.do_docs_trim_for_person,
+                    do_docs_filter=args.do_docs_filter,
                     do_qg_rel=args.do_qg_rel,
                     do_kenlm = args.do_kenlm,
                     cutoff=cutoff,
