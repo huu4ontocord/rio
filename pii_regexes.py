@@ -12,8 +12,6 @@ limitations under the License.
 """
 import stdnum
 import re, regex
-import dateparser
-
 from stdnum import (bic, bitcoin, casrn, cusip, ean, figi, grid, gs1_128, iban, \
                     imei, imo, imsi, isan, isbn, isil, isin, ismn, iso11649, iso6346, \
                     iso9362, isrc, issn, lei,  mac, meid, vatin)
@@ -191,65 +189,9 @@ from stdnum.vn import mst
 from stdnum.za import tin
 from stdnum.za import idnr
 
-#This is an incomplete list. TODO - adapt from https://github.com/scrapinghub/dateparser/blob/master/dateparser/data/languages_info.py
-country_to_lang = {'ar': 'es',
-     'ae': 'ar',
-     'iq': 'ar',
-     'dz': 'ar',
-     'eg': 'ar',
-     'sd': 'ar',
-     'au': 'en',
-     'ad': 'ca',
-     'aa': 'ar',
-     'am': 'hy',
-     'at': 'de',
-     'bg': 'bg',
-     'br': 'pt',
-     'ca': 'fr',
-     'ch': 'fr',
-     'cn': 'zh',
-     'cz': 'cs',
-     'de': 'de',
-     'dk': 'dk',
-     'ee': 'et',
-     'es': 'es',
-     'fi': 'fi',
-     'fr': 'fr',
-     'gb': 'en',
-     'ge': 'ka',
-     'gh': 'tw',
-     'gr': 'el',
-     'hr': 'hr',
-     'hu': 'hu',
-     'id': 'id',
-     'ie': 'ga',
-     'il': 'he',
-     'in_': 'ta',
-     'ir': 'fa',
-     'it': 'it',
-     'jp': 'ja',
-     'kr': 'ko',
-     'lt': 'lt',
-     'lv': 'lv',
-     'mx': 'es',
-     'nl': 'nl',
-     'no': 'no',
-     'np': 'ne',
-     'nz': 'en',
-     'pl': 'pl',
-     'ps': 'ar',
-     'pt': 'pt',
-     'qc': 'fr',
-     'ro': 'ro',
-     'ru': 'ru',
-     'sa': 'ar',
-     'se': 'sv',
-     'si': 'sl',
-     'th': 'th',
-     'tr': 'tr',
-     'tw': 'zh',
-     'ua': 'uk',
-     'us': 'en'}
+country_to_lang = {
+  #TODO
+}
 
 stdnum_mapper = {
     'ad.nrt':  stdnum.ad.nrt.validate,
@@ -444,6 +386,7 @@ stdnum_mapper = {
     'ismn':  stdnum.ismn.validate,
     'iso11649':  stdnum.iso11649.validate,
     'iso6346':  stdnum.iso6346.validate,
+    'iso9362':  stdnum.iso9362.validate,
     'isrc':  stdnum.isrc.validate,
     'issn':  stdnum.issn.validate,
     'lei':  stdnum.lei.validate,
@@ -452,34 +395,24 @@ stdnum_mapper = {
     'vatin':  stdnum.vatin.validate,
 }
 
-def ent_2_stdnum_type(text):
+def id_2_stdnum_type(text):
+  #not PII = isil, isbn, isan, imo, gs1_128, grid, figi, ean, casrn, 
+  #cusip number probaly PII?
   stdnum_type = []
-  for ent_type, validate in stdnum_mapper.items():
+  for id_type, validate in stdnum_mapper.items():
     try:
       found = validate(text)
     except:
       found = False
     if found:
-      stdnum_type.append (ent_type)
+      stdnum_type.append (id_type)
   return stdnum_type
 
-year_re = re.compile('^\d{4}\s|\s\d{4}$|\s\d{4}\s')
 #from https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py which is under the MIT License
 # see also for ICD https://stackoverflow.com/questions/5590862/icd9-regex-pattern - but this could be totally wrong!
 # we do regex in this order in order to not capture ner inside domain names and email addresses.
-#NORP, AGE, ADDRESS and DISEASE regexes are just test cases. We will use transformers and rules to detect these.
+#NORP, AGE and DISEASE regexes are just test cases. We will use transformers and rules to detect these.
 regex_rulebase = {
-    #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
-    "DATE": {
-        "default": [
-            (re.compile('^\d{4}\s|\s\d{4}$|\s\d{4}\s'), None),
-            (re.compile('(?:(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)|(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)\s+(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?)(?:\,)?\s*(?:\d{4})?|[0-3]?\d[-\./][0-3]?\d[-\./]\d{2,4}', re.IGNORECASE), None),
-        ],
-    },
-    #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
-    "TIME": {
-        "default": [(re.compile('\d{1,2}:\d{2} ?(?:[ap]\.?m\.?)?|\d[ap]\.?m\.?', re.IGNORECASE), None),],
-    },
     "NORP": {
       "en": [(re.compile(r"upper class|middle class|working class|lower class", re.IGNORECASE), None),],
     },
@@ -492,7 +425,7 @@ regex_rulebase = {
               None,
           )
       ],
-      "zh": [(regex.compile(r"\d{1,3}歲|岁"), None)],
+      "zh": [(regex.compile(r"\d{1,3}歲|\d{1,3}岁|[一二三四五六七八九十百]{1,3}岁|[一二三四五六七八九十百]{1,3}歲"), None)],
     },
     # Some of this code from https://github.com/bigscience-workshop/data_tooling/blob/master/ac_dc/anonymization.py which is under the Apache 2 license
     "ADDRESS": {
@@ -504,12 +437,11 @@ regex_rulebase = {
                   ),
                   None,
               ),
-             #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
               (
                   re.compile(r"P\.? ?O\.? Box \d+"), None
               )
       ],
-      #from https://github.com/Aggregate-Intellect/bigscience_aisc_pii_detection/blob/main/language/zh/rules.py which is under Apache 2
+
       "zh": [
           (
               regex.compile(
@@ -527,6 +459,7 @@ regex_rulebase = {
     },
     "DISEASE": {
       "en": [(re.compile("diabetes|cancer|HIV|AIDS|Alzheimer's|Alzheimer|heart disease", re.IGNORECASE), None)],
+      "zh": [(regex.compile(r"(糖尿|癌症|抗癌|爱滋|艾滋|愛滋|阿茲海默|老人痴呆|老人癡呆|心臟病|心脏病)", re.IGNORECASE), None)]
     },
     # many of the id_regex are from Presidio which is licensed under the MIT License
     # https://github.com/microsoft/presidio/blob/main/presidio-analyzer/presidio_analyzer/predefined_recognizers/aba_routing_recognizer.py
@@ -641,9 +574,12 @@ regex_rulebase = {
               ),
               None,
           ),
-          #consider whether we want to make PHONE a separate tag, that collapses to ID
-          #phone
-          (re.compile(r"\d{4}-\d{8}"), None),
+          (
+              regex.compile(
+                  r"([1-9][0-9]{4,14})" #QQ User ID
+              ),
+              None,
+          )
       ],
       "default": [
               #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py ssn
@@ -674,33 +610,26 @@ regex_rulebase = {
               #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
               (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None),
               # generic government id. consider a more complicated string with \w+ at the beginning or end
-              (re.compile(r"\d{7,12}|[૦-૯]{7,12}|[೦-೯]{7,12}|[൦-൯]{7,12}|[୦-୯]{7,12}|[௦-௯]{7,12}|[۰-۹]{7,12}|[০-৯]{7,12}|[٠-٩]{7,12}|[壹-玖〡-〩零〇-九十廿卅卌百千万亿兆]{7,12}"), None),
-              # generic user id
-              (re.compile(r"\S*@[a-zA-Z]+\S*"), None),
-              # bitcoin
-              (re.compile('(?<![a-km-zA-HJ-NP-Z0-9])[13][a-km-zA-HJ-NP-Z0-9]{26,33}(?![a-km-zA-HJ-NP-Z0-9])'), None),
+              (re.compile(r"\d{8}|\d{9}|\d{10}|\d{11}"), None),
       ],
     },
  }
 
-strip_chars = " ,،、{}[]|()\"'“”《》«»!:;?。.…．"
-#cusip number probaly PII?
-def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
+def detect_ner_with_regex_and_context(sentence, src_lang, context_window=5, tag_type={'ID'}, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', }):
       """
-      This function returns a list of 4 tuples, representing an NER detection for [(entity, start, end, tag), ...]
+      This function returns a list of 3 tuples, representing an NER detection for [(entity, start, end, tag), ...]
       NOTE: There may be overlaps
       """
       global regex_rulebase
-      is_cjk = src_lang in ("zh", "ko", "ja")
-      if is_cjk:
+      if src_lang in ("zh", "ko", "ja"):
           sentence_set = set(sentence.lower())
       else:
           sentence_set = set(sentence.lower().split(" "))
+      idx = 0
       all_ner = []
-      len_sentence = len(sentence)
-
+      original_sentence = sentence
       for tag, regex_group in regex_rulebase.items():
-          if tag_type and tag not in tag_type: continue
+          if tag not in tag_type: continue
           for regex_context in regex_group.get(src_lang, []) + regex_group.get("default", []):
               if True:
                   regex, context = regex_context
@@ -718,70 +647,19 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                   for ent in regex.findall(sentence):
                       if not isinstance(ent, str) or not ent:
                           continue
-                      ent = ent.strip()
                       if tag == 'ID':
-                          #simple length test
-                          if len(ent) > max_id_length: continue
-                          stnum_type = ent_2_stdnum_type(ent)
-                          found_country_lang_match = False
-                          #if the stdnum is one of the non PII types, we will ignore it
-                          if prioritize_lang_match_over_ignore:
-                                found_country_lang_match = any(a for a in stnum_type if "." in a and country_to_lang.get(a.split(".")[0]) == src_lang)
-                          if not found_country_lang_match and any(a for a in stnum_type if a in ignore_stdnum_type):
+                          stnum_type = id_2_stdnum_type(ent)
+                          #print (stnum_type, any(a for a in stnum_type if a in ignore_stdnum_type))
+                          #TODO: we couold do a rule where given the language, map to country, and if the country stdnum is matched, 
+                          #we won't skip this ent even if it also matches an ignore_stdnum_type
+                          if any(a for a in stnum_type if a in ignore_stdnum_type):
                             continue
-                      sentence2 = sentence
+                      sentence2 = original_sentence
                       delta = 0
-                      if tag in ('ID', 'DATE', ):
-                          #make sure an ID is not a date/time. If a date/time then assign it to 'DATE'.
-                          #TODO - map non arabic #s to 0-9
-                          is_date_time =  dateparser.parse(ent, languages=[src_lang])
-                          ent_is_year=False
-                          if len(ent) == 4:
-                            try:
-                              int(ent)
-                              ent_is_year=True
-                            except:
-                              ent_is_year=False
-                          #print (ent, ent_is_year, tag, is_date_time)
-                          if (ent_is_year and tag != 'ID') or (is_date_time and tag == 'ID'):
-                                i = sentence.index(ent)
-                                len_ent = len(ent)
-                                j = i + len_ent
-                                ent_spans = [(0, 1), (0, 2), (0, 3), (-1,0), (-1, 1), (-1, 2), (-1, 3), (-2,0), (-2, 1), (-2, 2), (-2, 3), (-3,0), (-3, 1), (-3, 2), (-3, 3)]
-                                before = sentence[:i]
-                                after = sentence[j:]
-                                if  not is_cjk:
-                                    before = before.split()
-                                    after = after.split()
-                                len_after = len(after)
-                                len_before = len(before)
-                                for before_words, after_words in ent_spans:
-                                    if after_words > len_after: continue
-                                    if -before_words > len_before: continue 
-                                    if before_words == 0: 
-                                        before1 = []
-                                    else:
-                                        before1 = before[max(-len_before,before_words):]
-                                    after1 = after[:min(len_after,after_words)]
-                                    if is_cjk:
-                                        ent2 = "".join(before1)+ent+"".join(after1)
-                                    else:
-                                        ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
-                                    if ent2.strip() == ent: continue
-                                    is_date_time = dateparser.parse(ent2, languages=[src_lang])
-                                    if is_date_time:
-                                      ent = ent2
-                                      break
-                                if is_date_time:
-                                    tag = 'DATE'
-                                else:
-                                    tag = 'ID'
-                      
                       while True:
                         if ent not in sentence2:
                           break
                         else:
-                          
                           i = sentence2.index(ent)
                           j = i + len(ent)
                           if found_context:
@@ -795,13 +673,10 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                                     found_context = True
                                     break
                               if not found_context:
-                                delta += j
                                 sentence2 = sentence2[i+len(ent):]
                                 continue
-                          if is_cjk or ((i+delta == 0 or sentence2[i-1]  in strip_chars) and (j+delta >= len_sentence-1 or sentence2[j] in strip_chars)): 
-                            all_ner.append((ent, delta+i, delta+j, tag))
                           sentence2 = sentence2[i+len(ent):]
+                          all_ner.append((ent, delta+i, delta+j, tag))
                           delta += j
-      all_ner = list(set(all_ner))
-      all_ner.sort(key=lambda a: a[1])
+                          idx += 1
       return all_ner
