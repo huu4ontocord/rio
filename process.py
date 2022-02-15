@@ -154,8 +154,8 @@ trannum = str.maketrans("0123456789", "1111111111")
 
 class TextAugmentDeviceModel:
 
-  available_devices = [torch.cuda.device(i).idx for i in range(torch.cuda.device_count())]
-  available_device_models  = [None]* torch.cuda.device_count()
+  available_devices = [-1] if torch.cuda.device_count() == 0 else [torch.cuda.device(i).idx for i in range(torch.cuda.device_count())]
+  available_device_models  = [None] if torch.cuda.device_count() == 0 else [None]* torch.cuda.device_count()
   
   def __init__(self, device_id=None, device=None):
     if device_id is not None:
@@ -180,7 +180,7 @@ class TextAugmentDeviceModel:
         if available_device_model is None:  
           available_device_model = TextAugmentDeviceModel(device_id=device_id)
         available_device_model.initializer(src_langs=src_langs, target_langs=target_langs, aug_langs=aug_langs)
-        TextAugmentDeviceModel.available_device_models[0 if available_device_model.device_id < 0 else available_device_model.device_id] = available_device_model
+        TextAugmentDeviceModel.available_device_models[max(0,available_device_model.device_id)] = available_device_model
 
   def initializer(self, device_id=None, device=None, src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
     if device_id is not None:
@@ -405,7 +405,7 @@ class TextAugment:
 
     device = TextAugment.device
     if available_device_model is not None:
-      TextAugmentDeviceModel.available_device_models  [0 if available_device_model.device_id < 0 else available_device_model.device_id] = available_device_model
+      TextAugmentDeviceModel.available_device_models  [max(0,available_device_model.device_id)] = available_device_model
       device_id = available_device_model.device_id
       TextAugment.device = device = available_device_model.device
       labse = available_device_model.labse
@@ -432,9 +432,10 @@ class TextAugment:
       else:
         device_id = -1 if device == "cpu" else int(device.split(":")[-1])
       if True:
-        available_device_model = TextAugmentDeviceModel.available_device_models[0 if device_id < 0 else device_id]
+        #print (device_id)
+        available_device_model = TextAugmentDeviceModel.available_device_models[max(0,device_id)]
         if available_device_model is None: 
-          TextAugmentDeviceModel.available_device_models[device_id] = available_device_model = TextAugmentDeviceModel(device=TextAugment.device)
+          TextAugmentDeviceModel.available_device_models[max(0,device_id)] = available_device_model = TextAugmentDeviceModel(device=TextAugment.device)
         labse = available_device_model.labse
         qg = available_device_model.qg
         translation_pipelines = available_device_model.translation_pipelines
