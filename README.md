@@ -34,7 +34,100 @@ If you have more than one GPU
 cd muliwai
 python processor.py -src_lang zh -num_workers=2 -cutoff 30
 ```
+# CLI
 
+usage: process.py [-h] [-src_lang SRC_LANG] [-target_lang TARGET_LANG]
+                  [-augment_lang AUGMENT_LANG] [-cutoff CUTOFF]
+                  [-batch_size BATCH_SIZE] [-infile INFILE] [-outfile OUTFILE]
+                  [-num_workers NUM_WORKERS] [-do_spacy_only DO_SPACY_ONLY]
+                  [-do_hf_ner_only DO_HF_NER_ONLY]
+                  [-do_regex_only DO_REGEX_ONLY]
+                  [-do_qg_rel_only DO_QG_REL_ONLY] [-do_spacy DO_SPACY]
+                  [-do_skip_src_lang_processing DO_SKIP_SRC_LANG_PROCESSING]
+                  [-do_hf_ner DO_HF_NER] [-do_backtrans DO_BACKTRANS]
+                  [-do_augment DO_AUGMENT]
+                  [-do_anonymization DO_ANONYMIZATION] [-do_regex DO_REGEX]
+                  [-do_cleanup DO_CLEANUP] [-do_marian_mt DO_MARIAN_MT]
+                  [-do_docs_trim_for_person DO_DOCS_TRIM_FOR_PERSON]
+                  [-do_docs_filter DO_DOCS_FILTER] [-do_kenlm DO_KENLM]
+                  [-do_qg_rel DO_QG_REL]
+                  [-num_words_per_chunk NUM_WORDS_PER_CHUNK]
+                  [-spacy_weight SPACY_WEIGHT] [-hf_ner_weight HF_NER_WEIGHT]
+                  [-regex_weight REGEX_WEIGHT]
+                  [-backtrans_weight BACKTRANS_WEIGHT] [-aug_scope AUG_SCOPE]
+                  [-anon_scope ANON_SCOPE] [-force_gpu FORCE_GPU]
+                  [-force_cpu FORCE_CPU] [-preload_cache]
+
+Text Annotation, Augmentation and Anonymization
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -src_lang SRC_LANG    Source Language(s), comma separated
+  -target_lang TARGET_LANG
+                        Target Language or Languages, comma separated
+  -augment_lang AUGMENT_LANG
+                        Translate to this Language for text augmentation
+  -cutoff CUTOFF        Cutoff documents, -1 is none
+  -batch_size BATCH_SIZE
+                        batch size
+  -infile INFILE        file to load
+  -outfile OUTFILE      file to save
+  -num_workers NUM_WORKERS
+                        Num of Workers
+  -do_spacy_only DO_SPACY_ONLY
+                        Wether to only apply a spacy model
+  -do_hf_ner_only DO_HF_NER_ONLY
+                        Wether to only apply a huggingface NER model
+  -do_regex_only DO_REGEX_ONLY
+                        Wether to only apply regex models
+  -do_qg_rel_only DO_QG_REL_ONLY
+                        Wether to only infer a relationship between PII
+                        entities based an question generation (EXPERIMENTAL)
+  -do_spacy DO_SPACY    Wether or not to apply a spacy model
+  -do_skip_src_lang_processing DO_SKIP_SRC_LANG_PROCESSING
+                        Wether or not to skip NER for src_lang (assumes NER is
+                        already perfored in the data provided)
+  -do_hf_ner DO_HF_NER  Wether or not to apply a huggingface NER model
+  -do_backtrans DO_BACKTRANS
+                        Wether or not to do back translation
+  -do_augment DO_AUGMENT
+                        Wether or not to do translation augmentation
+  -do_anonymization DO_ANONYMIZATION
+                        Wether or not to anonymize the src_lang
+  -do_regex DO_REGEX    Wether or not to apply regex models
+  -do_cleanup DO_CLEANUP
+                        Wether or not to cleanup NERs that are just stopwords
+                        or small number
+  -do_marian_mt DO_MARIAN_MT
+                        Wether or not to use marianMT for translation instead
+                        of M2M100
+  -do_docs_trim_for_person DO_DOCS_TRIM_FOR_PERSON
+                        Wether or not to filter out documents with no mentions
+                        of persons
+  -do_docs_filter DO_DOCS_FILTER
+                        Wether or not to filter out documents with high ratios
+                        of junk, or CSAM
+  -do_kenlm DO_KENLM    Wether or not to apply a KenLM model to decide if a
+                        name is a common person name
+  -do_qg_rel DO_QG_REL  Wether or not to infer a relationship between PII
+                        entities based an question generation (EXPERIMENTAL)
+  -num_words_per_chunk NUM_WORDS_PER_CHUNK
+                        number of words per chunk
+  -spacy_weight SPACY_WEIGHT
+                        weight given to a spacy decision
+  -hf_ner_weight HF_NER_WEIGHT
+                        weight given to a hf model decision
+  -regex_weight REGEX_WEIGHT
+                        weight given to a regex decision
+  -backtrans_weight BACKTRANS_WEIGHT
+                        weight given to back tranlation decisions
+  -aug_scope AUG_SCOPE  tag types for augmentation
+  -anon_scope ANON_SCOPE
+                        tag types for anonymization
+  -force_gpu FORCE_GPU  Force usage of GPU
+  -force_cpu FORCE_CPU  Force usage of CPU
+  -preload_cache        Preload the cache of models and data
+  
 # Preloading the cache
 - For systems where there is limited access to the Internet, such as the JZ supercomptuers, you will want to preload the models.
 - The below command will load the various models needed to run the code for the specific language. 
