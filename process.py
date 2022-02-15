@@ -43,6 +43,13 @@ from functools import partial
 from faker import Faker
 from faker.providers import person, company, geo, address, ssn, internet
 
+import logging
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(
+    format='%(asctime)s : %(processName)s : %(levelname)s : %(message)s',
+    level=logging.INFO)
+
 try:
   import neuralcoref
 except:
@@ -142,28 +149,6 @@ faker_map = {}
 for faker_lang in faker_list:
   lang, _ = faker_lang.split("_")
   faker_map[lang] = faker_map.get(lang, []) + [faker_lang]
-
-def _get_oscar_urls(language, shuffled="unshuffled", deduplicated="deduplicated"):
-  _BASE_DATA_URL_FORMAT_STR = ("https://s3.amazonaws.com/datasets.huggingface.co/oscar/1.0/{shuffled}/{deduplicated}/{language}/")
-  _BASE_CHECKSUM_FILE_NAME = "{language}_sha256.txt"
-  base_data_url = _BASE_DATA_URL_FORMAT_STR.format(
-            shuffled=shuffled, language=language, deduplicated=deduplicated
-        )
-  checksum_url = base_data_url + _BASE_CHECKSUM_FILE_NAME.format(language=language)
-  with fsspec.open(checksum_url, encoding="utf-8") as f:
-    data_filenames = [line.decode().split("\t")[0] for line in f if line]
-    return [base_data_url + data_filename for data_filename in data_filenames]
-
-def _download_oscar(language, shard=0, cache_dir=None, shuffled="unshuffled", deduplicated="deduplicated"):
-  if cache_dir is None: 
-    cache_dir = os.path.expanduser ('~')+"/.cache/transformers"
-  os.system(f"mkdir -p {cache_dir}")
-  _file = f"{cache_dir}/OSCAR_{language}_{shard}.jsonl"
-  if not os.path.exists(_file):
-      urls = _get_oscar_urls(language, shuffled, deduplicated)
-      url = urls[shard]
-      os.system(f"wget {url} -O {_file}")
-  return _file
 
 trannum = str.maketrans("0123456789", "1111111111")
 
@@ -372,11 +357,15 @@ class TextAugment:
       else:
         TextAugment.device_id = -1
         TextAugment.device = "cpu"  
-    print ('running on ', TextAugment.device)
+    logger.info (('running on ', TextAugment.device))
     if single_process:
       self.initializer(available_gpu_model=available_gpu_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model, cache_dir=cache_dir)
     
   def initializer(self, device_id_by_proess_id=True, all_available_gpu_model=None, available_gpu_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir=None):
+    if all_available_gpu_model is not None:
+      TextAugmentGPUModel.available_gpu_models  = all_available_gpu_model
+      TextAugmentGPUModel.available_gpus = list(range(len(all_available_gpu_model)))
+        
     if cache_dir is None: 
         cache_dir = os.path.expanduser ('~')+"/.cache"
     if TextAugment.cache_dir is None: 
@@ -394,8 +383,7 @@ class TextAugment:
       else:
         TextAugment.device_id = -1
         TextAugment.device = "cpu" 
-    if all_available_gpu_model is not None:
-      TextAugmentGPUModel.available_gpu_models  = all_available_gpu_model
+
     device = TextAugment.device
     if available_gpu_model is not None:
       TextAugmentGPUModel.available_gpu_models [available_gpu_model.device_id] = available_gpu_model
@@ -461,7 +449,7 @@ class TextAugment:
           faker_en.add_provider(geo)
           faker_en.add_provider(internet)
           faker_en.add_provider(company)
-    print ("finished load")
+    #print ("finished load")
     #TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
 
   @staticmethod
@@ -602,7 +590,7 @@ class TextAugment:
     except:
         return True
     if show_err and lang != src_lang and lang not in lang_groups:
-      print (src_lang, lang)
+      logger.info ((src_lang, lang))
     if ret_score: return lang == src_lang or lang in lang_groups, bad_score
     return lang == src_lang or lang in lang_groups
 
@@ -692,7 +680,7 @@ class TextAugment:
     return the blocks, and a matching score.
     Used to extract NER from original language sentence.
     """
-    print ("get_aligned_text")
+    #print ("get_aligned_text")
     #will the below have a side-effect?
     sent1 = sent1.replace("。", ".").replace("،", ",").replace("、", ",").replace("`", "'").replace("“", "\"").replace("”", "\"").replace("《", "\"").replace("》", "\"").replace("«", "\"").replace("»", "\"")
     sent2 = sent2.replace("。", ".").replace("،", ",").replace("、", ",").replace("`", "'").replace("“", "\"").replace("”", "\"").replace("《", "\"").replace("》", "\"").replace("«", "\"").replace("»", "\"")
@@ -750,8 +738,8 @@ class TextAugment:
     return (blocks2, score+score)
 
   def do_translations(self, texts, src_lang='en', target_lang='hi', batch_size=16, do_marian_mt=False):
-    print ("do_translations")
-    print ([len(t.split()) for t in texts])
+    #print ("do_translations")
+    #print ([len(t.split()) for t in texts])
     if not do_marian_mt:
       m2m_model_name = self.m2m100_lang.get((src_lang, target_lang), self.m2m100_lang[('*', '*')])
       if m2m_model_name != self.m2m_model_name or self.m2m_tokenizer is None:
@@ -778,7 +766,7 @@ class TextAugment:
           try:
             batch = self.m2m_tokenizer(src_text_list, return_tensors="pt", padding=True, truncation=True).to(self.device)
           except:
-            print ("could not tokenize m2m batch. falling back to marian_mt")
+            logger.info ("could not tokenize m2m batch. falling back to marian_mt")
             do_marian_mt = True
             break
 
@@ -836,7 +824,7 @@ class TextAugment:
     """
     apply regexes from the rulebase. if there is a context, check if the context is met in the context_window.
     """
-    print ("apply_regex_ner")
+    #print ("apply_regex_ner")
     global regex_rulebase
     if ner_key is None:
       ner_key = f'{src_lang}_ner'
@@ -845,7 +833,7 @@ class TextAugment:
     for doc in tqdm(docs.values()):
       ner = doc[ner_key] = doc.get(ner_key, {})
       sentence = doc[text_key]
-      all_ner = detect_ner_with_regex_and_context(sentence, src_lang, context_window=context_window)
+      all_ner = detect_ner_with_regex_and_context(sentence, src_lang, context_window=context_window, tag_type=None)
       for mention_tag in all_ner:
         ent, start, end, tag = mention_tag
         key = (ent, start, end)
@@ -865,7 +853,7 @@ class TextAugment:
     NOTE: we don't use results_arr = hf_pipeline([chunk[text_key] for chunk in chunks], grouped_entities=True)
     because grouped_entities does not properly group all entities as we do it below.
     """
-    print ("hf_ner")
+    #print ("hf_ner")
     if stopwords is None:
       stopwords = set(stopwords.get(src_lang, []))
     if offset_key is None:
@@ -946,7 +934,7 @@ class TextAugment:
             continue
           end = ner_result['end']
           if text[start:end] != ner_result['word']:
-            print ('offset mismatch', text[start:end], ner_result['word'])
+            logger.info ('offset mismatch', text[start:end], ner_result['word'])
           if "-" in ner_result['entity']:
             _, label = ner_result['entity'].split('-')
           else:
@@ -1041,7 +1029,7 @@ class TextAugment:
     Use the spacy English model to create chunks for English text
     and gather NER and coreference information
     """
-    print ("spacy_ner_coref")
+    #print ("spacy_ner_coref")
     if not nlp:
       return
     if stopwords is None:
@@ -1264,7 +1252,7 @@ class TextAugment:
       """
       Use the spacy models to create mentions w/ NER
       """
-      print ("spacy_ner")
+      #print ("spacy_ner")
       if neuralcoref is not None:
         return self.spacy_ner_coref(docs, nlp, stopwords, spacy_weight, src_lang, extra_weight=extra_weight, text_key=text_key, ner_key=ner_key, signal=signal)
       else:
@@ -1301,7 +1289,7 @@ class TextAugment:
                 ner[mention] = aHash
 
   def trim_to_prefer_person(self, docs, chunks, prob=100):
-      print ("trim_to_prefer_person")
+      #print ("trim_to_prefer_person")
       # downsample to mostly docs with mentions of people, id/email
       # if there were no ner set, then don't downsample the doc
       len_docs = len(docs)
@@ -1340,7 +1328,7 @@ class TextAugment:
 
 
   def collapse_ner(self, docs, ner_key, collapse_ner_key, text_key, stopwords, do_cleanup_only=False):
-    print ("collapse_ner")
+    #print ("collapse_ner")
     for doc in docs.values():
       text = doc.get(text_key, "")
 
@@ -1427,7 +1415,7 @@ class TextAugment:
 
   def create_augment_anon_context(self, docs, chunks, src_lang, faker_target_lang, faker_en, aug_scope={'ID', 'PERSON'}, target_lang=None, \
                                  items_key=None, context_key=None, ner_key=None):
-        print ("create_augment_anon_context")
+        #print ("create_augment_anon_context")
         if target_lang is None: target_lang = src_lang
         if ner_key is None: ner_key = f'{src_lang}_ner'
         if context_key is None: context_key = f'{src_lang}_aug_context'
@@ -1501,7 +1489,7 @@ class TextAugment:
 
   def replace_items_in_chunks(self, docs, chunks, src_lang, target_lang=None, lbracket="[", rbracket="]", replace_with_bracket=True, do_augment=False, \
                                                    context_key=None, ner_key=None, items_key=None, text_key=None, replace_text_key=None, offset_key=None):
-        print ("replace_items_in_chunks")
+        #print ("replace_items_in_chunks")
         if target_lang is None: target_lang = src_lang
         if ner_key is None: ner_key = f'{src_lang}_collapse_ner'
         if context_key is None: context_key = f'{src_lang}_aug_context'
@@ -1592,7 +1580,7 @@ class TextAugment:
     #anonymization will create a new {src_lang}_text_anon.
     #TODO: create a {src_lang}_ner_anon field.
     #TODO: another  way to do anonymimzation is to pass the anonymized text through backtrans. TBD?
-    print ("anonymize")
+    #print ("anonymize")
     if target_lang is None: target_lang = src_lang
 
     self.create_augment_anon_context(docs, chunks, src_lang, faker_src_lang, faker_en, aug_scope=anon_scope, target_lang=src_lang, \
@@ -1611,7 +1599,7 @@ class TextAugment:
   #TODO: we also need a deserialize
   @staticmethod
   def serialize_ner_items(docs, ner_keys=None, outfile=""):
-        print ("serialize_ner_items")
+        #print ("serialize_ner_items")
         # serialize ner keys
         if ner_keys:
           ner_keys = [k + '_ner' for k in ner_keys if '_ner' not in k]
@@ -1658,7 +1646,7 @@ class TextAugment:
                     aHash = dict([(tuple(a[0]) if type(a[0]) is list else a[0], float(a[1])) for a in item[3]])
                     deserialize_items[mention] = aHash
                   doc[ner_key] = deserialize_items
-    print ("deserialize_ner_items")
+    #print ("deserialize_ner_items")
     if infile:
       docs= [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
     elif docs:
@@ -1700,7 +1688,7 @@ class TextAugment:
                           do_qg_rel=False,
                           aug_scope={'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
                           anon_scope={'PERSON', 'ID'},):
-    print ("process_ner_chunks_with_trans:", self.device, self.device_id)
+    #print ("process_ner_chunks_with_trans:", self.device, self.device_id)
     if do_augment and do_backtrans:
       assert False, "Only augment or backtrans can be performed at a time, not both"
     if do_augment and do_anonymization:
@@ -2132,7 +2120,7 @@ class TextAugment:
                     idx = None
 
             if idx is not None and idx >= len_items:
-              print ('err idx out of range of items', idx, t, o)
+              logger.info (('err idx out of range of items', idx, t, o))
             if idx is not None and idx < len_items:
               ner_word += o
               if "[" in t:
@@ -2171,7 +2159,7 @@ class TextAugment:
                       ner_word = ner_word.strip(self.strip_chars+".。")
                       #print (ner_word, ner_word in orig_text, orig_text)
                       if ner_word not in orig_text[pos:]:
-                        print ('cant find in orig_text ', ner_word, '**', orig_text[pos:], '**', orig_text)
+                        logger.info( ('cant find in orig_text ', ner_word, '**', orig_text[pos:], '**', orig_text))
                       else:
                         i = orig_text[pos:].index(ner_word)
                         start = pos + i 
@@ -2295,7 +2283,7 @@ class TextAugment:
       This routine can also be used to do anonymization of the original src_lang text at the end of the NER pipeline.
       Note: This code will have a side-effect on the docs.
       """
-      print ("process_ner")
+      #print ("process_ner")
       if TextAugment.device is None:
         self.initializer()
       if type(docs) is tuple:
@@ -2517,11 +2505,11 @@ class TextAugment:
       return list(docs.values()) #this is not guaranteed to be ordered
 
   @staticmethod
-  def get_docs(src_langs=None, docs=None, max_chunk_size=10000, num_workers=1, cutoff=-1, dataset_name="", filter_out_no_registry=True):
+  def get_docs(src_langs=None, docs=None, max_chunk_size=100, num_workers=1, cutoff=-1, dataset_name="", filter_out_no_registry=True):
       """
       NOTE: We filter the registry docs if there are no registry label for a doc. This might not be the ideal behaviour.
       """
-      print("Intialize Documents")
+      #print("Intialize Documents")
 
       def get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size):
         suggested_chunk_size = int(len_docs/num_workers)
@@ -2602,13 +2590,13 @@ class TextAugment:
 
   @staticmethod
   def preload_cache(src_langs=["en"], target_langs=["en"], domain=None):
-    print ("preload_cache")
+    #print ("preload_cache")
     SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache")
     en_spacy_nlp = spacy.load('en_core_web_sm')
     try:
       coref = neuralcoref.NeuralCoref(en_spacy_nlp.vocab)
     except:
-      print("neuralcoref not loaded!")
+      logger.info("neuralcoref not loaded!")
       pass
     arr2 = []
     for arr in TextAugment.hf_ner_model_map.values():
@@ -2675,7 +2663,7 @@ class TextAugment:
                     cutoff=None,
                     num_workers=2):
 
-    print ("multiprocess_ner ", outfile, src_langs)
+    logger.info( ("multiprocess_ner ", outfile, src_langs))
     assert num_workers >= 2, "Can't do multiprocessing with less than 2 workers"
     multiprocessing.set_start_method('spawn', force=True)
     if type(src_langs) is str: src_langs = [src_langs]
@@ -2728,7 +2716,6 @@ class TextAugment:
                                               docs)
       i = 0
       for  docs in tqdm(processed_docs):
-          print(f"processed {i}: (Time elapsed: {(int(time.time() - start))}s)")
           i += 1
           for doc in processor.serialize_ner_items(docs):
             _file.write(f'{doc}\n')
@@ -2778,8 +2765,16 @@ if __name__ == "__main__":
     parser.add_argument('-backtrans_weight', dest='backtrans_weight', type=float, help='weight given to back tranlation decisions', default=0.9)
     parser.add_argument('-aug_scope', dest='aug_scope', type=str, help='tag types for augmentation', default="ADDRESS,ORG,PERSON,LOC,ID")
     parser.add_argument('-anon_scope', dest='anon_scope', type=str, help='tag types for anonymization', default='PERSON,ID')
+    parser.add_argument('-force_gpu', dest='force_gpu', type=int, help='Force usage of GPU', default = 0)
+    parser.add_argument('-force_cpu', dest='force_cpu', type=int, help='Force usage of CPU', default = 0)
     parser.add_argument('-preload_cache', dest='preload_cache', action='store_true', help='Preload the cache of models and data', default = 0)
     args = parser.parse_args()
+    if args.force_gpu:
+        TextAugmentGPUModel.available_gpu_models=[None]
+        TextAugmentGPUModel.available_gpus=[0]
+    elif args.force_cpu:
+        TextAugmentGPUModel.available_gpu_models=[]
+        TextAugmentGPUModel.available_gpus=[]
     if args.do_spacy_only:
       args.do_spacy = True
       args.do_hf_ner = False
