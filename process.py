@@ -1144,7 +1144,8 @@ class TextAugment:
               if not ref2mention[old_ref]:
                 del ref2mention[old_ref]
             mention2ref[mention] = coref
-            if mention not in ref2mention[coref]:
+            if mention not in ref2mention.get(coref,[]):
+              ref2mention[coref] = ref2mention.get(coref,[])
               ref2mention[coref].append(mention)
 
       #expand ner labels based on coref matches
@@ -1159,10 +1160,8 @@ class TextAugment:
       # overwrite all ner labels in the coref cluster to PERSON if there is a person pronoun
       if True:
         for cl in list(doc._.coref_clusters):
-          cluster_text_list = set([m.text.lower() for m in cl.mentions])
-          # I don't use "us" because that is sometimes the U.S.
-          # TODO: fix to check for upper case only US as an exception
-          if "you" in cluster_text_list or "your"  in cluster_text_list  or "yours"  in cluster_text_list  or  "we" in cluster_text_list  or 'i' in cluster_text_list  or 'my' in cluster_text_list  or 'mine' in cluster_text_list or 'me' in cluster_text_list or 'he' in cluster_text_list or "she" in cluster_text_list or "his" in cluster_text_list or "her" in cluster_text_list or "him" in cluster_text_list or "hers" in cluster_text_list:
+          cluster_text_list = set([m.text.lower() if m.text != 'US' else m.text for m in cl.mentions])
+          if "us" in cluster_text_list or "you" in cluster_text_list or "your"  in cluster_text_list  or "yours"  in cluster_text_list  or  "we" in cluster_text_list  or 'i' in cluster_text_list  or 'my' in cluster_text_list  or 'mine' in cluster_text_list or 'me' in cluster_text_list or 'he' in cluster_text_list or "she" in cluster_text_list or "his" in cluster_text_list or "her" in cluster_text_list or "him" in cluster_text_list or "hers" in cluster_text_list:
             label = "PERSON"
             for m in cl.mentions:
               chunk2ner[(m.text, m.start, m.end)] = label
@@ -1220,7 +1219,7 @@ class TextAugment:
       i = 0
       for spanIdx, mention in enumerate(chunks2):
           label = chunk2ner.get(mention)
-          if label in ('WORK_OF_ART', 'NOUN', None): continue
+          if label in ('CARDINAL', 'WORK_OF_ART', 'NOUN', None): continue
           if label in ('GPE', 'FAC'): label = 'LOC'
 
           ner_word = mention[0]
@@ -1229,14 +1228,14 @@ class TextAugment:
                 if ner_word not in text: continue
                 i += text[i:].index(ner_word)
                 ner_word = text[i:].split(" ", 1)[0]
-              ner_word = ner_word.strip(self.strip_chars)
+              ner_word = ner_word.rstrip(self.strip_chars)
               if ner_word.lower() not in stopwords:
                 mention2 = (ner_word, i, i+len(ner_word))
                 aHash = ner.get(mention2, {})
                 aHash[(label, signal)] = aHash.get((label, signal), 0) + spacy_weight * (1.0 + len(ner_word)/100) * extra_weight
                 ner[mention2] = aHash
                 if label in ('PERSON', 'PUBLIC_FIGURE'):
-                  coref = list(set([a[0] for a in ref2mention.get(mention2ref.get(mention), [])]))
+                  coref = set([a[0] for a in ref2mention.get(mention2ref.get(mention), [])])
                   if "he" in coref or "He" in coref or "him" in coref or "Him" in coref or "his" in coref or "His" in coref or "Mr." in coref or "Mr" in coref or "mr" in coref or "mr." in coref:
                     mention2pronoun[mention2] = "he"
                   elif "she" in coref or "She" in coref or "her" in coref or "Her" in coref or "hers" in coref or "Hers" in coref or "Miss" in coref or "miss" in coref or  "Mrs." in coref or "Mrs" in coref or "mrs" in coref or "mrs." in coref or "Ms." in coref or "Ms" in coref or "ms" in coref or "ms." in coref:
@@ -1637,18 +1636,21 @@ class TextAugment:
       return ret['__ret']
       
     def deserialize_doc(doc):
-       for ner_key in [key for key in doc if key.endswith('_ner')]:
+      for ner_key in [key for key in doc if key.endswith('_ner')]:
                 ner_items = doc[ner_key]
-                if ner_items and type(ner_items) is list and 'ner_values' in ner_items[0]:
+                if ner_items and type(ner_items) is list:
                   deserialize_items = {}
                   for item in ner_items:
                     mention = (item[0], item[1], item[2])
                     aHash = dict([(tuple(a[0]) if type(a[0]) is list else a[0], float(a[1])) for a in item[3]])
                     deserialize_items[mention] = aHash
                   doc[ner_key] = deserialize_items
+      return doc
+
     #print ("deserialize_ner_items")
     if infile:
       docs= [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
+      print (docs)
     elif docs:
       if type(docs) is dict:
         docs = copy.copy(docs.values())
@@ -1660,7 +1662,7 @@ class TextAugment:
     else:
       return [deserialize_doc(doc) for doc in docs]
     return docs
-            
+
   #TODO - refactor this method into parts
   def process_ner_chunks_with_trans(self,
                           src_lang,
@@ -2382,6 +2384,7 @@ class TextAugment:
         src_text = ""
         while len_text > num_words_per_chunk:
             for j in range(num_words_per_chunk-1, len_text):
+              if j > num_words_per_chunk * 2: break 
               if (src_is_cjk and text[j] in self.punc_char+' ') or \
                   (not src_is_cjk and text[j][-1] in self.punc_char):
                 break
@@ -2505,9 +2508,9 @@ class TextAugment:
       return list(docs.values()) #this is not guaranteed to be ordered
 
   @staticmethod
-  def get_docs(src_langs=None, docs=None, max_chunk_size=50, num_workers=1, cutoff=-1, dataset_name="", filter_out_no_registry=True):
+  def get_docs(src_langs=None, docs=None, max_chunk_size=25, num_workers=1, cutoff=-1, dataset_name="", filter_out_no_registry=True):
       """
-      NOTE: We filter the registry docs if there are no registry label for a doc. This might not be the ideal behaviour.
+      NOTE: We filter the TurkuNLP registry docs if there are no registry label for a doc. This might not be the ideal behaviour.
       """
       #print("Intialize Documents")
 
@@ -2543,6 +2546,7 @@ class TextAugment:
         
         # we will load the data from turkunlp_data
         for src_lang in src_langs:
+          use_load_py_from_str=False
           _file = os.path.abspath(os.path.dirname(__file__))+f"/turkunlp_data/{src_lang}_data.jsonl.gz"
           if os.path.exists(_file):
                 chunk_size = get_chunk_size(cutoff, 1000000, num_workers, max_chunk_size)
@@ -2551,7 +2555,14 @@ class TextAugment:
                 with gzip.open(_file, "rb") as f:
                   for t in f:
                     t = t.decode()
-                    dat = load_py_from_str(t, {})
+                    dat = None
+                    if not use_load_py_from_str: 
+                      try:
+                        dat = json.loads(t)
+                      except:
+                        use_load_py_from_str = True
+                    if use_load_py_from_str:
+                      dat = load_py_from_str(t, {})
                     if dat:
                       if cutoff is not None and cutoff > 0 and cnt >= cutoff:
                         yield ret
@@ -2674,6 +2685,7 @@ class TextAugment:
     TextAugmentGPUModel.initializer_all(src_langs=src_langs, target_langs=target_langs)
     processor = TextAugment(single_process=False)
     # processor.initializer()
+    logger.info(("creating multiprocessing pool for num_workers ", num_workers))
     pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_gpu_model=TextAugmentGPUModel.available_gpu_models ))      
     if outfile is not None:
       _file =  open(outfile, 'w', encoding='utf-8')
