@@ -47,7 +47,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 logging.basicConfig(
-    format='%(asctime)s : %(processName)s : %(levelname)s : %(message)s',
+    format='%(asctime)s : %(processName)s : %(threadName)s : %(levelname)s : %(message)s',
     level=logging.INFO)
 
 try:
@@ -606,7 +606,7 @@ class TextAugment:
       rel_key = f'{src_lang}_rel'
     i= 0
     allqa = []
-    for chunk in tqdm(chunks):
+    for chunk in chunks:
       text = chunk[text_key]
       _id = chunk['id']
       ner = docs[_id][ner_key] = docs[_id].get(ner_key,{})
@@ -762,7 +762,7 @@ class TextAugment:
                 TextAugment.translation_pipelines[m2m_model_name] = self.m2m_model = M2M100ForConditionalGeneration.from_pretrained(m2m_model_name).eval().half().to(self.device)
         self.m2m_model_name = m2m_model_name
         translations = []
-        for src_text_list in tqdm(self.batch(texts, batch_size)):
+        for src_text_list in self.batch(texts, batch_size):
           try:
             batch = self.m2m_tokenizer(src_text_list, return_tensors="pt", padding=True, truncation=True).to(self.device)
           except:
@@ -795,7 +795,7 @@ class TextAugment:
         if mt_pipeline is None:
           raise RuntimeError("no translation pipeline") # we could do multi-step translation where there are no pairs
     mt_pipeline = self.translation_pipelines[model_name]
-    for src_text_list in tqdm(self.batch(texts, batch_size)):
+    for src_text_list in self.batch(texts, batch_size):
         outputs = [t['translation_text'] for t in mt_pipeline(src_text_list, batch_size=batch_size)]
         translations.extend(outputs)
     return translations
@@ -830,7 +830,7 @@ class TextAugment:
       ner_key = f'{src_lang}_ner'
     if text_key is None:
       text_key = f'{src_lang}_text'
-    for doc in tqdm(docs.values()):
+    for doc in docs.values():
       ner = doc[ner_key] = doc.get(ner_key, {})
       sentence = doc[text_key]
       all_ner = detect_ner_with_regex_and_context(sentence, src_lang, context_window=context_window, tag_type=None)
@@ -2505,7 +2505,7 @@ class TextAugment:
       return list(docs.values()) #this is not guaranteed to be ordered
 
   @staticmethod
-  def get_docs(src_langs=None, docs=None, max_chunk_size=100, num_workers=1, cutoff=-1, dataset_name="", filter_out_no_registry=True):
+  def get_docs(src_langs=None, docs=None, max_chunk_size=50, num_workers=1, cutoff=-1, dataset_name="", filter_out_no_registry=True):
       """
       NOTE: We filter the registry docs if there are no registry label for a doc. This might not be the ideal behaviour.
       """
@@ -2733,7 +2733,7 @@ if __name__ == "__main__":
     parser.add_argument('-src_lang', dest='src_lang', type=str, help='Source Language(s), comma separated', default=None)
     parser.add_argument('-target_lang', dest='target_lang', type=str, help='Target Language or Languages, comma separated', default="en")
     parser.add_argument('-augment_lang', dest='augment_lang', type=str, help='Translate to this Language for text augmentation', default="en")
-    parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=30)
+    parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=-1)
     parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
     parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
     parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default=None)
@@ -2871,7 +2871,7 @@ if __name__ == "__main__":
       else:
         processor = TextAugment(single_process=True)
         if not docs:
-            all_docs = [(list(processor.get_docs(sl, cutoff=cutoff)), sl, tl) for sl, tl in zip(src_lang, target_lang)]
+            all_docs = [(processor.get_docs(sl, cutoff=cutoff), sl, tl) for sl, tl in zip(src_lang, target_lang)]
         else:
             all_docs = [([docs], src_lang[0], target_lang[0])]
 
@@ -2884,7 +2884,7 @@ if __name__ == "__main__":
                 if _file is not None: _file.close()
                 _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
             #print(docs_iter)
-            for docs in docs_iter:
+            for docs in tqdm(docs_iter):
                 #print(docs)
                 docs =  processor.process_ner(docs=docs, 
                     src_lang=src_lang,
