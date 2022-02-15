@@ -60,7 +60,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from marian_mt import marian_mt
 from edugp_kenlm_model import *
 from fake_names import *
-from pii_regexes import *
+from pii_regexes import detect_ner_with_regex_and_context
 try:
   if not stopwords:
     from stopwords import stopwords
@@ -152,18 +152,18 @@ for faker_lang in faker_list:
 
 trannum = str.maketrans("0123456789", "1111111111")
 
-class TextAugmentGPUModel:
+class TextAugmentDeviceModel:
 
-  available_gpus = [torch.cuda.device(i).idx for i in range(torch.cuda.device_count())]
-  available_gpu_models  = [None]* torch.cuda.device_count()
+  available_devices = [torch.cuda.device(i).idx for i in range(torch.cuda.device_count())]
+  available_device_models  = [None]* torch.cuda.device_count()
   
   def __init__(self, device_id=None, device=None):
     if device_id is not None:
       self.device_id = int(device_id)
-      self.device = "cuda:"+str(device_id)
+      self.device = "cpu" if device_id < 0 else "cuda:"+str(device_id)
     elif device is not None:
       self.device=device
-      self.device_id = int(device.split(":")[-1])
+      self.device_id = -1 if device == "cpu" else int(device.split(":")[-1])
     else:
       self.device = None
       self.device_id = None
@@ -176,37 +176,56 @@ class TextAugmentGPUModel:
   @staticmethod
   def initializer_all(src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
 
-    for i, available_gpu_model in enumerate(TextAugmentGPUModel.available_gpu_models ):
-      if available_gpu_model is None:  
-        available_gpu_model = TextAugmentGPUModel(device_id=i)
-      available_gpu_model.initializer(src_langs=src_langs, target_langs=target_langs, aug_langs=aug_langs)
-      TextAugmentGPUModel.available_gpu_models [available_gpu_model.device_id] = available_gpu_model
+    for available_device_model, device_id in zip(TextAugmentDeviceModel.available_device_models, TextAugmentDeviceModel.available_devices):
+        if available_device_model is None:  
+          available_device_model = TextAugmentDeviceModel(device_id=device_id)
+        available_device_model.initializer(src_langs=src_langs, target_langs=target_langs, aug_langs=aug_langs)
+        TextAugmentDeviceModel.available_device_models[0 if available_device_model.device_id < 0 else available_device_model.device_id] = available_device_model
 
   def initializer(self, device_id=None, device=None, src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
     if device_id is not None:
       self.device_id = int(device_id)
-      self.device = "cuda:"+str(device_id)
+      self.device = "cpu" if device_id < 0 else "cuda:"+str(device_id)
     elif device is not None:
       self.device=device
-      self.device_id = int(device.split(":")[-1])
+      self.device_id = -1 if device == "cpu" else int(device.split(":")[-1])
     else:
-      self.device = self.device
-      self.device_id = self.device_id
+      self.device = None
+      self.device_id = None
     if not hasattr(self, 'qg') or self.qg is None: self.qg = qg_pipeline.pipeline("multitask-qa-qg", device=self.device) # TODO make sure it's running in half mode
     if not hasattr(self, 'labse') or self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache").half().eval().to(self.device)
     if not hasattr(self, 'ner_model_name2pipelines') or self.ner_model_name2pipelines is None: self.ner_model_name2pipelines = {}
     if not hasattr(self, 'translation_pipelines') or self.translation_pipelines is None: 
       self.translation_pipelines  = {}
       self.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
-      #TODO - do marianMT model load, other m2m models
+    seen = {}
+    pairs = list(set([(src_lang, target_lang) in zip(src_langs, target_langs+aug_langs)] + [(target_lang, src_lang) in zip(src_langs, target_langs+aug_langs)]))
+    for pair in pairs: 
+      if pair not in seen:
+        model_name = marian_mt.get(pair)
+        seen[pair] = 1
+        if model_name is not None and model_name not in TextAugment.translation_pipelines:
+          tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_len=512)
+          if self.device == "cpu":
+            model = MarianMTModel.from_pretrained(model_name).eval()
+            model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
+          else:
+            model = MarianMTModel.from_pretrained(model_name).eval().half().to(self.device)
+          if self.device == 'cpu':
+            mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer)
+          else:
+            mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=self.device_id)
+            self.translation_pipelines[model_name] = mt_pipeline                          
+
     for target_lang in list(set(target_langs + src_langs + aug_langs)):
       for model_name, model_cls, hf_ner_weight2 in TextAugment.hf_ner_model_map.get(target_lang, []):
           if model_name not in self.ner_model_name2pipelines:
             try:
               model = model_cls.from_pretrained(model_name).half().eval().to(self.device)
-              tokenizer = AutoTokenizer.from_pretrained(model_name)
+              tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_len=512)
               ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=self.device_id)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
+              logger.info("problems loading model and tokenizer for pipeline. attempting to load without passing in model")
             except:
               ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=self.device_id)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
@@ -339,7 +358,7 @@ class TextAugment:
   stopwords_en = set(stopwords.get('en',[]))
   cache_dir = None
 
-  def __init__(self, device=None, single_process=1, available_gpu_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir=None):
+  def __init__(self, device=None, single_process=1, available_device_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir=None):
     if cache_dir is None: 
         cache_dir = os.path.expanduser ('~')+"/.cache"
     if TextAugment.cache_dir is None: 
@@ -351,20 +370,20 @@ class TextAugment:
       else:
         TextAugment.device_id = int(device.split(":")[-1])
     else:
-      if TextAugmentGPUModel.available_gpus:
-        TextAugment.device_id = random.choice(TextAugmentGPUModel.available_gpus)
-        TextAugment.device = "cuda:"+str(TextAugment.device_id) 
+      if TextAugmentDeviceModel.available_devices:
+        TextAugment.device_id = -1 if TextAugmentDeviceModel.available_devices[0] == -1 else random.choice(TextAugmentDeviceModel.available_devices)
+        TextAugment.device = "cpu" if TextAugment.device_id == -1 else "cuda:"+str(TextAugment.device_id) 
       else:
         TextAugment.device_id = -1
         TextAugment.device = "cpu"  
     logger.info (('running on ', TextAugment.device))
     if single_process:
-      self.initializer(available_gpu_model=available_gpu_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model, cache_dir=cache_dir)
+      self.initializer(available_device_model=available_device_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model, cache_dir=cache_dir)
     
-  def initializer(self, device_id_by_proess_id=True, all_available_gpu_model=None, available_gpu_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir=None):
-    if all_available_gpu_model is not None:
-      TextAugmentGPUModel.available_gpu_models  = all_available_gpu_model
-      TextAugmentGPUModel.available_gpus = list(range(len(all_available_gpu_model)))
+  def initializer(self, device_id_by_proess_id=True, all_available_device_model=None, available_device_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir=None):
+    if all_available_device_model is not None:
+      TextAugmentDeviceModel.available_device_models   = all_available_device_model
+      TextAugmentDeviceModel.available_devices = [d.device_id for d in all_available_device_model]
         
     if cache_dir is None: 
         cache_dir = os.path.expanduser ('~')+"/.cache"
@@ -377,48 +396,49 @@ class TextAugment:
       else:
         TextAugment.device_id = int(device.split(":")[-1])
     else:
-      if TextAugmentGPUModel.available_gpus:
-        TextAugment.device_id = random.choice(TextAugmentGPUModel.available_gpus)
-        TextAugment.device = "cuda:"+str(TextAugment.device_id) 
+      if TextAugmentDeviceModel.available_devices:
+        TextAugment.device_id = -1 if TextAugmentDeviceModel.available_devices[0] == -1 else random.choice(TextAugmentDeviceModel.available_devices)
+        TextAugment.device = "cpu" if TextAugment.device_id == -1 else "cuda:"+str(TextAugment.device_id) 
       else:
         TextAugment.device_id = -1
         TextAugment.device = "cpu" 
 
     device = TextAugment.device
-    if available_gpu_model is not None:
-      TextAugmentGPUModel.available_gpu_models [available_gpu_model.device_id] = available_gpu_model
-      device_id = available_gpu_model.device_id
-      TextAugment.device = device = available_gpu_model.device
-      labse = available_gpu_model.labse
-      qg = available_gpu_model.qg
-      translation_pipelines = available_gpu_model.translation_pipelines
-      ner_model_name2pipelines = available_gpu_model.ner_model_name2pipelines
+    if available_device_model is not None:
+      TextAugmentDeviceModel.available_device_models  [0 if available_device_model.device_id < 0 else available_device_model.device_id] = available_device_model
+      device_id = available_device_model.device_id
+      TextAugment.device = device = available_device_model.device
+      labse = available_device_model.labse
+      qg = available_device_model.qg
+      translation_pipelines = available_device_model.translation_pipelines
+      ner_model_name2pipelines = available_device_model.ner_model_name2pipelines
     else:
       if device is None:
-        if TextAugmentGPUModel.available_gpus:
+        if TextAugmentDeviceModel.available_devices and TextAugmentDeviceModel.available_devices[0].device_id >= 0:
           if device_id_by_proess_id:
             process_id = torch.multiprocessing.current_process().name.split("-")[-1]
             try:
               process_id = int(process_id)
             except:
               process_id = 0
-            device_id = process_id % len(TextAugmentGPUModel.available_gpus)
+            device_id = process_id % len(TextAugmentDeviceModel.available_devices)
           else:
-            device_id = random.choice(TextAugmentGPUModel.available_gpus)
+            device_id = random.choice(TextAugmentDeviceModel.available_devices)
           TextAugment.device_id = device_id
           device = TextAugment.device = "cuda:"+str(TextAugment.device_id) 
         else:
-          TextAugment.device_id = -1
+          device_id = TextAugment.device_id = -1
           device = TextAugment.device = "cpu"  
-      if device != "cpu":
-        device_id = int(device.split(":")[-1])
-        available_gpu_model = TextAugmentGPUModel.available_gpu_models [device_id]
-        if available_gpu_model is None: 
-          TextAugmentGPUModel.available_gpu_models [device_id] = available_gpu_model = TextAugmentGPUModel(device=TextAugment.device)
-        labse = available_gpu_model.labse
-        qg = available_gpu_model.qg
-        translation_pipelines = available_gpu_model.translation_pipelines
-        ner_model_name2pipelines = available_gpu_model.ner_model_name2pipelines
+      else:
+        device_id = -1 if device == "cpu" else int(device.split(":")[-1])
+      if True:
+        available_device_model = TextAugmentDeviceModel.available_device_models[0 if device_id < 0 else device_id]
+        if available_device_model is None: 
+          TextAugmentDeviceModel.available_device_models[device_id] = available_device_model = TextAugmentDeviceModel(device=TextAugment.device)
+        labse = available_device_model.labse
+        qg = available_device_model.qg
+        translation_pipelines = available_device_model.translation_pipelines
+        ner_model_name2pipelines = available_device_model.ner_model_name2pipelines
     
     if labse is not None: TextAugment.labse = labse 
     if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
@@ -434,6 +454,7 @@ class TextAugment:
         TextAugment.en_spacy_nlp.add_pipe(coref, name='neuralcoref')
         #we could potentially add new items to the vocabulary to improve coref.
     except:
+        logger.info("Neuralcoref not loaded. Using normal spacy")
         pass
 
     if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
@@ -743,7 +764,7 @@ class TextAugment:
     if not do_marian_mt:
       m2m_model_name = self.m2m100_lang.get((src_lang, target_lang), self.m2m100_lang[('*', '*')])
       if m2m_model_name != self.m2m_model_name or self.m2m_tokenizer is None:
-        self.m2m_tokenizer = M2M100Tokenizer.from_pretrained(m2m_model_name)
+        self.m2m_tokenizer = M2M100Tokenizer.from_pretrained(m2m_model_name, model_max_len=512)
       try:
         self.m2m_tokenizer.src_lang = src_lang
         target_lang_bos_token = self.m2m_tokenizer.get_lang_id(target_lang)
@@ -764,7 +785,7 @@ class TextAugment:
         translations = []
         for src_text_list in self.batch(texts, batch_size):
           try:
-            batch = self.m2m_tokenizer(src_text_list, return_tensors="pt", padding=True, truncation=True).to(self.device)
+            batch = self.m2m_tokenizer(src_text_list, return_tensors="pt", padding=True, truncation=True, max_length=512).to(self.device)
           except:
             logger.info ("could not tokenize m2m batch. falling back to marian_mt")
             do_marian_mt = True
@@ -781,7 +802,7 @@ class TextAugment:
     model_name = marian_mt.get((src_lang, target_lang))
     mt_pipeline = None
     if model_name is not None and model_name not in TextAugment.translation_pipelines:
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_len=512)
         if self.device == "cpu":
           model = MarianMTModel.from_pretrained(model_name).eval()
           model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
@@ -796,7 +817,7 @@ class TextAugment:
           raise RuntimeError("no translation pipeline") # we could do multi-step translation where there are no pairs
     mt_pipeline = self.translation_pipelines[model_name]
     for src_text_list in self.batch(texts, batch_size):
-        outputs = [t['translation_text'] for t in mt_pipeline(src_text_list, batch_size=batch_size)]
+        outputs = [t['translation_text'] for t in mt_pipeline(src_text_list, batch_size=batch_size,  truncation=True, max_length=512)]
         translations.extend(outputs)
     return translations
 
@@ -1780,12 +1801,12 @@ class TextAugment:
           else:
               TextAugment.translation_pipelines["facebook/m2m100_418M"] =  TextAugment.translation_pipelines["facebook/m2m100_418M"].half().to(TextAugment.device)
         if TextAugment.device_id >= 0:
-            available_gpu_model = TextAugmentGPUModel.available_gpu_models[TextAugment.device_id]
-            if available_gpu_model is not None:
-                if TextAugment.labse  is not None and available_gpu_model.labse is None: available_gpu_model.labse = TextAugment.labse 
-                if TextAugment.qg is not None and available_gpu_model.qg  is None: available_gpu_model.qg = TextAugment.qg
-                if TextAugment.translation_pipelines  is not None and not available_gpu_model.translation_pipelines : available_gpu_model.translation_pipelines = TextAugment.translation_pipelines 
-                if TextAugment.ner_model_name2pipelines is not None and not available_gpu_model.ner_model_name2pipelines: available_gpu_model.ner_model_name2pipelines = TextAugment.ner_model_name2pipelines
+            available_device_model = TextAugmentDeviceModel.available_device_models [TextAugment.device_id]
+            if available_device_model is not None:
+                if TextAugment.labse  is not None and available_device_model.labse is None: available_device_model.labse = TextAugment.labse 
+                if TextAugment.qg is not None and available_device_model.qg  is None: available_device_model.qg = TextAugment.qg
+                if TextAugment.translation_pipelines  is not None and not available_device_model.translation_pipelines : available_device_model.translation_pipelines = TextAugment.translation_pipelines 
+                if TextAugment.ner_model_name2pipelines is not None and not available_device_model.ner_model_name2pipelines: available_device_model.ner_model_name2pipelines = TextAugment.ner_model_name2pipelines
 
     # init hf ner pipelines
     if do_hf_ner:
@@ -1798,13 +1819,14 @@ class TextAugment:
                 model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
             else:
                 model = model_cls.from_pretrained(model_name).half().eval().to(self.device)
-            tokenizer = AutoTokenizer.from_pretrained(model_name)
+            tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_len=512)
             if self.device == 'cpu':
               ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer)
             else:
               ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=self.device_id)
             self.ner_model_name2pipelines[model_name] = ner_pipeline
           except:
+            logger.info("problems loading hf pipeline model and tokenizer. trying without passing in model and tokenizer")
             if self.device == 'cpu':
               ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},))
             else:
@@ -2615,15 +2637,15 @@ class TextAugment:
         arr2.append(model_name)
     for model_name in list(set(arr2)):
         AutoModel.from_pretrained(model_name)
-        AutoTokenizer.from_pretrained(model_name)
+        AutoTokenizer.from_pretrained(model_name, model_max_len=512)
         AutoConfig.from_pretrained(model_name)
     for model_name in TextAugment.m2m100_lang.values():
-        AutoModel.from_pretrained(model_name)
+        AutoModel.from_pretrained(model_name, model_max_len=512)
         AutoTokenizer.from_pretrained(model_name)
         AutoConfig.from_pretrained(model_name)
     for aHash in qg_pipeline.SUPPORTED_TASKS.values():
       for model_name in aHash["default"].values():
-        AutoModel.from_pretrained(model_name)
+        AutoModel.from_pretrained(model_name, model_max_len=512)
         AutoTokenizer.from_pretrained(model_name)
         AutoConfig.from_pretrained(model_name)
     seen = {}
@@ -2633,14 +2655,14 @@ class TextAugment:
           seen[(src_lang, target_lang)] = 1
           if model_name is not None:
             AutoModel.from_pretrained(model_name)
-            AutoTokenizer.from_pretrained(model_name)
+            AutoTokenizer.from_pretrained(model_name, model_max_len=512)
             AutoConfig.from_pretrained(model_name)
         if (target_lang, src_lang) not in seen: 
           model_name = marian_mt.get((target_lang, src_lang))
           seen[(target_lang, src_lang)] = 1
           if model_name is not None:
             AutoModel.from_pretrained(model_name)
-            AutoTokenizer.from_pretrained(model_name)
+            AutoTokenizer.from_pretrained(model_name, model_max_len=512)
             AutoConfig.from_pretrained(model_name)                
     TextAugment.load_kenlm_model(store_model=False)
                
@@ -2682,11 +2704,11 @@ class TextAugment:
     if src_langs is None: src_langs = ["en"]
     if target_langs is None: target_langs = ["en"]*len(src_langs)
     start = time.time()
-    TextAugmentGPUModel.initializer_all(src_langs=src_langs, target_langs=target_langs)
+    TextAugmentDeviceModel.initializer_all(src_langs=src_langs, target_langs=target_langs)
     processor = TextAugment(single_process=False)
     # processor.initializer()
-    logger.info(("creating multiprocessing pool for num_workers ", num_workers))
-    pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_gpu_model=TextAugmentGPUModel.available_gpu_models ))      
+    logger.info(("creating multiprocessing pool for num_workers ", num_workers, TextAugmentDeviceModel.available_device_models))
+    pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_device_model=TextAugmentDeviceModel.available_device_models  ))      
     if outfile is not None:
       _file =  open(outfile, 'w', encoding='utf-8')
     else:
@@ -2696,8 +2718,6 @@ class TextAugment:
         if _file is not None: _file.close()
         _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
       docs = TextAugment.get_docs(src_lang, cutoff=cutoff, num_workers=num_workers)
-
-      # for i in range(0, num_workers):
       processed_docs = pool.imap_unordered(partial(processor.process_ner,
                                                       src_lang=src_lang,
                                                       target_lang=target_lang,
@@ -2782,11 +2802,11 @@ if __name__ == "__main__":
     parser.add_argument('-preload_cache', dest='preload_cache', action='store_true', help='Preload the cache of models and data', default = 0)
     args = parser.parse_args()
     if args.force_gpu:
-        TextAugmentGPUModel.available_gpu_models=[None]
-        TextAugmentGPUModel.available_gpus=[0]
+        TextAugmentDeviceModel.available_device_models =[None]
+        TextAugmentDeviceModel.available_devices=[0]
     elif args.force_cpu:
-        TextAugmentGPUModel.available_gpu_models=[]
-        TextAugmentGPUModel.available_gpus=[]
+        TextAugmentDeviceModel.available_device_models =[None]
+        TextAugmentDeviceModel.available_devices=[-1]
     if args.do_spacy_only:
       args.do_spacy = True
       args.do_hf_ner = False
