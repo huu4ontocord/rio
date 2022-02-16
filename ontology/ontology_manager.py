@@ -50,12 +50,12 @@ import gzip
 import urllib
 import re
 from transformers import AutoTokenizer
-from nltk.corpus import stopwords
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              os.path.pardir)))
 
-from stopwords import stopwords as stopwords_ac_dc
+from stopwords import stopwords
 
 mt5_underscore = "▁"
 trannum = str.maketrans("0123456789", "1111111111")
@@ -70,7 +70,7 @@ class OntologyManager:
   """
 
     default_strip_chars = "-,~`.?!@#$%^&*(){}[]|\\/-_+=<>;'\""
-    stopwords_wn = set(stopwords.words())
+    #stopwords_wn = set(itertools.chain(*[list(s) for s in stopwords.values()]))
     x_lingual_onto_name = "yago_cn_wn"
     default_data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "data"))
 
@@ -107,7 +107,7 @@ class OntologyManager:
         self.target_lang_lexicon = {}
         self.x_lingual_lexicon_by_prefix = {}
         self.target_lang = target_lang
-        self.stopwords = set(stopwords_ac_dc.get(target_lang, []) + list(self.stopwords_wn))
+        self.stopwords = set(stopwords.get(target_lang, []))
         self._max_lexicon = 0
         if data_dir is None: data_dir = self.default_data_dir
         if tmp_dir is None: tmp_dir = "/tmp/pii_processing/"
