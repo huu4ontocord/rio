@@ -49,7 +49,7 @@ from transformers.utils.dummy_tf_objects import TFRagSequenceForGeneration
 logger = logging.getLogger(__name__)
 
 logging.basicConfig(
-    format='%(asctime)s : %(processName)s : %(threadName)s : %(levelname)s : %(message)s',
+    format='%(asctime)s : %(processName)s : %(levelname)s : %(message)s',
     level=logging.INFO)
 
 try:
@@ -2011,20 +2011,27 @@ class TextAugment:
     if do_docs_trim_for_person:
       docs, chunks = self.trim_to_prefer_person(docs, chunks)
 
-    if do_kenlm and target_lang == 'en':
+    if do_kenlm: # and target_lang == 'en':
       for doc in docs.values():
         ner = doc[target_ner_key]
         persons = []
         for ent, aHash in ner.items():
           if any(key[0] == 'PERSON' for key in aHash.keys()):
-            persons.append(ent[0])
+            persons.append(ent[0].strip("."))
         public_figures = []
         for ent in list(set(persons)):
-          if self.kenlm_model.get_perplexity(f"{ent} (born") <= public_figure_kenlm_cutoff:
+          kenlm_score = self.kenlm_model.get_perplexity(f"{ent} (born")
+          #logger.info((ent, kenlm_score))
+          if kenlm_score <= public_figure_kenlm_cutoff:
+            #logger.info(("found public figure ", ent))
             public_figures.append(ent)
+          else:
+            pass 
+            #logger.info(("not public figure ", ent, kenlm_score))
         public_figures = set(public_figures)
         for ent, aHash in ner.items():
-          if ent in public_figures:
+          if ent[0].strip(".") in public_figures:
+            #logger.info(("adding knelm public figure", ent))
             aHash[('PUBLIC_FIGURE', 'kenlm')] = aHash.get(('PUBLIC_FIGURE', 'kenlm'), 0) + 1.0 # use param kenlm_weight
 
     # this will mess up the items array and the other arrays that depends on mentions unles we do_cleanup_only
