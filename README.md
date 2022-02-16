@@ -27,8 +27,8 @@ You may optionally install libpostal for more accurate address parsing (https://
 git clone https://github.com/openvenues/libpostal
 cd libpostal
 make distclean
-./bootstrap.sh
-./configure --datadir=/content/data
+bootstrap.sh
+configure --datadir=muliwai/libpostal_data
 make -j4
 sudo make install
 pip install postal
