@@ -482,9 +482,12 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
     structure = Synset('structure.n.01')
     fac = Synset('facility.n.01')
     group = Synset('group.n.01')
-    symptom = Synset('symptom.n.01')
+    disease = wn.synset('disease.n.1')
+    infectious_agent = wn.synset('infectious_agent.n.01')
+    physical_condition = wn.synset('physical_condition.n.01')
+    symptom  = wn.synset('symptom.n.01')
     location = Synset('location.n.01')
-    condition = Synset('condition.n.01') # disease
+    #condition = Synset('condition.n.01') # disease
     body_part = Synset('body_part.n.01') #anat
     substance = Synset('substance.n.07')#sub, BIO_CHEM_ENTITY
     food = Synset('food.n.01') #product
@@ -588,7 +591,8 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
         if commodity in hype or vehicle in hype or artifact in hype or \
             plant in hype or molecule in hype or compound in hype or event in hype or \
             animal in hype or fac in hype or group in hype or symptom in hype or location in hype or \
-            condition in hype or body_part in hype or substance in hype or food in hype or act in hype or \
+            infectious_agent in hype or symptom in hype or disease in hype or physical_condition in hype or \
+            body_part in hype or substance in hype or food in hype or act in hype or \
             process in hype:
             continue    
 
@@ -750,8 +754,9 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
     race_list_en = list(set(self.race_list + race_list2))
     disease_list_en =  disease_en + self.disease_list + list(itertools.chain(*[[str(a.name()) for a in d.lemmas()] for d in wn.synset('physical_condition.n.01').closure(lambda s: s.hyponyms())]))
     disease_list_en = disease_list_en + list(itertools.chain(*[[str(a.name()) for a in d.lemmas()] for d in wn.synset('infectious_agent.n.01').closure(lambda s: s.hyponyms())]))
+    disease_list_en = disease_list_en + list(itertools.chain(*[[str(a.name()) for a in d.lemmas()] for d in wn.synset('disease.n.1').closure(lambda s: s.hyponyms())]))
     disease_list_en = disease_list_en + list(itertools.chain(*[[str(a.name()) for a in d.lemmas()] for d in wn.synset('symptom.n.01').closure(lambda s: s.hyponyms())]))
-    
+
     #now create the x-lingual word2ner mapping
     # TODO: need to do LANGUAGE, GPE (country, city) and block lists
     block_list= []
