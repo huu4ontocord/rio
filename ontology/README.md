@@ -4,7 +4,7 @@
 - The dictionary based on Conceptnet5 and Yago entities. We have also created constraints on various entities, and hand crafted rules for conflicts between various types. 
 - See ontology_builder_data.py and ontology_builder.py for details on the constraints.
 
-## How to rebuild the ontonolgy
+## How to rebuild the ontology
 ```
 python ontology_builder.py -c
 ```
