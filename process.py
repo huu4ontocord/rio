@@ -44,6 +44,8 @@ from faker import Faker
 from faker.providers import person, company, geo, address, ssn, internet
 
 import logging
+
+from transformers.utils.dummy_tf_objects import TFRagSequenceForGeneration
 logger = logging.getLogger(__name__)
 
 logging.basicConfig(
@@ -61,6 +63,7 @@ from marian_mt import marian_mt
 from edugp_kenlm_model import *
 from fake_names import *
 from pii_regexes import detect_ner_with_regex_and_context
+from ontology.ontology_manager import OntologyManager
 try:
   if not stopwords:
     from stopwords import stopwords
@@ -458,7 +461,7 @@ class TextAugment:
         logger.info("Neuralcoref not loaded. Using normal spacy")
         pass
 
-    if TextAugment.ontology_manager is None: TextAugment.ontology_manager = None # OntologyManager(src_lang='en') #src_lang=src_lang
+    if TextAugment.ontology_manager is None: TextAugment.ontology_manager = OntologyManager('en') #src_lang=src_lang
     #speed up loading if we don't use kenlm models
     #if TextAugment.kenlm_model is None: 
     #  TextAugment.load_kenlm_model()
@@ -473,6 +476,75 @@ class TextAugment:
           faker_en.add_provider(company)
     #print ("finished load")
     #TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
+
+
+  #TODO: we also need a deserialize
+  @staticmethod
+  def serialize_ner_items(docs, ner_keys=None, outfile=""):
+        #print ("serialize_ner_items")
+        # serialize ner keys
+        if ner_keys:
+          ner_keys = [k + '_ner' for k in ner_keys if '_ner' not in k]
+        else:
+          ner_keys = []
+        if type(docs) is dict:
+          serialize_docs = list(docs.values())
+        else:
+          serialize_docs = docs
+
+        serialize_docs.sort(key=lambda a: int(a.get('id', -1)))
+        serialize_docs = copy.copy(serialize_docs)
+        for doc in serialize_docs:
+            for ner_key in ner_keys + ([] if ner_keys else [key for key in doc if key.endswith('_ner')]):
+                ner_items = doc[ner_key]
+                serialize_items = []
+                for (text, start, end), ner_value in ner_items.items():
+                    ner_value = list(ner_value.items())
+                    ner_dict = [text, start, end, ner_value]
+                    serialize_items.append(ner_dict)
+                doc[ner_key] = serialize_items
+        if outfile:       
+          with open(outfile, 'w', encoding='utf-8') as file:
+            for doc in serialize_docs:
+              file.write(f'{doc}\n')
+        return serialize_docs
+
+  @staticmethod
+  def deserialize_ner_items(docs=None, infile="", return_dict=False):
+    def load_py_from_str(s, default=None):
+      if not s.strip(): return default
+      ret = {'__ret': None}
+      #print (s)
+      exec("__ret= "+s, ret)
+      return ret['__ret']
+      
+    def deserialize_doc(doc):
+      for ner_key in [key for key in doc if key.endswith('_ner')]:
+                ner_items = doc[ner_key]
+                if ner_items and type(ner_items) is list:
+                  deserialize_items = {}
+                  for item in ner_items:
+                    mention = (item[0], item[1], item[2])
+                    aHash = dict([(tuple(a[0]) if type(a[0]) is list else a[0], float(a[1])) for a in item[3]])
+                    deserialize_items[mention] = aHash
+                  doc[ner_key] = deserialize_items
+      return doc
+
+    #print ("deserialize_ner_items")
+    if infile:
+      docs= [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
+      #print (docs)
+    elif docs:
+      if type(docs) is dict:
+        docs = copy.copy(docs.values())
+        return_dict = True
+      else:
+        docs = copy.copy(docs)
+    if return_dict:
+      return dict([(int(doc.get('id', idx)), deserialize_doc(doc)) for idx, doc in enumerate(docs)])
+    else:
+      return [deserialize_doc(doc) for doc in docs]
+    return docs
 
   @staticmethod
   def get_lang_groups(src_lang):
@@ -1617,74 +1689,6 @@ class TextAugment:
 
     return docs, chunks
 
-  #TODO: we also need a deserialize
-  @staticmethod
-  def serialize_ner_items(docs, ner_keys=None, outfile=""):
-        #print ("serialize_ner_items")
-        # serialize ner keys
-        if ner_keys:
-          ner_keys = [k + '_ner' for k in ner_keys if '_ner' not in k]
-        else:
-          ner_keys = []
-        if type(docs) is dict:
-          serialize_docs = list(docs.values())
-        else:
-          serialize_docs = docs
-
-        serialize_docs.sort(key=lambda a: int(a.get('id', -1)))
-        serialize_docs = copy.copy(serialize_docs)
-        for doc in serialize_docs:
-            for ner_key in ner_keys + ([] if ner_keys else [key for key in doc if key.endswith('_ner')]):
-                ner_items = doc[ner_key]
-                serialize_items = []
-                for (text, start, end), ner_value in ner_items.items():
-                    ner_value = list(ner_value.items())
-                    ner_dict = [text, start, end, ner_value]
-                    serialize_items.append(ner_dict)
-                doc[ner_key] = serialize_items
-        if outfile:       
-          with open(outfile, 'w', encoding='utf-8') as file:
-            for doc in serialize_docs:
-              file.write(f'{doc}\n')
-        return serialize_docs
-
-  @staticmethod
-  def deserialize_ner_items(docs=None, infile="", return_dict=False):
-    def load_py_from_str(s, default=None):
-      if not s.strip(): return default
-      ret = {'__ret': None}
-      #print (s)
-      exec("__ret= "+s, ret)
-      return ret['__ret']
-      
-    def deserialize_doc(doc):
-      for ner_key in [key for key in doc if key.endswith('_ner')]:
-                ner_items = doc[ner_key]
-                if ner_items and type(ner_items) is list:
-                  deserialize_items = {}
-                  for item in ner_items:
-                    mention = (item[0], item[1], item[2])
-                    aHash = dict([(tuple(a[0]) if type(a[0]) is list else a[0], float(a[1])) for a in item[3]])
-                    deserialize_items[mention] = aHash
-                  doc[ner_key] = deserialize_items
-      return doc
-
-    #print ("deserialize_ner_items")
-    if infile:
-      docs= [load_py_from_str(s, {}) for s in open(infile, "rb").read().decode().split("\n")]
-      print (docs)
-    elif docs:
-      if type(docs) is dict:
-        docs = copy.copy(docs.values())
-        return_dict = True
-      else:
-        docs = copy.copy(docs)
-    if return_dict:
-      return dict([(int(doc.get('id', idx)), deserialize_doc(doc)) for idx, doc in enumerate(docs)])
-    else:
-      return [deserialize_doc(doc) for doc in docs]
-    return docs
-
   #TODO - refactor this method into parts
   def process_ner_chunks_with_trans(self,
                           src_lang,
@@ -1970,11 +1974,11 @@ class TextAugment:
     if do_regex:
       docs = self.apply_regex_ner(target_lang, docs=docs, weight=regex_weight, text_key=target_text_key, ner_key=target_ner_key)
 
-    if False: # do_ontology and self.ontology_manager is not None:
+    if do_ontology and self.ontology_manager is not None:
         # ontology - context independent - there are some bugs in disease detection which needs to be fixed so we will skip for now
         for doc in docs.values():
           doc[target_ner_key] = ner = doc.get(target_ner_key, {})
-          if target_lang == 'en':
+          if True:
             chunk2ner = self.ontology_manager.tokenize(doc[target_text_key])['chunk2ner']
             onto_items = []
             for c, label in chunk2ner.items():
@@ -2685,7 +2689,7 @@ class TextAugment:
                     do_marian_mt = True,
                     batch_size = 5,
                     num_words_per_chunk=70,
-                    #ontology_weight=0.85,
+                    ontology_weight=0.85,
                     spacy_weight=1.00,
                     hf_ner_weight=1.25,
                     regex_weight=1.5,
@@ -2724,7 +2728,7 @@ class TextAugment:
                                                       target_lang=target_lang,
                                                       do_spacy = do_spacy ,
                                                       do_hf_ner = do_hf_ner ,
-                                                      #do_ontology = True,
+                                                      do_ontology = do_ontology,
                                                       do_skip_src_lang_processing=do_skip_src_lang_processing,
                                                       do_backtrans=do_backtrans,
                                                       do_augment=do_augment,
@@ -2734,7 +2738,7 @@ class TextAugment:
                                                       do_regex = do_regex ,
                                                       do_marian_mt = do_marian_mt,
                                                       num_words_per_chunk=num_words_per_chunk,
-                                                      #ontology_weight=ontology_weight,
+                                                      ontology_weight=ontology_weight,
                                                       spacy_weight=spacy_weight,
                                                       hf_ner_weight=hf_ner_weight,
                                                       regex_weight=regex_weight,
@@ -2773,13 +2777,13 @@ if __name__ == "__main__":
     parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
     parser.add_argument('-do_spacy_only', dest='do_spacy_only', type=int, help='Wether to only apply a spacy model', default = 0)
     parser.add_argument('-do_hf_ner_only', dest='do_hf_ner_only', type=int, help='Wether to only apply a huggingface NER model', default = 0)
-    #parser.add_argument('-do_ontology_only', dest='do_ontology_only', type=int, help='Wether to only use an ontology', default = 0)
+    parser.add_argument('-do_dictionary_only', dest='do_ontology_only', type=int, help='Wether to only use an dictionary', default = 0)
     parser.add_argument('-do_regex_only', dest='do_regex_only', type=int, help='Wether to only  apply regex models', default = 0)
     parser.add_argument('-do_qg_rel_only', dest='do_qg_rel_only', type=int, help='Wether to only infer a relationship between PII entities based an question generation (EXPERIMENTAL)', default = 0)
     parser.add_argument('-do_spacy', dest='do_spacy', type=int, help='Wether or not to apply a spacy model', default = 1)
     parser.add_argument('-do_skip_src_lang_processing', dest='do_skip_src_lang_processing', type=int, help='Wether or not to skip NER for src_lang (assumes NER is already perfored in the data provided)', default = 0)
     parser.add_argument('-do_hf_ner', dest='do_hf_ner', type=int, help='Wether or not to apply a huggingface NER model', default = 1)
-    #parser.add_argument('-do_ontology', dest='do_ontology', type=int, help='Wether or not to use an ontology', default = 1)
+    parser.add_argument('-do_dictionary', dest='do_ontology', type=int, help='Wether or not to use a dictionary', default = 1)
     parser.add_argument('-do_backtrans', dest='do_backtrans', type=int, help='Wether or not to do back translation', default = 1)
     parser.add_argument('-do_augment', dest='do_augment', type=int, help='Wether or not to do translation augmentation', default = 0)
     parser.add_argument('-do_anonymization', dest='do_anonymization', type=int, help='Wether or not to anonymize the src_lang', default = 0)
@@ -2791,7 +2795,7 @@ if __name__ == "__main__":
     parser.add_argument('-do_kenlm', dest='do_kenlm', type=int, help='Wether or not to apply a KenLM model to decide if a name is a common person name', default = 0)
     parser.add_argument('-do_qg_rel', dest='do_qg_rel', type=int, help='Wether or not to infer a relationship between PII entities based an question generation (EXPERIMENTAL)', default = 0)
     parser.add_argument('-num_words_per_chunk', dest='num_words_per_chunk', type=int, help='number of words per chunk', default=70)
-    #parser.add_argument('-ontology_weight', dest='ontology_weight', type=float, help='batch size', default=0.85)
+    parser.add_argument('-dictionary_weight', dest='ontology_weight', type=float, help='Weight given to the dictionary model', default=0.85)
     parser.add_argument('-spacy_weight', dest='spacy_weight', type=float, help='weight given to a spacy decision', default=1.00)
     parser.add_argument('-hf_ner_weight', dest='hf_ner_weight', type=float, help='weight given to a hf model decision', default=1.25)
     parser.add_argument('-regex_weight', dest='regex_weight', type=float, help='weight given to a regex decision', default=1.5)
@@ -2813,6 +2817,7 @@ if __name__ == "__main__":
       args.do_hf_ner = False
       args.do_regex = False
       args.do_qg_rel = False
+      args.do_ontology_only = False
       args.do_backtrans = False
       args.target_lang = args.src_lang
       args.do_anonymization = False
@@ -2822,6 +2827,7 @@ if __name__ == "__main__":
       args.do_hf_ner = False
       args.do_regex = True
       args.do_qg_rel = False
+      args.do_ontology_only = False
       args.do_backtrans = False
       args.target_lang = args.src_lang
       args.do_anonymization = False
@@ -2831,6 +2837,7 @@ if __name__ == "__main__":
       args.do_hf_ner = True
       args.do_regex = False
       args.do_qg_rel = False
+      args.do_ontology_only = False
       args.do_backtrans = False
       args.target_lang = args.src_lang
       args.do_anonymization = False
@@ -2841,10 +2848,20 @@ if __name__ == "__main__":
       args.do_regex = False
       args.do_backtrans = False
       args.do_qg_rel = True
+      args.do_ontology_only = False
       args.target_lang = args.src_lang
       args.do_anonymization = False
       args.do_augmentation = False
-
+    elif args.do_ontology_only:
+      args.do_spacy = False
+      args.do_hf_ner = False
+      args.do_regex = False
+      args.do_backtrans = False
+      args.do_qg_rel = False
+      args.do_ontology_only = True
+      args.target_lang = args.src_lang
+      args.do_anonymization = False
+      args.do_augmentation = False
     args.anon_scope = set(args.anon_scope.split(","))
     args.aug_scope = set(args.aug_scope.split(","))
     src_lang = args.src_lang
@@ -2879,7 +2896,7 @@ if __name__ == "__main__":
                     target_langs=target_lang,
                     do_spacy = args.do_spacy ,
                     do_hf_ner = args.do_hf_ner ,
-                    #do_ontology = True,
+                    do_ontology = args.do_ontology,
                     do_skip_src_lang_processing=args.do_skip_src_lang_processing,
                     do_backtrans=args.do_backtrans,
                     do_augment=args.do_augment,
@@ -2889,7 +2906,7 @@ if __name__ == "__main__":
                     do_regex = args.do_regex ,
                     do_marian_mt = args.do_marian_mt,
                     num_words_per_chunk=args.num_words_per_chunk,
-                    #ontology_weight=args.ontology_weight,
+                    ontology_weight=args.ontology_weight,
                     spacy_weight=args.spacy_weight,
                     hf_ner_weight=args.hf_ner_weight,
                     regex_weight=args.regex_weight,
@@ -2924,7 +2941,7 @@ if __name__ == "__main__":
                     target_lang=target_lang,
                     do_spacy = args.do_spacy ,
                     do_hf_ner = args.do_hf_ner ,
-                    #do_ontology = True,
+                    do_ontology = args.do_ontology,
                     do_skip_src_lang_processing=args.do_skip_src_lang_processing,
                     do_backtrans=args.do_backtrans,
                     do_augment=args.do_augment,
@@ -2934,7 +2951,7 @@ if __name__ == "__main__":
                     do_regex = args.do_regex ,
                     do_marian_mt = args.do_marian_mt,
                     num_words_per_chunk=args.num_words_per_chunk,
-                    #ontology_weight=args.ontology_weight,
+                    ontology_weight=args.ontology_weight,
                     spacy_weight=args.spacy_weight,
                     hf_ner_weight=args.hf_ner_weight,
                     regex_weight=args.regex_weight,
