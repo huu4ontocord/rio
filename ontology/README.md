@@ -8,3 +8,10 @@
 ```
 python ontology_builder.py -c
 ```
+
+## How to use the API
+```
+from ontology_manager import OntologyManager
+onto = OntologyManager()
+onto.tokenize("George Washington was the 1st president of the United States")
+```
