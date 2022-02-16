@@ -1755,8 +1755,8 @@ class TextAugment:
       faker_src_lang = None
       faker_en = None
 
-    stopwords1 = set(stopwords[src_lang])
-    stopwords2 = set(stopwords[target_lang])
+    stopwords1 = set(stopwords.get(src_lang,[]))
+    stopwords2 = set(stopwords.get(target_lang,[]))
 
     #init spacy pipeline
     spacy_nlp = None
