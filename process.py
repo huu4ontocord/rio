@@ -693,7 +693,7 @@ class TextAugment:
     answers = {}
 
     if ner_key is None:
-      ner_key = f'{src_lang}_ner'
+      ner_key = f'{src_lang}_signal_ner'
     if text_key is None:
       text_key = f'{src_lang}_text'
     if rel_key is None:
@@ -921,7 +921,7 @@ class TextAugment:
     #print ("apply_regex_ner")
     global regex_rulebase
     if ner_key is None:
-      ner_key = f'{src_lang}_ner'
+      ner_key = f'{src_lang}_signal_ner'
     if text_key is None:
       text_key = f'{src_lang}_text'
     for doc in docs.values():
@@ -953,7 +953,7 @@ class TextAugment:
     if offset_key is None:
       offset_key = f'{src_lang}_offset'
     if ner_key is None:
-      ner_key = f'{src_lang}_ner'
+      ner_key = f'{src_lang}_signal_ner'
     if text_key is None:
       text_key = f'{src_lang}_text'
     #print (chunks)
@@ -1130,7 +1130,7 @@ class TextAugment:
       stopwords = set(stopwords.get(src_lang, []))
     offset_key=f'{src_lang}_offset'
     if ner_key is None:
-      ner_key = f'{src_lang}_ner'
+      ner_key = f'{src_lang}_signal_ner'
     if text_key is None:
       text_key = f'{src_lang}_text'
     mention2ref_key = f'{src_lang}_mention2ref'
@@ -1355,7 +1355,7 @@ class TextAugment:
           stopwords = set(stopwords.get(src_lang, []))
         offset_key=f'{src_lang}_offset'
         if ner_key is None:
-          ner_key = f'{src_lang}_ner'
+          ner_key = f'{src_lang}_signal_ner'
         if text_key is None:
           text_key = f'{src_lang}_text'
         for dat in docs.values():
@@ -1510,7 +1510,7 @@ class TextAugment:
                                  items_key=None, context_key=None, ner_key=None):
         #print ("create_augment_anon_context")
         if target_lang is None: target_lang = src_lang
-        if ner_key is None: ner_key = f'{src_lang}_ner'
+        if ner_key is None: ner_key = f'{src_lang}_signal_ner'
         if context_key is None: context_key = f'{src_lang}_aug_context'
         if items_key is None: items_key = f'{src_lang}_items'
         if faker_target_lang is not None and faker_en is not None:
@@ -1584,7 +1584,7 @@ class TextAugment:
                                                    context_key=None, ner_key=None, items_key=None, text_key=None, replace_text_key=None, offset_key=None):
         #print ("replace_items_in_chunks")
         if target_lang is None: target_lang = src_lang
-        if ner_key is None: ner_key = f'{src_lang}_collapse_ner'
+        if ner_key is None: ner_key = f'{src_lang}_ner'
         if context_key is None: context_key = f'{src_lang}_aug_context'
         if items_key is None: items_key = f'{src_lang}_items'
         if text_key is None: text_key = f'{src_lang}_text'
@@ -1671,17 +1671,17 @@ class TextAugment:
     #we will replace the words directly from {src_lang}_text to {src_lang}_text_anon.
     #we assume all ner process has been completed at this point.
     #anonymization will create a new {src_lang}_text_anon.
-    #TODO: create a {src_lang}_ner_anon field.
+    #TODO: create a {src_lang}_signal_ner_anon field.
     #TODO: another  way to do anonymimzation is to pass the anonymized text through backtrans. TBD?
     #print ("anonymize")
     if target_lang is None: target_lang = src_lang
 
     self.create_augment_anon_context(docs, chunks, src_lang, faker_src_lang, faker_en, aug_scope=anon_scope, target_lang=src_lang, \
-                                          items_key=f'{src_lang}_items', context_key=f'{src_lang}_anon_context', ner_key=f'{src_lang}_collapse_ner')
+                                          items_key=f'{src_lang}_items', context_key=f'{src_lang}_anon_context', ner_key=f'{src_lang}_ner')
 
     docs, chunks = self.replace_items_in_chunks(docs, chunks, src_lang, replace_with_bracket=False, do_augment=True, \
                                                                          context_key=f'{src_lang}_non_context', \
-                                                                         ner_key=f'{src_lang}_ner', items_key=f'{src_lang}_items', \
+                                                                         ner_key=f'{src_lang}_signal_ner', items_key=f'{src_lang}_items', \
                                                                          text_key=f'{src_lang}_text', replace_text_key=f'{src_lang}_text_anon', \
                                                                          offset_key=f'{src_lang}_offset')
     for doc in docs.values():
@@ -1845,20 +1845,20 @@ class TextAugment:
 
     if do_augment:
       target_text_key = f'{target_lang}_text_aug'
-      target_ner_key =  f'{target_lang}_ner_aug'
-      target_collapse_ner_key =  f'{target_lang}_collapse_ner_aug'
+      target_ner_key =  f'{target_lang}_signal_ner_aug'
+      target_collapse_ner_key =  f'{target_lang}_ner_aug'
       target_offset_key = f'{target_lang}_offset_aug'
       target_src_sim_key = f'{src_lang}_2_{target_lang}_sim_aug'
     else:
       target_text_key = f'{target_lang}_text'
-      target_ner_key = f'{target_lang}_ner'
-      target_collapse_ner_key = f'{target_lang}_collapse_ner'
+      target_ner_key = f'{target_lang}_signal_ner'
+      target_collapse_ner_key = f'{target_lang}_ner'
       target_offset_key = f'{target_lang}_offset'
       target_src_sim_key = f'{src_lang}_2_{target_lang}_sim'
 
     public_figure_kenlm_cutoff = self.public_figure_kenlm_cutoff_map.get(target_lang, 450)
 
-    docs = self.collapse_ner(docs, ner_key = f'{src_lang}_ner', collapse_ner_key = f'{src_lang}_collapse_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1)
+    docs = self.collapse_ner(docs, ner_key = f'{src_lang}_signal_ner', collapse_ner_key = f'{src_lang}_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1)
 
     # do operations in the target_lang space
     if target_lang == src_lang:
@@ -1873,11 +1873,11 @@ class TextAugment:
 
         if do_augment:
           self.create_augment_anon_context(docs, chunks, src_lang, faker_target_lang, faker_en, aug_scope=aug_scope, target_lang=target_lang, \
-                                          items_key=f'{src_lang}_items', context_key=f'{src_lang}_aug_context', ner_key=f'{src_lang}_collapse_ner')
+                                          items_key=f'{src_lang}_items', context_key=f'{src_lang}_aug_context', ner_key=f'{src_lang}_ner')
         docs, chunks = self.replace_items_in_chunks(docs, chunks,  src_lang, lbracket=lbracket, rbracket=rbracket, \
                                                                          replace_with_bracket=True, do_augment=do_augment, \
                                                                          context_key=f'{src_lang}_aug_context', \
-                                                                         ner_key=f'{src_lang}_collapse_ner',  items_key=f'{src_lang}_items', \
+                                                                         ner_key=f'{src_lang}_ner',  items_key=f'{src_lang}_items', \
                                                                          text_key=f'{src_lang}_text', replace_text_key=f'{src_lang}_tmp_text', \
                                                                          offset_key=f'{src_lang}_offset')
         chunks2 = [chunk[f'{src_lang}_tmp_text'] for chunk in chunks]
@@ -1948,12 +1948,12 @@ class TextAugment:
                 ent_lower = ent.lower()
                 if ent_lower in stopwords2:
                   #reduce weight of target labels if this is translated into an target_lang stopword
-                  if mention in doc[f'{src_lang}_ner']:
-                    aHash = doc[f'{src_lang}_ner'][mention]
+                  if mention in doc[f'{src_lang}_signal_ner']:
+                    aHash = doc[f'{src_lang}_signal_ner'][mention]
                     for key2 in list(aHash.keys()):
                       aHash[key2] /= 2.0
                 else:
-                  #vals = list(doc[f'{src_lang}_ner'][mention].keys())
+                  #vals = list(doc[f'{src_lang}_signal_ner'][mention].keys())
                   ent = ent.strip(self.strip_chars)
                   doc[f'{target_lang}_2_{src_lang}_tmp'][ent] = idx
             else: # except:
@@ -2048,8 +2048,8 @@ class TextAugment:
 
     if target_lang != src_lang and not do_augment:
           for doc in docs.values():
-            ner =  doc[f'{target_lang}_ner']
-            src_ner = doc[f'{src_lang}_ner']
+            ner =  doc[f'{target_lang}_signal_ner']
+            src_ner = doc[f'{src_lang}_signal_ner']
             target2src_ner = doc.get(f'{target_lang}_2_{src_lang}_tmp', {})
             #increase weight of src ner_lang items if the target_lang translations indicate it's an NER
             for ent, idx in target2src_ner.items():
@@ -2092,7 +2092,7 @@ class TextAugment:
           doc[f'{target_lang}_2_{src_lang}_context'] = dict([(a, items[b][0]) for a, b in aHash.items()])
         docs, chunks = self.replace_items_in_chunks(docs, chunks,  src_lang, lbracket=lbracket, rbracket=rbracket, \
                                                                          replace_with_bracket=True, do_augment=True, \
-                                                                         ner_key=f'{target_lang}_ner', items_key=f'{target_lang}_items', \
+                                                                         ner_key=f'{target_lang}_signal_ner', items_key=f'{target_lang}_items', \
                                                                          text_key=f'{target_lang}_text', replace_text_key=f'{target_lang}_tmp_text', \
                                                                          offset_key=f'{target_lang}_offset', context_key=f'{target_lang}_2_{src_lang}_context')
 
@@ -2125,7 +2125,7 @@ class TextAugment:
           trans_text = chunk[f'{src_lang}_text_backtrans_from_{target_lang}']
           items = doc[f'{target_lang}_items']
           len_items = len(items)
-          ner = doc[f'{target_lang}_ner']
+          ner = doc[f'{target_lang}_signal_ner']
           bner = doc[f'{src_lang}_2_{target_lang}_backtrans_ner_tmp'] = doc.get(f'{src_lang}_2_{target_lang}_backtrans_ner_tmp', {})
           pos = 0
           sim_score = sim_score.item()
@@ -2228,7 +2228,7 @@ class TextAugment:
         #TODO: for all persons and public figures we map from target_lang back to src_lang, also map the gender
         for doc in docs.values():
           bner = doc[f'{src_lang}_2_{target_lang}_backtrans_ner_tmp']
-          ner = doc[f'{src_lang}_ner']
+          ner = doc[f'{src_lang}_signal_ner']
           # partial match
           for key, aHash in bner.items():
             if key in ner: continue # we do the full match below
@@ -2254,8 +2254,8 @@ class TextAugment:
 
     if target_lang != src_lang and not do_augment:
           for doc in docs.values():
-            ner =  doc[f'{target_lang}_ner']
-            src_ner = doc[f'{src_lang}_ner']
+            ner =  doc[f'{target_lang}_signal_ner']
+            src_ner = doc[f'{src_lang}_signal_ner']
             target2src_ner = doc.get(f'{target_lang}_2_{src_lang}_tmp', {})
             #print (target2src_ner)
             #add labels from src ner to target ner for matches
@@ -2281,7 +2281,7 @@ class TextAugment:
 
     docs = self.collapse_ner(docs, target_ner_key, target_collapse_ner_key, target_text_key, stopwords2)
     if target_lang != src_lang:
-      docs = self.collapse_ner(docs, ner_key = f'{src_lang}_ner', collapse_ner_key = f'{src_lang}_collapse_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1)
+      docs = self.collapse_ner(docs, ner_key = f'{src_lang}_signal_ner', collapse_ner_key = f'{src_lang}_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1)
 
     if do_anonymization and faker_src_lang is not None and faker_en is not None:
       docs, chunks = self.anonymize(docs, chunks, src_lang, faker_src_lang, faker_en, anon_scope=anon_scope)
@@ -2452,7 +2452,7 @@ class TextAugment:
       # we do this here because we don't want to trim  ner items that are considered empty.
       # we should probably fix trim_to_prefer_person to not do any trimming if all ner's are empty
       for doc in docs.values():
-        doc[f'{src_lang}_ner'] = doc.get(f'{src_lang}_ner', {})
+        doc[f'{src_lang}_signal_ner'] = doc.get(f'{src_lang}_signal_ner', {})
 
       if not do_skip_src_lang_processing:
         #do ner processing in src_lang with potential anonymization
@@ -2808,7 +2808,7 @@ if __name__ == "__main__":
     parser.add_argument('-do_marian_mt', dest='do_marian_mt', type=int, help='Wether or not to use marianMT for translation instead of M2M100', default = 1)
     parser.add_argument('-do_docs_trim_for_person', dest='do_docs_trim_for_person', type=int, help='Wether or not to filter out documents with no mentions of persons', default = 0)
     parser.add_argument('-do_docs_filter', dest='do_docs_filter', type=int, help='Wether or not to filter out documents with high ratios of junk, or CSAM', default = 0)
-    parser.add_argument('-do_kenlm', dest='do_kenlm', type=int, help='Wether or not to apply a KenLM model to decide if a name is a common person name', default = 0)
+    parser.add_argument('-do_kenlm', dest='do_kenlm', type=int, help='Wether or not to apply a KenLM model to decide if a name is a common person name', default = 1)
     parser.add_argument('-do_qg_rel', dest='do_qg_rel', type=int, help='Wether or not to infer a relationship between PII entities based an question generation (EXPERIMENTAL)', default = 0)
     parser.add_argument('-num_words_per_chunk', dest='num_words_per_chunk', type=int, help='number of words per chunk', default=70)
     parser.add_argument('-dictionary_weight', dest='ontology_weight', type=float, help='Weight given to the dictionary model', default=0.85)
