@@ -677,7 +677,7 @@ def ent_2_stdnum_type(text, src_lang=None):
 # see also for ICD https://stackoverflow.com/questions/5590862/icd9-regex-pattern - but this could be totally wrong!
 # we do regex in this order in order to not capture ner inside domain names and email addresses.
 #NORP, AGE, ADDRESS and DISEASE regexes are just test cases. We will use transformers and rules to detect these.
-regex_rulebase = {
+regex_rulebase_extended = {
     #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
     "DATE": {
         "default": [
@@ -898,9 +898,94 @@ regex_rulebase = {
     },
  }
 
+# Some of this code from https://github.com/bigscience-workshop/data_tooling/blob/master/ac_dc/anonymization.py which is under the Apache 2 license
+regex_rulebase = {
+    #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
+    "DATE": {
+      "default": [
+            #year
+            (re.compile('\d{4}'), None),
+            #date
+            (re.compile('(?:(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)|(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)\s+(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?)(?:\,)?\s*(?:\d{4})?|[0-3]?\d[-\./][0-3]?\d[-\./]\d{2,4}', re.IGNORECASE), None),
+        ],
+    },
+    #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
+    "TIME": {
+      "default": [(re.compile('\d{1,2}:\d{2} ?(?:[ap]\.?m\.?)?|\d[ap]\.?m\.?', re.IGNORECASE), None),],
+    },
+    "URL": {
+      "default": [(re.compile('https?:\/\/[^\s\"\']{8,50}|www[^\s\"\']{8,50}'), None)],
+    },
+    "ADDRESS": {
+      "en": [
+              #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
+              (
+                  re.compile(
+                      r"\d{1,4} [\w\s]{1,20} (?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?(?=\s|$).*\b\d{5}(?:[-\s]\d{4})?\b|\d{1,4} [\w\s]{1,20} (?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?(?=\s|$)", re.IGNORECASE
+                  ),
+                  None,
+              ),
+             #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
+              (
+                  re.compile(r"P\.? ?O\.? Box \d+"), None
+              )
+      ],
+      #from https://github.com/Aggregate-Intellect/bigscience_aisc_pii_detection/blob/main/language/zh/rules.py which is under Apache 2
+      "zh": [
+          (
+              regex.compile(
+                  r"((\p{Han}{1,3}(自治区|省))?\p{Han}{1,4}((?<!集)市|县|州)\p{Han}{1,10}[路|街|道|巷](\d{1,3}[弄|街|巷])?\d{1,4}号)"
+              ),
+              None,
+          ),
+          (
+              regex.compile(
+                  r"(?<zipcode>(^\d{5}|^\d{3})?)(?<city>\D+[縣市])(?<district>\D+?(市區|鎮區|鎮市|[鄉鎮市區]))(?<others>.+)"
+              ),
+              None,
+          ),
+      ],
+    },
+    "PHONE": {
+      "zh" : [(re.compile(r"\d{4}-\d{8}"), None),],
+      "default": [
+              # https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py phone with exts
+              (
+                  re.compile('((?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*(?:[2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|(?:[2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?(?:[2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?(?:[0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(?:\d+)?))', re.IGNORECASE),
+                  None
+              ),
+              # common regex phone
+              (
+                  re.compile('((?:(?<![\d-])(?:\+?\d{1,3}[-.\s*]?)?(?:\(?\d{3}\)?[-.\s*]?)?\d{3}[-.\s*]?\d{4}(?![\d-]))|(?:(?<![\d-])(?:(?:\(\+?\d{2}\))|(?:\+?\d{2}))\s*\d{2}\s*\d{3}\s*\d{4}(?![\d-])))'),
+                  None,
+              ), 
+              ( re.compile('[\+\d]?(\d{2,3}[-\.\s]??\d{2,3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})'), None)     
+      ]      
+    },
+    "USER": {
+      "default": [
+              # generic user id
+              (re.compile(r"\s@[a-z][0-9a-z]{4-8}", re.IGNORECASE), None),
+              #email
+              (re.compile("([a-z0-9!#$%&'*+\/=?^_`{|.}~-]+@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)", re.IGNORECASE), None),
+      ]    
+    },
+    "ID": {
+      "default": [
+              #credit card from common regex
+              (re.compile('((?:(?:\\d{4}[- ]?){3}\\d{4}|\\d{15,16}))(?![\\d])'), None),
+              #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
+              (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None),
+              # generic id with dashes
+              (re.compile('[A-Z]{0,3}(?:[- ]*\d){7,13}'), None),
+      ],
+    },
+ }
+
 lstrip_chars = " ,،、{}[]|()\"'“”《》«»:;"
 rstrip_chars = " ,،、{}[]|()\"'“”《》«»!:;?。.…．"
 #cusip number probaly PII?
+from stopwords import stopwords
 def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, all_regex=None):
       """
       Output:
@@ -922,6 +1007,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
       - As such, We don't match embedded IDs: e.g., MyIDis555-555-5555 won't match the ID. 
       
       """
+      sw = stopwords.get(src_lang, {})
 
       def test_date_time_or_id(ent, tag, sentence, ent_is_4_digit):
         """
@@ -954,7 +1040,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
               else:
                 ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
               if ent2.strip() == ent: continue
-              is_date_time = dateparser.parse(ent2)# use src_lang to make it faster, languages=[src_lang])
+              is_date_time = dateparser.parse(ent2, languages=[src_lang])# use src_lang to make it faster, languages=[src_lang])
               if is_date_time:
                 ent = ent2.strip()
                 break
@@ -965,7 +1051,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
         return ent, tag
         
       global regex_rulebase
-    
+      
       # if we are just doing 'ID', we would still want to see if we catch DATE and ADDRESS. DATE and ADDRESS may have higher precedence. 
       no_date = False
       if tag_type is not None and 'ID' in tag_type and 'DATE' not in tag_type:
@@ -1025,7 +1111,10 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                       found_country_lang_stdnum_match = False
                       if tag in ('ID', 'DATE'):
                           #simple length test
-                          if len(ent) > max_id_length: continue
+                          ent_no_space = ent.replace(" ", "").replace(".", "").replace("-", "")
+                          if len(ent_no_space) > max_id_length: continue
+                          if len(ent_no_space) < 6 and tag == 'ID': continue
+                            
                           #check if this is really a non PII stdnum, unless it's specifically an ID for a country using this src_lang. 
                           #TODO - complete the country to src_lang dict above. 
                           stnum_type = ent_2_stdnum_type(ent, src_lang)
@@ -1046,10 +1135,11 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                           #check the edge case of a year range.
                           range_matched=False
                           ent_no_spaces = ent.replace(" - ", "-").split(" ")[-1]
-                          if len(ent_no_spaces) == 9 and ent_no_spaces[4] == "-":  
+                          len_ent_no_spaces = len(ent_no_spaces)
+                          if len_ent_no_spaces <= 9 and len_ent_no_spaces > 5 and ent_no_spaces[4] == "-":  
                             try:
-                              year1 = int(ent_no_spaces[:4])
-                              year2 = int(ent_no_spaces[-4:])
+                              year1, year2 = ent_no_spaces.split("-")
+                              year1, year2 = int(year1), int(year2)
                             except:
                               year1 = year2 = None
                             if year1 is not None:
