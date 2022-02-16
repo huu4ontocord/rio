@@ -318,28 +318,28 @@ class TextAugment:
 
   #wikipedia kenlm model based on prompt "f{s} (born"
   #TODO figure out actual numbers. Also, add languge specific kenlm models
-  public_figure_kenlm_cutoff_map = {('en', 'en'): 450,
-                                    ('yo', 'en'): 450,
-                                    ('zu', 'en'): 450,
-                                    ('sn', 'en'): 450,
-                                    ('st', 'en'): 450,
-                                    ('ny', 'en'): 450,
-                                    ('xh', 'en'): 450,
-                                    ('sw', 'en'): 450,
-                                    ('ig', 'en'): 450,
-                                    ('ar', 'en'): 450,
-                                    ('en', 'en'): 450,
-                                    ('es', 'en'): 450,
-                                    ('eu', 'en'): 450,
-                                    ('ca', 'en'): 450,
-                                    ('pt', 'en'): 450,
-                                    ('fr', 'en'): 450,
-                                    ('zh', 'en'): 450,
-                                    ('vi', 'en'): 450,
-                                    ('hi', 'en'): 450,
-                                    ('ur', 'en'): 450,
-                                    ('id', 'en'): 450,
-                                    ('bn', 'en'): 450,
+  public_figure_kenlm_cutoff_map = {'en': 450,
+                                    'yo': 450,
+                                    'zu': 450,
+                                    'sn': 450,
+                                    'st': 450,
+                                    'ny': 450,
+                                    'xh': 450,
+                                    'sw': 450,
+                                    'ig': 450,
+                                    'ar': 450,
+                                    'en': 450,
+                                    'es': 450,
+                                    'eu': 450,
+                                    'ca': 450,
+                                    'pt': 450,
+                                    'fr': 450,
+                                    'zh': 450,
+                                    'vi': 450,
+                                    'hi': 450,
+                                    'ur': 450,
+                                    'id': 450,
+                                    'bn': 450,
                                     }
   m2m100_lang = {
     ('en', 'yo'): "Davlan/m2m100_418M-eng-yor-mt",
@@ -1787,7 +1787,7 @@ class TextAugment:
     ner_pipelines = []
     
     # init the kenlm pipeline
-    if do_kenlm and target_lang == 'en':
+    if do_kenlm:
         if TextAugment.kenlm_model is None:
             TextAugment.load_kenlm_model()
             
@@ -1856,7 +1856,7 @@ class TextAugment:
       target_offset_key = f'{target_lang}_offset'
       target_src_sim_key = f'{src_lang}_2_{target_lang}_sim'
 
-    public_figure_kenlm_cutoff = self.public_figure_kenlm_cutoff_map.get((src_lang, target_lang), 1500)
+    public_figure_kenlm_cutoff = self.public_figure_kenlm_cutoff_map.get(target_lang, 450)
 
     docs = self.collapse_ner(docs, ner_key = f'{src_lang}_ner', collapse_ner_key = f'{src_lang}_collapse_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1)
 
@@ -2016,18 +2016,27 @@ class TextAugment:
         ner = doc[target_ner_key]
         persons = []
         for ent, aHash in ner.items():
-          if any(key[0] == 'PERSON' for key in aHash.keys()):
-            persons.append(ent[0].strip("."))
+          if any(key[0] in ('PUBLIC_FIGURE', 'PERSON') for key in aHash.keys()):
+            ent = ent[0].strip(".")
+            if not target_is_cjk:
+              ent_arr = ent.split()
+              if len(ent_arr[-1]) == 1: continue
+              if len(ent_arr) == 2 and len(ent_arr[0].strip(".")) == 1: continue
+            persons.append(ent)
         public_figures = []
         for ent in list(set(persons)):
-          kenlm_score = self.kenlm_model.get_perplexity(f"{ent} (born")
+          ent2 = ent
+          if not target_is_cjk and ent == ent.upper():
+            ent2 = " ".join([a[0].upper()+a[1:] if len(a) > 1 else a.upper() for a in ent.lower().split()])
+          kenlm_score = self.kenlm_model.get_perplexity(f"{ent2} (born")
           #logger.info((ent, kenlm_score))
           if kenlm_score <= public_figure_kenlm_cutoff:
-            #logger.info(("found public figure ", ent))
+            logger.info(("found public figure ", ent2, kenlm_score))
             public_figures.append(ent)
           else:
+            logger.info(("not public figure ", ent2, kenlm_score))
             pass 
-            #logger.info(("not public figure ", ent, kenlm_score))
+            
         public_figures = set(public_figures)
         for ent, aHash in ner.items():
           if ent[0].strip(".") in public_figures:
