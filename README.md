@@ -22,6 +22,18 @@ pip install spacy==2.1.0 dateparse python-stdnum protobuf neuralcoref cdifflib t
 python -m nltk.downloader punkt 
 python -m spacy download en_core_web_sm
 ```
+You may optionally install libpostal for more accurate address parsing (https://github.com/openvenues/pypostal):
+```
+git clone https://github.com/openvenues/libpostal
+cd libpostal
+make distclean
+./bootstrap.sh
+./configure --datadir=/content/data
+make -j4
+sudo make install
+pip install postal
+cp /usr/local/lib/libpostal.so /usr/lib/libpostal.so.1
+```
 
 # Running
 If no filenames are passed, the sample data from turkunlp_data/{src_lang}.jsonl.gz will be loaded. The below runs on a sample of 30 documents only.
