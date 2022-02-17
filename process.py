@@ -296,10 +296,10 @@ class TextAugment:
       "zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
       'vi': [["lhkhiem28/COVID-19-Named-Entity-Recognition-for-Vietnamese", RobertaForTokenClassification, 1.0]],#["jplu/tf-xlm-r-ner-40-lang", None ],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
       'hi': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
+      'bn': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
       'ur': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
       'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0]],
-      'bn': [["sagorsarker/mbert-bengali-ner", BertForTokenClassification, 1.0]],
-
+      
       # NOT PART OF OUR LANGUAGE SET. EXPERIMENTAL
       'he': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]], # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
       'hr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
@@ -2039,6 +2039,7 @@ class TextAugment:
             ent = ent[0].strip(".")
             if not target_is_cjk:
               ent_arr = ent.split()
+              if not ent_arr: continue
               if len(ent_arr[-1]) == 1: continue
               if len(ent_arr) == 2 and len(ent_arr[0].strip(".")) == 1: continue
             persons.append(ent)
@@ -2082,7 +2083,7 @@ class TextAugment:
                 public_figures.append((ent2, ent[1], ent[2]))
         f = lambda x: x[0]
         for ent, group in itertools.groupby(sorted(public_figures, key=f), f):
-          spans = set([(a[1], a[2]) for a in group])
+          spans = [(a[1], a[2]) for a in group]
           label = 'PUBLIC_FIGURE'
           pos = 0
           while pos < len_text and ent in text[pos:]:
@@ -2090,7 +2091,7 @@ class TextAugment:
             start = pos + i
             end = start + len(ent)
             pos = end+1
-            if (start, end) in spans:  continue
+            if any(s for s in spans if s[0]<=start and s[1]>=end):  continue
             mention2 = (ent, start, end)
             if any(mention for mention in ner if mention[1] <= mention2[1] and mention[2] >= mention2[2]):
               ner[mention2] = aHash1 = ner.get(mention2, {})
