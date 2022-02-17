@@ -654,7 +654,7 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
     self.ner2word = ner2word
     self.yago2ner = yago2ner
 
-  def save_cross_lingual_ontology(self, word2ner_file = "word2ner.json", do_small_set=True):
+  def save_cross_lingual_ontology(self, word2ner_file = "word2ner.json", do_small_set=False):
     tmp_dir=self.tmp_dir
     data_dir=self.data_dir
     self.create_eng2multilang_dict()
