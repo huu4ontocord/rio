@@ -110,7 +110,7 @@ class OntologyManager:
         self.stopwords = set(stopwords.get(target_lang, []))
         self._max_lexicon = 0
         if data_dir is None: data_dir = self.default_data_dir
-        if tmp_dir is None: tmp_dir = "/tmp/pii_processing/"
+        if tmp_dir is None: tmp_dir = "/tmp/ontology/"
         os.system(f"mkdir -p {data_dir}")
         os.system(f"mkdir -p {tmp_dir}")
         self.tmp_dir = tmp_dir
@@ -202,7 +202,7 @@ class OntologyManager:
             x_lingual_lexicon_by_prefix_file = f"{data_dir}/{x_lingual_lexicon_by_prefix_file}"
         json.dump(self.x_lingual_lexicon_by_prefix, open(x_lingual_lexicon_by_prefix_file, "w", encoding="utf8"),
                   indent=1)
-        os.system(f"gzip {x_lingual_lexicon_by_prefix_file}")
+        os.system(f"gzip -f {x_lingual_lexicon_by_prefix_file}")
         os.system(f"rm {x_lingual_lexicon_by_prefix_file}")
 
     def load_target_lang_data(self, target_lang_data_file=None, target_lang=None):
