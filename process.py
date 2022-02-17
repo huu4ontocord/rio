@@ -2605,7 +2605,7 @@ class TextAugment:
       return list(docs.values()) #this is not guaranteed to be ordered
 
   @staticmethod
-  def get_docs(src_langs=None, docs=None, max_chunk_size=25, num_workers=1, cutoff=-1, dataset_name="", filter_out_no_registry=True):
+  def get_docs(src_langs=None, docs=None, max_chunk_size=25, num_workers=1, cutoff=-1, hfdataset="", filter_out_no_registry=True):
       """
       NOTE: We filter the TurkuNLP registry docs if there are no registry label for a doc. This might not be the ideal behaviour.
       """
@@ -2625,18 +2625,17 @@ class TextAugment:
         exec("__ret= "+s, ret)
         return ret['__ret']
 
-
-      if dataset_name:
-          d = load_dataset(*dataset_name.split(",")) 
+      if hfdataset:
+          d = load_dataset(*hfdataset.split(",")) 
           len_docs = len(d)
-          chunk_size = get_chunk_size(cutoff, len_docs, num_workers)
+          chunk_size = get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size)
           curr_recs = 0
           for i in range(0, len_docs, chunk_size):
               j = min(i + chunk_size, len_docs)
               curr_recs += j - i
               if cutoff > 0 and curr_recs >= cutoff:
                 j -= curr_recs - cutoff
-              if i <= j: yield d['train'][i:j]
+              if i <= j: yield [d['train'][k] for k in range(i,j)]
               if cutoff > 0 and curr_recs >= cutoff: break
       elif not docs and src_langs is not None:
         if type(src_langs) is str: src_langs = [src_langs]
@@ -2746,6 +2745,7 @@ class TextAugment:
                     outfile,
                     src_langs,
                     target_langs,
+                    hfdataset=None,
                     do_spacy = True,
                     do_hf_ner = True,
                     do_ontology = True,
@@ -2792,7 +2792,7 @@ class TextAugment:
       if outfile is None:
         if _file is not None: _file.close()
         _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
-      docs = TextAugment.get_docs(src_lang, cutoff=cutoff, num_workers=num_workers)
+      docs = TextAugment.get_docs(src_lang, hfdataset=hfdataset, cutoff=cutoff, num_workers=num_workers)
       processed_docs = pool.imap_unordered(partial(processor.process_ner,
                                                       src_lang=src_lang,
                                                       target_lang=target_lang,
@@ -2825,6 +2825,7 @@ class TextAugment:
       for  docs in tqdm(processed_docs):
           i += 1
           for doc in processor.serialize_ner_items(docs):
+            doc = json.dumps(doc)
             _file.write(f'{doc}\n')
       if _file is not None: _file.close()
 
@@ -2842,6 +2843,7 @@ if __name__ == "__main__":
     parser.add_argument('-augment_lang', dest='augment_lang', type=str, help='Translate to this Language for text augmentation', default="en")
     parser.add_argument('-cutoff', dest='cutoff', type=int, help='Cutoff documents, -1 is none', default=-1)
     parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
+    parser.add_argument('-hfdataset', dest='hfdataset', type=str, help='dataset to load, comma separated for different subsets', default=None)
     parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
     parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default=None)
     parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
@@ -2964,6 +2966,7 @@ if __name__ == "__main__":
                     outfile,
                     src_langs=src_lang,
                     target_langs=target_lang,
+                    hfdataset=args.hfdataset,
                     do_spacy = args.do_spacy ,
                     do_hf_ner = args.do_hf_ner ,
                     do_ontology = args.do_ontology,
@@ -2990,7 +2993,9 @@ if __name__ == "__main__":
                     num_workers=num_workers)
       else:
         processor = TextAugment(single_process=True)
-        if not docs:
+        if args.hfdataset:
+            all_docs = [(processor.get_docs(src_lang[0], hfdataset=args.hfdataset, cutoff=cutoff), src_lang[0], target_lang[0])]
+        elif not docs:
             all_docs = [(processor.get_docs(sl, cutoff=cutoff), sl, tl) for sl, tl in zip(src_lang, target_lang)]
         else:
             all_docs = [([docs], src_lang[0], target_lang[0])]
@@ -3033,5 +3038,6 @@ if __name__ == "__main__":
                     cutoff=cutoff,
                     batch_size=batch_size)
                 for doc in processor.serialize_ner_items(docs):
+                    doc = json.dumps(doc)
                     _file.write(f'{doc}\n')
         if _file is not None: _file.close()
