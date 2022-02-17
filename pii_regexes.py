@@ -986,19 +986,20 @@ lstrip_chars = " ,،、{}[]|()\"'“”《》«»:;"
 rstrip_chars = " ,،、{}[]|()\"'“”《》«»!:;?。.…．"
 #cusip number probaly PII?
 from stopwords import stopwords
-def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, all_regex=None):
+def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, all_regex=None, do_context_check=True):
       """
       Output:
        - This function returns a list of 4 tuples, representing an NER detection for [(entity, start, end, tag), ...]
       Input:
-       - sentence: the sentence to tag
-       - src_lang: the language of the sentence
-       - context_window: the contxt window in characters to check for context characters for any rules that requries context
-       - max_id_length: the maximum length of an ID
-       - tag_type: the type of NER tags we are detecting. If None, then detect everything.
-       - ignore_stdnum_type: the set of stdnum we will consider NOT PII and not match as an ID
-       - prioritize_lang_match_over_ignore: if true, and an ID matches an ingore list, we still keep it as an ID if there was an ID match for this particular src_lang
-       - all_regex: a rulebase of the form {tag: {lang: [(regex, context), ...], 'default': [(regex, context), ...]}}. If none, then we use the global regex_rulebase
+       :sentence: the sentence to tag
+       :src_lang: the language of the sentence
+       :context_window: the contxt window in characters to check for context characters for any rules that requries context
+       :max_id_length: the maximum length of an ID
+       :tag_type: the type of NER tags we are detecting. If None, then detect everything.
+       :ignore_stdnum_type: the set of stdnum we will consider NOT PII and not match as an ID
+       :prioritize_lang_match_over_ignore: if true, and an ID matches an ingore list, we still keep it as an ID if there was an ID match for this particular src_lang
+       :all_regex: a rulebase of the form {tag: {lang: [(regex, context), ...], 'default': [(regex, context), ...]}}. If none, then we use the global regex_rulebase
+       :do_context_check: if we require a context match
       NOTE: 
       - There may be overlaps in mentions. 
       - Unlike presidio, we require that a context be met. We don't increase a score if a context is matched.  
@@ -1019,7 +1020,12 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
             i = sentence.index(ent)
             len_ent = len(ent)
             j = i + len_ent
-            ent_spans = [(0, 1), (0, 2), (0, 3), (-1,0), (-1, 1), (-1, 2), (-1, 3), (-2,0), (-2, 1), (-2, 2), (-2, 3), (-3,0), (-3, 1), (-3, 2), (-3, 3)]
+            #for speed we can just use these windows to check for a date.
+            #but for completeness we should check a sliding window. 
+            #Maybe in some countries a year could
+            #be in the middle of a date: Month Year Day
+            ent_spans = [(-1,0), (-2, 0), (-3, 0), \
+              (0, 1), (0, 2), (0, 3)]
             before = sentence[:i]
             after = sentence[j:]
             if  not is_cjk:
@@ -1042,6 +1048,16 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
               if ent2.strip() == ent: continue
               is_date_time = dateparser.parse(ent2, languages=[src_lang])# use src_lang to make it faster, languages=[src_lang])
               if is_date_time:
+                #sometimes dateparser says things like "in 2020" is a date, which it is
+                #but we want to strip out the stopwords.
+                if before1 and before1[-1].lower() in sw:
+                  before1 = before1[:-1]
+                if after1 and after1[0].lower() in sw:
+                  after1 = after1[1:]
+                if is_cjk:
+                  ent2 = "".join(before1)+ent+"".join(after1)
+                else:
+                  ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
                 ent = ent2.strip()
                 break
         if is_date_time:
@@ -1049,8 +1065,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
         else:
           tag = 'ID'
         return ent, tag
-        
-      global regex_rulebase
+
       
       # if we are just doing 'ID', we would still want to see if we catch DATE and ADDRESS. DATE and ADDRESS may have higher precedence. 
       no_date = False
@@ -1189,7 +1204,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
                             
       all_ner = list(set(all_ner))
       all_ner.sort(key=lambda a: a[1]+(1.0/(1.0+a[2]-a[1])))
-      if tag_type and 'ID' in tag_type:
+      if not tag_type or 'ID' in tag_type:
         all_ner2 = []
         prev_mention = None
         # this doesn't do a perfect overlap match; just an overlap to the prior item.
@@ -1211,4 +1226,160 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, max
       if no_address:
          all_ner = [a for a in all_ner if a[3] != 'ADDRESS']
       
+      
+      # if we are just doing 'ID', we would still want to see if we catch DATE and ADDRESS. DATE and ADDRESS may have higher precedence. 
+      no_date = False
+      if tag_type is not None and 'ID' in tag_type and 'DATE' not in tag_type:
+         no_date = True
+         tag_type = set(list(tag_type)+['DATE'])
+      no_address = False
+      if tag_type is not None and 'ID' in tag_type and 'ADDRESS' not in tag_type:
+         no_address = True
+         tag_type = set(list(tag_type)+['ADDRESS'])
+        
+      is_cjk = src_lang in ("zh", "ko", "ja")
+      if is_cjk:
+          sentence_set = set(sentence.lower())
+      else:
+          sentence_set = set(sentence.lower().split(" "))
+      all_ner = []
+      len_sentence = len(sentence)
+        
+      if all_regex is None:
+        all_regex = regex_rulebase
+      if tag_type is None:
+        all_tags_to_check = list(all_regex.keys())
+      else:
+        all_tags_to_check = list(tag_type) 
+      for tag in all_tags_to_check:
+          regex_group = all_regex.get(tag)
+          if not regex_group: continue
+          for regex_context in regex_group.get(src_lang, []) + regex_group.get("default", []):
+              if True:
+                  regex, context = regex_context
+                  #if this regex rule requires a context, find if it is satisified in general. this is a quick check.
+                  potential_context = False
+                  if context:
+                      for c1 in context:
+                        c1 = c1.lower()
+                        for c2 in c1.split():
+                          if c2 in sentence_set:
+                              potential_context = True
+                              break
+                        if potential_context: break
+                      if not potential_context:
+                          continue
+                  #now apply regex
+                  for ent in regex.findall(sentence):
+                      if not isinstance(ent, str) or not ent:
+                          continue
+                      ent = ent.strip()
+                      ent_is_4_digit=False
+                      if len(ent) == 4:
+                        try:
+                          int(ent)
+                          ent_is_4_digit=True
+                        except:
+                          ent_is_4_digit=False
+                      sentence2 = sentence
+                      delta = 0
+                      found_country_lang_stdnum_match = False
+                      if tag in ('ID', 'DATE'):
+                          #simple length test
+                          ent_no_space = ent.replace(" ", "").replace(".", "").replace("-", "")
+                          if len(ent_no_space) > max_id_length: continue
+                          if len(ent_no_space) < 6 and tag == 'ID': continue
+                            
+                          #check if this is really a non PII stdnum, unless it's specifically an ID for a country using this src_lang. 
+                          #TODO - complete the country to src_lang dict above. 
+                          stnum_type = ent_2_stdnum_type(ent, src_lang)
+                          
+                          #if the stdnum is one of the non PII types, we will ignore it
+                          if prioritize_lang_match_over_ignore:
+                                found_country_lang_stdnum_match = any(a for a in stnum_type if "." in a and country_2_lang.get(a.split(".")[0]) == src_lang)
+                          if not ent_is_4_digit and not found_country_lang_stdnum_match and any(a for a in stnum_type if a in ignore_stdnum_type):
+                            continue
+                          #this is actually an ID and not a DATE
+                          if any(a for a in stnum_type if a not in ignore_stdnum_type):
+                            tag = 'ID'
+                      
+                      #let's check to see if an ID is a DATE or vice versa. 
+                      #if it was matched as an stdnum, then we don't do this check.
+                      if tag in ('ID', 'DATE', ) and not found_country_lang_stdnum_match:
+                          #make sure an ID is not a date/time. If a date/time then assign it to 'DATE'.
+                          #check the edge case of a year range.
+                          range_matched=False
+                          ent_no_spaces = ent.replace(" - ", "-").split(" ")[-1]
+                          len_ent_no_spaces = len(ent_no_spaces)
+                          if len_ent_no_spaces <= 9 and len_ent_no_spaces > 5 and ent_no_spaces[4] == "-":  
+                            try:
+                              year1, year2 = ent_no_spaces.split("-")
+                              year1, year2 = int(year1), int(year2)
+                            except:
+                              year1 = year2 = None
+                            if year1 is not None:
+                              # from the year 1000-2090
+                              range_matched= year1 > 1000 and year1 < 2090 and year2 > 1000 and year2 < 2090
+                              if range_matched:
+                                ent2, tag2 = test_date_time_or_id(ent_no_spaces[:4], tag, sentence, ent_is_4_digit)
+                                if tag2 == 'DATE':
+                                  ent = ent2.replace(ent_no_spaces[:4], ent)
+                                  tag = tag2
+                                else:
+                                  range_matched = False
+                          #check id/DATE conflict
+                          if not range_matched:
+                            ent, tag = test_date_time_or_id(ent, tag, sentence, ent_is_4_digit)
+      
+                      #now let's turn all occurances of ent in this sentence into a span mention and also check for context
+                      while True:
+                        if ent not in sentence2:
+                          break
+                        else:
+                          
+                          i = sentence2.index(ent)
+                          j = i + len(ent)
+                          if potential_context:
+                              len_sentence = len(sentence2)
+                              left = sentence2[max(0, i - context_window) : i].lower()
+                              right = sentence2[j : min(len_sentence, j + context_window)].lower()
+                              found_context = False
+                              for c in context:
+                                c = c.lower()
+                                if c in left or c in right:
+                                    found_context = True
+                                    break
+                              if not found_context:
+                                delta += j
+                                sentence2 = sentence2[i+len(ent):]
+                                continue
+                          #check to see if the entity is really a standalone word or part of another longer word.
+                          if is_cjk or ((i+delta == 0 or sentence2[i-1]  in lstrip_chars) and (j+delta >= len_sentence-1 or sentence2[j] in rstrip_chars)): 
+                            all_ner.append((ent, delta+i, delta+j, tag))
+                          sentence2 = sentence2[i+len(ent):]
+                          delta += j
+                            
+      all_ner = list(set(all_ner))
+      all_ner.sort(key=lambda a: a[1]+(1.0/(1.0+a[2]-a[1])))
+      if tag_type and 'ID' in tag_type:
+        all_ner2 = []
+        prev_mention = None
+        # this doesn't do a perfect overlap match; just an overlap to the prior item.
+        for mention in all_ner:
+          if prev_mention:
+            if prev_mention[3] in ('DATE', 'ADDRESS') and prev_mention[2] >= mention[1] and prev_mention[2] >= mention[2]:
+              # if there is a complete overlap to an ID in an ADDRESS or a DATE, we ignore this ID
+              # this is because we have more context for the DATE or ADDRESS to determine it is so. 
+              if mention[3] == 'ID': 
+                continue
+            else:
+              prev_mention = mention
+          else:
+            prev_mention = mention
+          all_ner2.append(mention)
+        all_ner = all_ner2
+      if no_date:
+         all_ner = [a for a in all_ner if a[3] != 'DATE']
+      if no_address:
+         all_ner = [a for a in all_ner if a[3] != 'ADDRESS']
       return all_ner
