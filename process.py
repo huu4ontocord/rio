@@ -318,28 +318,28 @@ class TextAugment:
 
   #wikipedia kenlm model based on prompt "f{s} (born"
   #TODO figure out actual numbers. Also, add languge specific kenlm models
-  public_figure_kenlm_cutoff_map = {'en': 450,
-                                    'yo': 450,
-                                    'zu': 450,
-                                    'sn': 450,
-                                    'st': 450,
-                                    'ny': 450,
-                                    'xh': 450,
-                                    'sw': 450,
-                                    'ig': 450,
-                                    'ar': 450,
-                                    'en': 450,
-                                    'es': 450,
-                                    'eu': 450,
-                                    'ca': 450,
-                                    'pt': 450,
-                                    'fr': 450,
-                                    'zh': 450,
-                                    'vi': 450,
-                                    'hi': 450,
-                                    'ur': 450,
-                                    'id': 450,
-                                    'bn': 450,
+  public_figure_kenlm_cutoff_map = {'en': 500,
+                                    'yo': 500,
+                                    'zu': 500,
+                                    'sn': 500,
+                                    'st': 500,
+                                    'ny': 500,
+                                    'xh': 500,
+                                    'sw': 500,
+                                    'ig': 500,
+                                    'ar': 500,
+                                    'en': 500,
+                                    'es': 500,
+                                    'eu': 500,
+                                    'ca': 500,
+                                    'pt': 500,
+                                    'fr': 500,
+                                    'zh': 500,
+                                    'vi': 500,
+                                    'hi': 500,
+                                    'ur': 500,
+                                    'id': 500,
+                                    'bn': 500,
                                     }
   m2m100_lang = {
     ('en', 'yo'): "Davlan/m2m100_418M-eng-yor-mt",
@@ -506,6 +506,7 @@ class TextAugment:
         if outfile:       
           with open(outfile, 'w', encoding='utf-8') as file:
             for doc in serialize_docs:
+              doc = json.dumps(doc)
               file.write(f'{doc}\n')
         return serialize_docs
 
@@ -513,6 +514,12 @@ class TextAugment:
   def deserialize_ner_items(docs=None, infile="", return_dict=False):
     def load_py_from_str(s, default=None):
       if not s.strip(): return default
+      dat = None
+      try:
+        dat = json.loads(s)
+      except:
+        pass
+      if dat is not None: return dat
       ret = {'__ret': None}
       #print (s)
       exec("__ret= "+s, ret)
@@ -1712,6 +1719,7 @@ class TextAugment:
                           regex_weight=1.5,
                           backtrans_weight=0.9,
                           do_docs_trim_for_person=False,
+                          do_public_figure_expansion=True,
                           do_kenlm = True,
                           do_qg_rel=False,
                           aug_scope={'ADDRESS', 'ORG', 'PERSON', 'LOC', 'ID'}, #TODO, public figure, age, norp and disease
@@ -1975,13 +1983,14 @@ class TextAugment:
       docs = self.apply_regex_ner(target_lang, docs=docs, weight=regex_weight, text_key=target_text_key, ner_key=target_ner_key)
 
     if do_ontology and self.ontology_manager is not None:
-        # ontology - context independent - there are some bugs in disease detection which needs to be fixed so we will skip for now
+        # dictionary matching context independent so has lower accuracies
         for doc in docs.values():
           doc[target_ner_key] = ner = doc.get(target_ner_key, {})
           if True:
             chunk2ner = self.ontology_manager.tokenize(doc[target_text_key])['chunk2ner']
             onto_items = []
             for c, label in chunk2ner.items():
+              if label not in ("PERSON", "PUBLIC_FIGURE"): continue # hard coded to only do people for now
               ner_word  = c[0].replace(" ", "").replace("_", "").replace("_", "") if self.cjk_detect(c[0]) else c[0].replace("_", " ").replace("_", " ").rstrip(self.strip_chars)
               if ner_word.lower() not in stopwords2:
                 if not self.cjk_detect(ner_word) and label in ('PERSON', 'PUBLIC_FIGURE', 'ORG') and " " not in ner_word: continue
@@ -2011,9 +2020,19 @@ class TextAugment:
     if do_docs_trim_for_person:
       docs, chunks = self.trim_to_prefer_person(docs, chunks)
 
-    if do_kenlm: # and target_lang == 'en':
+    if do_kenlm and self.kenlm_model is not None:
       for doc in docs.values():
         ner = doc[target_ner_key]
+        prev_public_figures = []
+        for ent, aHash in ner.items():
+          if any(key[0] == 'PUBLIC_FIGURE' for key in aHash.keys()):
+            ent = ent[0].strip(".")
+            if not target_is_cjk:
+              ent_arr = ent.split()
+              if len(ent_arr[-1]) == 1: continue
+              if len(ent_arr) == 2 and len(ent_arr[0].strip(".")) == 1: continue
+            prev_public_figures.append(ent)
+        
         persons = []
         for ent, aHash in ner.items():
           if any(key[0] in ('PUBLIC_FIGURE', 'PERSON') for key in aHash.keys()):
@@ -2023,6 +2042,8 @@ class TextAugment:
               if len(ent_arr[-1]) == 1: continue
               if len(ent_arr) == 2 and len(ent_arr[0].strip(".")) == 1: continue
             persons.append(ent)
+        persons += prev_public_figures
+        prev_public_figures = set(prev_public_figures)
         public_figures = []
         for ent in list(set(persons)):
           ent2 = ent
@@ -2034,7 +2055,10 @@ class TextAugment:
             logger.info(("found public figure ", ent2, kenlm_score))
             public_figures.append(ent)
           else:
-            logger.info(("not public figure ", ent2, kenlm_score))
+            if ent2 in prev_public_figures:
+              logger.info(("**not public figure ", ent2, kenlm_score))
+            else:
+              logger.info(("not public figure ", ent2, kenlm_score))
             pass 
             
         public_figures = set(public_figures)
@@ -2042,6 +2066,36 @@ class TextAugment:
           if ent[0].strip(".") in public_figures:
             #logger.info(("adding knelm public figure", ent))
             aHash[('PUBLIC_FIGURE', 'kenlm')] = aHash.get(('PUBLIC_FIGURE', 'kenlm'), 0) + 1.0 # use param kenlm_weight
+
+    if do_public_figure_expansion:
+      for doc in docs.values():
+        text  = doc[target_text_key]
+        len_text = len(text)
+        ner = doc[target_ner_key]
+        public_figures = []
+        for ent, aHash in ner.items():
+          if any(key[0] in ('PUBLIC_FIGURE',) for key in aHash.keys()):
+            ent1 = ent[0].strip(".")
+            if not target_is_cjk:
+              for ent2 in ent1.split():
+                if len(ent2.strip(".,")) <= 4: continue
+                public_figures.append((ent2, ent[1], ent[2]))
+        f = lambda x: x[0]
+        for ent, group in itertools.groupby(sorted(public_figures, key=f), f):
+          spans = set([(a[1], a[2]) for a in group])
+          label = 'PUBLIC_FIGURE'
+          pos = 0
+          while pos < len_text and ent in text[pos:]:
+            i = text[pos:].index(ent)
+            start = pos + i
+            end = start + len(ent)
+            pos = end+1
+            if (start, end) in spans:  continue
+            mention2 = (ent, start, end)
+            if any(mention for mention in ner if mention[1] <= mention2[1] and mention[2] >= mention2[2]):
+              ner[mention2] = aHash1 = ner.get(mention2, {})
+              aHash1[(label, 'pf_expand')] = aHash1.get((label, 'pf_expand'), 0) + 1.0
+              logger.info(("pf_expand", mention2))
 
     # this will mess up the items array and the other arrays that depends on mentions unles we do_cleanup_only
     docs = self.collapse_ner(docs, target_ner_key, target_collapse_ner_key, target_text_key, stopwords2, do_cleanup_only=True)
