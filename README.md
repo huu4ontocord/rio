@@ -15,15 +15,28 @@ We also use spacy and regex as added signals for NER tags.
 The translation techniques used are very compute heavy, and not intended to perform fast detection or anonymization of a dataset. Instead, it is intended to be used to create augmented training data to train a relatively fast model (e.g., spacy or transformer model) for languages where there is little or no NER data.
 
 # Installing
+If you want to be able to do gender detection and coref detection, you will need to load neuralcoref below. However, you will only be able to use space english if you load neural coref. You can also load a larger spacy model for more accuracy but more memory.
 ```
 git clone https://github.com/ontocord/muliwai
 pip install https://github.com/kpu/kenlm/archive/master.zip
 pip install spacy==2.1.0 dateparse python-stdnum protobuf neuralcoref cdifflib transformers datasets langid faker sentencepiece fsspec tqdm sentence-transformers nltk
-python -m nltk.downloader punkt 
+python -m nltk.downloader punkt wordnet
 python -m spacy download en_core_web_sm
 ```
 
+If you don't need gender detection and coref detection, install the below which will enable spacy for other languages. You can also load a larger spacy model for more accuracy but more memory.
+```
+git clone https://github.com/ontocord/muliwai
+pip install https://github.com/kpu/kenlm/archive/master.zip
+pip install spacy>=3.0.0 dateparse python-stdnum protobuf neuralcoref cdifflib transformers datasets langid faker sentencepiece fsspec tqdm sentence-transformers nltk
+python -m nltk.downloader punkt wordnet
+python -m spacy download en_core_web_sm
+python -m spacy download fr_core_news_sm
+python -m spacy download ca_core_news_sm
+python -m spacy download pt_core_news_sm
 
+
+```
 # Running
 If no filenames are passed, the sample data from turkunlp_data/{src_lang}.jsonl.gz will be loaded. The below runs on a sample of 30 documents only.
 ```
