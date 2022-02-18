@@ -989,8 +989,8 @@ regex_rulebase = {
 
 lstrip_chars = " ,،、{}[]|()\"'“”《》«»:;"
 rstrip_chars = " ,،、{}[]|()\"'“”《》«»!:;?。.…．"
-#cusip number probaly PII?
 from stopwords import stopwords
+#cusip number probaly PII?
 def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min_id_length=6, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, all_regex=None, do_context_check=True):
       """
       Output:
@@ -1005,23 +1005,34 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min
        :prioritize_lang_match_over_ignore: if true, and an ID matches an ingore list, we still keep it as an ID if there was an ID match for this particular src_lang
        :all_regex: a rulebase of the form {tag: {lang: [(regex, context), ...], 'default': [(regex, context), ...]}}. If none, then we use the global regex_rulebase
        :do_context_check: if we require a context match
+      ALGORITHM:
+        For each regex, we check the sentence to find a match and a required context, if the context exists in a window.
+        If the regex is an ID or a DATE, test to see if it's a stdnum we know. Stdnum are numbers formatted to specific regions, or generally.
+        If it is a stdnum and NOT a PII type (such as ISBN numbers) skip this ID.
+          UNLESS If the stdnum is ALSO a PII type for the local region of the language, then consider it a matched stdnum.
+        If it's a matched stdnum that is not skipped, save it as an ID.
+        If the ID is not a stdum, check if the ID is a DATE. If it's a DATE using context words in a context window. 
+          If it's a DATE then save it as a DATE, else save as ID.
+        Gather all regex matches and sort the list by position, prefering longer matches, and DATEs and ADDRESSES over IDs.
+        For all subsumed IDs and DATEs, remove those subsumed items. 
+        Return a list of potentially overlapping NER matched.
+
       NOTE: 
-      - There may be overlaps in mentions. 
+      - There may be overlaps in mention spans. 
       - Unlike presidio, we require that a context be met. We don't increase a score if a context is matched.  
       - A regex does not need to match string boundaries or space boundaries. The matching code checks this. 
           We require all entities that is not cjk to have space or special char boundaries or boundaries at end or begining of sentence.
-      - As such, We don't match embedded IDs: e.g., MyIDis555-555-5555 won't match the ID. 
+      - As such, We don't match embedded IDs: e.g., MyIDis555-555-5555 won't match the ID. This is to preven
+        matching extremely nosiy imput that might have patterns of numbers in long strings.
       
       """
-      sw = stopwords.get(src_lang, {})
-
-      def test_date(ent, tag, sentence, ent_is_4_digit, is_cjk):
+      def test_date(ent, tag, sentence, is_cjk):
         """
         Helper function used to test if an ent is a date or not
         We use dateparse to find context words around the ID/date to determine if its a date or not.
         """
         is_date =  dateparser.parse(ent, languages=[src_lang]) # use src_lang to make it faster, languages=[src_lang])
-        if (ent_is_4_digit and tag != 'ID') or (is_date and tag == 'ID'):
+        if (is_date and tag == 'ID'):
             i = sentence.index(ent)
             len_ent = len(ent)
             j = i + len_ent
@@ -1064,16 +1075,14 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min
                 else:
                   ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
                 ent = ent2.strip()
+                tag = "DATE"
                 break
-        if is_date:
-          tag = 'DATE'
-        else:
-          tag = 'ID'
         return ent, tag
 
       # main
       # if we are doing 'ID', we would still want to see if we catch DATE and ADDRESS. 
-      # DATE and ADDRESS may have higher precedence. 
+      # DATE and ADDRESS may have higher precedence, in which case it might overide an ID match. 
+      sw = stopwords.get(src_lang, {})
       no_date = False
       if tag_type is not None and 'ID' in tag_type and 'DATE' not in tag_type:
          no_date = True
@@ -1134,7 +1143,6 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min
                           ent_is_4_digit=False
                       sentence2 = sentence
                       delta = 0
-
                       #check to see if the ID or DATE is type of stdnum
                       is_stdnum = False
                       if tag in ('ID', 'DATE'):
@@ -1159,7 +1167,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min
                             
                       #let's check the FIRST instance of this id is really a date 
                       if tag == 'ID' and not is_stdnum:
-                          ent, tag = test_date(ent, tag, sentence, ent_is_4_digit, is_cjk)
+                          ent, tag = test_date(ent, tag, sentence, is_cjk)
       
                       #now let's turn all occurances of ent in this sentence into a span mention and also check for context
                       while True:
