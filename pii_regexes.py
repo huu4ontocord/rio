@@ -1,3 +1,4 @@
+%cd /content/muliwai
 """
 Copyright, 2021-2022 Ontocord, LLC, All rights reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -192,7 +193,8 @@ from stdnum.za import tin
 from stdnum.za import idnr
 
 #This is an incomplete list. TODO - adapt from https://github.com/scrapinghub/dateparser/blob/master/dateparser/data/languages_info.py
-country_2_lang = {'ar': 'es',
+country_2_lang = {'pk': 'ur',
+     'ar': 'es',
      'ae': 'ar',
      'iq': 'ar',
      'dz': 'ar',
@@ -251,7 +253,9 @@ country_2_lang = {'ar': 'es',
      'ua': 'uk',
      'us': 'en'}
 
+#TODO - get the complete list for our language
 lang_2_country = {'ar': ['ae', 'iq', 'dz', 'eg', 'sd', 'aa', 'ps', 'sa'],
+     'ur': ['pk'],
      'bg': ['bg'],
      'ca': ['ad'],
      'cs': ['cz'],
@@ -967,6 +971,10 @@ regex_rulebase = {
               ( re.compile('[\+\d]?(\d{2,3}[-\.\s]??\d{2,3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})'), None)     
       ]      
     },
+    "IP_ADDRESS": {
+        "default": [(re.compile('(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)', re.IGNORECASE), None),]
+              
+        },
     "USER": {
       "default": [
               # generic user id
@@ -987,8 +995,9 @@ regex_rulebase = {
     },
  }
 
-lstrip_chars = " ,،、{}[]|()\"'“”《》«»:;"
-rstrip_chars = " ,،、{}[]|()\"'“”《》«»!:;?。.…．"
+lstrip_chars = " ,،、<>{}[]|()\"'“”《》«»:;"
+rstrip_chars = " ,،、<>{}[]|()\"'“”《》«»!:;?。.…．"
+date_parser_lang_mapper = {'st': 'en', 'ny': 'en', 'xh': 'en'}
 from stopwords import stopwords
 #cusip number probaly PII?
 def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min_id_length=6, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, all_regex=None, do_context_check=True):
@@ -1026,12 +1035,13 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min
         matching extremely nosiy imput that might have patterns of numbers in long strings.
       
       """
-      def test_date(ent, tag, sentence, is_cjk):
+      def test_if_id_is_date(ent, tag, sentence, is_cjk):
         """
         Helper function used to test if an ent is a date or not
         We use dateparse to find context words around the ID/date to determine if its a date or not.
         """
-        is_date =  dateparser.parse(ent, languages=[src_lang]) # use src_lang to make it faster, languages=[src_lang])
+        if len(ent) > 8: return ent, tag
+        is_date =  dateparser.parse(ent, languages=[date_parser_lang_mapper.get(src_lang,src_lang)]) # use src_lang to make it faster, languages=[src_lang])
         if (is_date and tag == 'ID'):
             i = sentence.index(ent)
             len_ent = len(ent)
@@ -1062,7 +1072,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min
               else:
                 ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
               if ent2.strip() == ent: continue
-              is_date = dateparser.parse(ent2, languages=[src_lang])# use src_lang to make it faster, languages=[src_lang])
+              is_date = dateparser.parse(ent2, languages=[date_parser_lang_mapper.get(src_lang,src_lang)])# use src_lang to make it faster, languages=[src_lang])
               if is_date:
                 #sometimes dateparser says things like "in 2020" is a date, which it is
                 #but we want to strip out the stopwords.
@@ -1167,7 +1177,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min
                             
                       #let's check the FIRST instance of this id is really a date 
                       if tag == 'ID' and not is_stdnum:
-                          ent, tag = test_date(ent, tag, sentence, is_cjk)
+                          ent, tag = test_if_id_is_date(ent, tag, sentence, is_cjk)
       
                       #now let's turn all occurances of ent in this sentence into a span mention and also check for context
                       while True:
@@ -1210,7 +1220,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min
             if prev_mention[3] in ('ID', 'DATE', 'ADDRESS') and prev_mention[2] >= mention[1] and prev_mention[2] >= mention[2]:
               # if there is a complete overlap to an ID in an ADDRESS or a DATE, we ignore this ID
               # this is because we have more context for the DATE or ADDRESS to determine it is so. 
-              if mention[3] in ('DATE', 'ID'): 
+              if mention[3] in ('DATE', 'ID', 'PHONE'): 
                 continue
             else:
               prev_mention = mention
