@@ -1,6 +1,6 @@
 
 #This is an incomplete list. TODO - adapt from https://github.com/scrapinghub/dateparser/blob/master/dateparser/data/languages_info.py
-country_2_lang = {   
+country_2_lang = {
     'aa': ['ar'],
     'ad': ['ca'],
     'ae': ['ar'],
@@ -11,7 +11,7 @@ country_2_lang = {
     'am': ['hy'],
     'ao': ['pt'],
     'ar': ['es'],
-    'as': ['sm'],
+    'as': ['en', 'sm'],
     'at': ['de'],
     'au': ['en'],
     'aw': ['nl', 'pap'],
@@ -38,10 +38,11 @@ country_2_lang = {
     'by': ['ru', 'be'],
     'bz': ['en'],
     'ca': ['en', 'fr'],
+    'cc': ['en'],
     'cd': ['fr'],
     'cf': ['sg', 'fr'],
     'cg': ['fr'],
-    'ch': ['de', 'fr', 'it'],
+    'ch': ['de', 'gsw', 'fr', 'it'],
     'ci': ['fr'],
     'ck': ['en'],
     'cl': ['es'],
@@ -51,7 +52,7 @@ country_2_lang = {
     'cr': ['es'],
     'cu': ['es'],
     'cv': ['pt'],
-    'cw': ['nl'],
+    'cw': ['nl', 'pap'],
     'cx': ['en'],
     'cy': ['tr', 'el'],
     'cz': ['cs'],
@@ -65,7 +66,7 @@ country_2_lang = {
     'ee': ['et'],
     'eg': ['ar'],
     'eh': ['ar'],
-    'er': ['en', 'ar'],
+    'er': ['en', 'ar', 'ti'],
     'es': ['es'],
     'et': ['am'],
     'fi': ['fi', 'sv'],
@@ -89,7 +90,7 @@ country_2_lang = {
     'gq': ['pt', 'es', 'fr'],
     'gr': ['el'],
     'gt': ['es'],
-    'gu': ['ch'],
+    'gu': ['en', 'ch'],
     'gw': ['pt'],
     'gy': ['en'],
     'hk': ['zh', 'en'],
@@ -125,7 +126,7 @@ country_2_lang = {
     'la': ['lo'],
     'lb': ['ar'],
     'lc': ['en'],
-    'li': ['de'],
+    'li': ['de', 'gsw'],
     'lk': ['ta', 'si'],
     'lr': ['en'],
     'ls': ['st', 'en'],
@@ -133,7 +134,7 @@ country_2_lang = {
     'lu': ['de', 'lb', 'fr'],
     'lv': ['lv'],
     'ly': ['ar'],
-    'ma': ['ar', 'tzm'],
+    'ma': ['ar', 'tzm', 'fr'],
     'mc': ['fr'],
     'md': ['ro'],
     'me': ['sr'],
@@ -145,6 +146,7 @@ country_2_lang = {
     'mm': ['my'],
     'mn': ['mn'],
     'mo': ['pt', 'zh'],
+    'mp': ['en'],
     'mq': ['fr'],
     'mr': ['ar'],
     'ms': ['en'],
@@ -166,7 +168,7 @@ country_2_lang = {
     'np': ['ne'],
     'nr': ['na', 'en'],
     'nu': ['niu', 'en'],
-    'nz': ['mi'],
+    'nz': ['en', 'mi'],
     'om': ['ar'],
     'pa': ['es'],
     'pe': ['es', 'qu'],
@@ -177,7 +179,7 @@ country_2_lang = {
     'pl': ['pl'],
     'pm': ['fr'],
     'pn': ['en'],
-    'pr': ['es'],
+    'pr': ['en', 'es'],
     'ps': ['ar'],
     'pt': ['pt'],
     'pw': ['en', 'pau'],
@@ -201,7 +203,7 @@ country_2_lang = {
     'sk': ['sk'],
     'sl': ['en'],
     'sm': ['it'],
-    'sn': ['fr'],
+    'sn': ['fr', 'wo'],
     'so': ['ar', 'so'],
     'sr': ['nl'],
     'ss': ['en'],
@@ -225,14 +227,17 @@ country_2_lang = {
     'tv': ['tvl', 'en'],
     'tw': ['zh'],
     'tz': ['en', 'sw'],
-    'ua': ['uk'],
+    'ua': ['ru', 'uk'],
     'ug': ['en', 'sw'],
+    'um': ['en'],
     'us': ['en'],
     'uy': ['es'],
     'uz': ['uz'],
+    'va': ['it'],
     'vc': ['en'],
     've': ['es'],
     'vg': ['en'],
+    'vi': ['en'],
     'vn': ['vi'],
     'vu': ['en', 'bi', 'fr'],
     'wf': ['fr'],
@@ -242,14 +247,14 @@ country_2_lang = {
     'za': ['en'],
     'zm': ['en'],
     'zw': ['en', 'sn', 'nd']
-    }
+ }
 
 #TODO - get the complete list for our language
-lang_2_country = {   
+lang_2_country = {
     'am': ['et'],
-    'ar': [   
-        'ae','iq','dz','eg','sd','aa','il','ps','sa','bh','km','dj','er','eh',
-        'jo','kw','lb','ly','ma','mr','om','qa','so','sy','td','tn','ye'
+    'ar': [
+        'ae','iq','dz','eg','sd','aa','il','ps','sa','bh','km','dj','er','eh','jo','kw',
+        'lb','ly','ma','mr','om','qa','so','sy','td','tn','ye'
         ],
     'ay': ['bo'],
     'az': ['az'],
@@ -266,18 +271,18 @@ lang_2_country = {
     'dv': ['mv'],
     'dz': ['bt'],
     'el': ['gr', 'cy'],
-    'en': [  
-        'pk','sd','au','ca','gb','gh','ie','in','us','ai','ag','bi','bs','bz',
-        'bm','bb','bw','cm','ck','cx','ky','dm','er','fj','fk','fm','gg','gi',
-        'gm','gd','gy','hk','im','io','jm','je','ke','ki','kn','lr','lc','ls',
-        'mg','mh','mt','ms','mu','mw','na','nf','ng','nu','nr','pn','ph','pw',
-        'pg','rw','sg','sh','sb','sl','ss','sz','sx','sc','tc','tk','to','tt',
-        'tv','tz','ug','vc','vg','vu','ws','za','zm','zw'
-        ],
-    'es': [   
-        'ar','es','mx','bo','cl','co','cr','cu','do','ec','gq','gt','hn','ni',
-        'pa','pe','pr','py','sv','uy','ve'
-        ],
+    'en': [
+        'pk','sd','au','ca','gb','gh','ie','in','nz','us','ai','as','ag','bi','bs','bz',
+        'bm','bb','bw','cc','cm','ck','cx','ky','dm','er','fj','fk','fm','gg','gi','gm',
+        'gd','gu','gy','hk','im','io','jm','je','ke','ki','kn','lr','lc','ls','mg','mh',
+        'mt','mp','ms','mu','mw','na','nf','ng','nu','nr','pn','ph','pw','pg','pr','rw',
+        'sg','sh','sb','sl','ss','sz','sx','sc','tc','tk','to','tt','tv','tz','ug','um',
+        'vc','vg','vi','vu','ws','za','zm','zw'
+    ],
+    'es': [
+        'ar','es','mx','bo','cl','co','cr','cu','do','ec','gq','gt','hn','ni','pa','pe',
+        'pr','py','sv','uy','ve'
+    ],
     'et': ['ee'],
     'fa': ['ir', 'af'],
     'fi': ['fi'],
@@ -285,14 +290,14 @@ lang_2_country = {
     'fj': ['fj'],
     'fo': ['fo'],
     'fr': [
-        'dz', 'ca', 'ch', 'fr', 'qc', 'bi', 'be', 'bj', 'bf', 'bl', 'cf', 'ci',
-        'cm', 'cd', 'cg', 'km', 'dj', 'ga', 'gn', 'gp', 'gq', 'gf', 'ht', 'lu', 
-        'mf', 'mc', 'mg', 'ml', 'mq', 'mu', 'yt', 'nc', 'ne', 'pf', 're', 'rw', 
-        'sn', 'pm', 'sc', 'sy', 'td', 'tg', 'tn', 'vu', 'wf'
+        'dz','ca','ch','fr','qc','bi','be','bj','bf','bl','cf','ci','cm','cd','cg','km',
+        'dj', 'ga','gn','gp','gq','gf','ht','lu','mf','ma','mc','mg','ml','mq','mu','yt',
+        'nc','ne', 'pf','re','rw','sn','pm','sc','sy','td','tg','tn','vu','wf'
     ],
     'ga': ['ie'],
     'gil': ['ki'],
     'gn': ['py'],
+    'gsw': ['ch', 'li'],
     'gv': ['im'],
     'he': ['il'],
     'hi': ['in'],
@@ -304,7 +309,7 @@ lang_2_country = {
     'hy': ['am'],
     'id': ['id'],
     'is': ['is'],
-    'it': ['ch', 'it', 'sm'],
+    'it': ['ch', 'it', 'sm', 'va'],
     'ja': ['jp'],
     'ka': ['ge'],
     'kk': ['kz'],
@@ -332,15 +337,15 @@ lang_2_country = {
     'nl': ['nl', 'aw', 'be', 'bq', 'cw', 'sr', 'sx'],
     'nn': ['no'],
     'ny': ['mw'],
-    'pap': ['aw'],
+    'pap': ['aw', 'cw'],
     'pau': ['pw'],
     'pl': ['pl'],
     'ps': ['af'],
-    'pt': ['br', 'pt', 'ao', 'cv', 'gw', 'gq', 'mo', 'mz', 'st', 'tl'],
+    'pt': ['br','pt','ao','cv','gw','gq','mo','mz','st','tl'],
     'qu': ['bo', 'ec', 'pe'],
     'rn': ['bi'],
     'ro': ['ro', 'md'],
-    'ru': ['ru', 'by', 'kz', 'kg'],
+    'ru': ['ru', 'ua', 'by', 'kz', 'kg'],
     'rw': ['rw'],
     'sg': ['cf'],
     'si': ['lk'],
@@ -359,6 +364,7 @@ lang_2_country = {
     'tet': ['tl'],
     'tg': ['tj'],
     'th': ['th'],
+    'ti': ['er'],
     'tk': ['tm'],
     'tkl': ['tk'],
     'tn': ['bw'],
@@ -373,7 +379,8 @@ lang_2_country = {
     'uz': ['uz'],
     'vi': ['vn'],
     'wni': ['km'],
+    'wo': ['sn'],
     'yo': ['ng'],
     'zdj': ['km'],
     'zh': ['cn', 'tw', 'hk', 'mo', 'sg']
-    }
+}
