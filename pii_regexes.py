@@ -1,4 +1,3 @@
-%cd /content/muliwai
 """
 Copyright, 2021-2022 Ontocord, LLC, All rights reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
