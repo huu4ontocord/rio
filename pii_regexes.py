@@ -904,26 +904,38 @@ regex_rulebase_extended = {
 
 # Some of this code from https://github.com/bigscience-workshop/data_tooling/blob/master/ac_dc/anonymization.py which is under the Apache 2 license
 regex_rulebase = {
+    "AGE": {
+      "en": [
+          (
+              re.compile(
+                  r"\S+ years old|\S+\-years\-old|\S+ year old|\S+\-year\-old", re.IGNORECASE
+              ),
+              None, None
+          )
+      ],
+       "zh": [(regex.compile(r"\d{1,3}歲|\d{1,3}岁"), None, None)],
+    },
     #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
     "DATE": {
       "default": [
             #year
-            (re.compile('\d{4}'), None),
-            (re.compile(r"\d{4}-\d{4}"), None), # yyyy-yyyy
-            (re.compile(r"\d{4}-\d{2}-\d{2}"), None),  # yyyy-mm-dd or yyyy-dd-mm
-            (re.compile(r"\d{2}-\d{2}-\d{4}"), None),  # mm-dd-yyyy or dd-mm-yyyy
-            (re.compile(r"\d{2}-\d{4}"), None),  # mm-yyyy
-            (re.compile(r"\d{4}-\d{2}"), None),  # yyyy-mm
+            (re.compile('\d{4}'), None, None),# [('died', 'AGE'), ('born', 'AGE')]),
+            (re.compile(r"\d{4}-\d{4}"), None, None),#[('died', 'AGE'), ('born', 'AGE')]), # yyyy-yyyy
+            (re.compile(r"\d{4}-\d{2}-\d{2}"), None, None),#[('died', 'AGE'), ('born', 'AGE')]),  # yyyy-mm-dd or yyyy-dd-mm
+            (re.compile(r"\d{2}-\d{2}-\d{4}"), None, None),# [('died', 'AGE'), ('born', 'AGE')]),  # mm-dd-yyyy or dd-mm-yyyy
+            (re.compile(r"\d{2}-\d{4}"), None, None),# [('died', 'AGE'), ('born', 'AGE')]),  # mm-yyyy
+            (re.compile(r"\d{4}-\d{2}"), None, None),# [('died', 'AGE'), ('born', 'AGE')]),  # yyyy-mm
             ##date
-            #(re.compile('(?:(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)|(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)\s+(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?)(?:\,)?\s*(?:\d{4})?|[0-3]?\d[-\./][0-3]?\d[-\./]\d{2,4}', re.IGNORECASE), None),
+            (re.compile(r'[0-3]?\d[-\./][0-3]?\d[-\./]\d{2,4}'), None, None),# [('died', 'AGE'), ('born', 'AGE')]),
+            #(re.compile('(?:(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)|(?:jan\.?|january|feb\.?|february|mar\.?|march|apr\.?|april|may|jun\.?|june|jul\.?|july|aug\.?|august|sep\.?|september|oct\.?|october|nov\.?|november|dec\.?|december)\s+(?<!\:)(?<!\:\d)[0-3]?\d(?:st|nd|rd|th)?)(?:\,)?\s*(?:\d{4})?|[0-3]?\d[-\./][0-3]?\d[-\./]\d{2,4}', re.IGNORECASE), , [('died', 'AGE'), ('born', 'AGE')]),
         ],
     },
     #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
     "TIME": {
-      "default": [(re.compile('\d{1,2}:\d{2} ?(?:[ap]\.?m\.?)?|\d[ap]\.?m\.?', re.IGNORECASE), None),],
+      "default": [(re.compile('\d{1,2}:\d{2} ?(?:[ap]\.?m\.?)?|\d[ap]\.?m\.?', re.IGNORECASE), None, None),],
     },
     "URL": {
-      "default": [(re.compile('https?:\/\/[^\s\"\']{8,50}|www[^\s\"\']{8,50}'), None)],
+      "default": [(re.compile('https?:\/\/[^\s\"\']{8,50}|www[^\s\"\']{8,50}'), None, None)],
     },
     "ADDRESS": {
       "en": [
@@ -932,11 +944,11 @@ regex_rulebase = {
                   re.compile(
                       r"\d{1,4} [\w\s]{1,20} (?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?(?=\s|$).*\b\d{5}(?:[-\s]\d{4})?\b|\d{1,4} [\w\s]{1,20} (?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?(?=\s|$)", re.IGNORECASE
                   ),
-                  None,
+                  None, None
               ),
              #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
               (
-                  re.compile(r"P\.? ?O\.? Box \d+"), None
+                  re.compile(r"P\.? ?O\.? Box \d+"), None, None
               )
       ],
       #from https://github.com/Aggregate-Intellect/bigscience_aisc_pii_detection/blob/main/language/zh/rules.py which is under Apache 2
@@ -945,52 +957,56 @@ regex_rulebase = {
               regex.compile(
                   r"((\p{Han}{1,3}(自治区|省))?\p{Han}{1,4}((?<!集)市|县|州)\p{Han}{1,10}[路|街|道|巷](\d{1,3}[弄|街|巷])?\d{1,4}号)"
               ),
-              None,
+              None, None
           ),
           (
               regex.compile(
                   r"(?<zipcode>(^\d{5}|^\d{3})?)(?<city>\D+[縣市])(?<district>\D+?(市區|鎮區|鎮市|[鄉鎮市區]))(?<others>.+)"
               ),
-              None,
+              None, None
           ),
       ],
     },
     "PHONE": {
-      "zh" : [(re.compile(r"\d{4}-\d{8}"), None),],
+      "zh" : [(re.compile(r"\d{4}-\d{8}"), None, None),],
+      # we can probably remove one f the below
       "default": [
               # https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py phone with exts
               (
                   re.compile('((?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*(?:[2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|(?:[2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?(?:[2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?(?:[0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(?:\d+)?))', re.IGNORECASE),
-                  None
+                  None, None
               ),
               # common regex phone
               (
                   re.compile('((?:(?<![\d-])(?:\+?\d{1,3}[-.\s*]?)?(?:\(?\d{3}\)?[-.\s*]?)?\d{3}[-.\s*]?\d{4}(?![\d-]))|(?:(?<![\d-])(?:(?:\(\+?\d{2}\))|(?:\+?\d{2}))\s*\d{2}\s*\d{3}\s*\d{4}(?![\d-])))'),
-                  None,
+                  None, None
               ), 
-              ( re.compile('[\+\d]?(\d{2,3}[-\.\s]??\d{2,3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})'), None)     
+              ( re.compile('[\+\d]?(\d{2,3}[-\.\s]??\d{2,3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})'), None, None)     
       ]      
     },
     "IP_ADDRESS": {
-        "default": [(re.compile('(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)', re.IGNORECASE), None),]
+        "default": [(re.compile('(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)', re.IGNORECASE), None, None),]
               
         },
     "USER": {
       "default": [
               # generic user id
-              (re.compile(r"\s@[a-z][0-9a-z]{4-8}", re.IGNORECASE), None),
+              (re.compile(r"\s@[a-z][0-9a-z]{4-8}", re.IGNORECASE), None, None),
               #email
-              (re.compile("([a-z0-9!#$%&'*+\/=?^_`{|.}~-]+@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)", re.IGNORECASE), None),
+              (re.compile("(\w+[a-z0-9!#$%&'*+\/=?^_`{|.}~-]*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)", re.IGNORECASE), None, None),
       ]    
     },
     "ID": {
       "default": [
               #credit card from common regex
-              (re.compile('((?:(?:\\d{4}[- ]?){3}\\d{4}|\\d{15,16}))(?![\\d])'), None),
+              (re.compile('((?:(?:\\d{4}[- ]?){3}\\d{4}|\\d{15,16}))(?![\\d])'), None, None),
               #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
-              (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None),
+              (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None, None),
               # generic id with dashes
-              (re.compile('[A-Z]{0,3}(?:[- ]*\d){6,13}'), None),
+              (re.compile('[A-Z#]{0,3}(?:[- ]*\d){6,13}'), None, ('pp', 'pp.')),
+              # IBAN
+              (re.compile('[A-Z]{2}\d+\d+[A-Z]{0,4}(?:[- ]*\d){10,32}[A-Z]{0,3}'), None, None),
+              #ES45 0075 3494 7706 0100 0263
       ],
     },
  }
@@ -1000,7 +1016,7 @@ rstrip_chars = " ,،、<>{}[]|()\"'“”《》«»!:;?。.…．"
 date_parser_lang_mapper = {'st': 'en', 'ny': 'en', 'xh': 'en'}
 from stopwords import stopwords
 #cusip number probaly PII?
-def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min_id_length=6, max_id_length=50, tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, all_regex=None, do_context_check=True):
+def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, all_regex=None, context_window=20, min_id_length=6, max_id_length=50,):
       """
       Output:
        - This function returns a list of 4 tuples, representing an NER detection for [(entity, start, end, tag), ...]
@@ -1012,7 +1028,9 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min
        :tag_type: the type of NER tags we are detecting. If None, then detect everything.
        :ignore_stdnum_type: the set of stdnum we will consider NOT PII and not match as an ID
        :prioritize_lang_match_over_ignore: if true, and an ID matches an ingore list, we still keep it as an ID if there was an ID match for this particular src_lang
-       :all_regex: a rulebase of the form {tag: {lang: [(regex, context), ...], 'default': [(regex, context), ...]}}. If none, then we use the global regex_rulebase
+       :all_regex: a rulebase of the form {tag: {lang: [(regex, context, block), ...], 'default': [(regex, context, block), ...]}}. 
+         context are words that must be found surronding the entity. block are words that must not be found.
+         If all_regex is none, then we use the global regex_rulebase
        :do_context_check: if we require a context match
       ALGORITHM:
         For each regex, we check the sentence to find a match and a required context, if the context exists in a window.
@@ -1122,7 +1140,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min
           if not regex_group: continue
           for regex_context in regex_group.get(src_lang, []) + regex_group.get("default", []):
               if True:
-                  regex, context = regex_context
+                  regex, context, block = regex_context
                   #if this regex rule requires a context, find if it is satisified in general. this is a quick check.
                   potential_context = False
                   if context:
@@ -1169,33 +1187,43 @@ def detect_ner_with_regex_and_context(sentence, src_lang, context_window=20, min
                           if prioritize_lang_match_over_ignore:
                                 is_stdnum = any(a for a in stnum_type if "." in a and country_2_lang.get(a.split(".")[0]) == src_lang)
                           if not ent_is_4_digit and not is_stdnum and any(a for a in stnum_type if a in ignore_stdnum_type):
+                            #print ('ignoring this id because it is not pii', ent, stnum_type)
                             continue
                           #this is actually an ID and not a DATE
                           if any(a for a in stnum_type if a not in ignore_stdnum_type):
                             tag = 'ID'
                             is_stdnum = True
                             
-                      #let's check the FIRST instance of this id is really a date 
+                      #let's check the FIRST instance of this id is really a date; ideally we should do this for every instance of this ID
                       if tag == 'ID' and not is_stdnum:
                           ent, tag = test_if_id_is_date(ent, tag, sentence, is_cjk)
       
                       #now let's turn all occurances of ent in this sentence into a span mention and also check for context
+                      len_ent = len(ent)
                       while True:
                         if ent not in sentence2:
                           break
                         else:
                           i = sentence2.index(ent)
-                          j = i + len(ent)
-                          if potential_context:
+                          j = i + len_ent
+                          if potential_context or block:
                               len_sentence = len(sentence2)
                               left = sentence2[max(0, i - context_window) : i].lower()
                               right = sentence2[j : min(len_sentence, j + context_window)].lower()
                               found_context = False
-                              for c in context:
-                                c = c.lower()
-                                if c in left or c in right:
-                                    found_context = True
-                                    break
+                              if context:
+                                for c in context:
+                                  c = c.lower()
+                                  if c in left or c in right:
+                                      found_context = True
+                                      break
+                                
+                              if block:
+                                for c in block:
+                                  c = c.lower()
+                                  if c in left or c in right:
+                                      found_context = False
+                                      break
                               if not found_context:
                                 delta += j
                                 sentence2 = sentence2[i+len(ent):]
