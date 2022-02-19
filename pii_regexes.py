@@ -13,8 +13,15 @@ limitations under the License.
 import stdnum
 import re, regex
 import dateparser
+try:
+  from postal.parser import parse_address
+except:
+  def parse_address(s): return {}
 import sys, os
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))    
+try:
+  sys.path.append(os.path.abspath(os.path.dirname(__file__)))    
+except:
+  pass
 from country_2_lang import *
 from pii_regexes_rulebase import regex_rulebase
 from stdnum import (bic, bitcoin, casrn, cusip, ean, figi, grid, gs1_128, iban, \
@@ -694,9 +701,13 @@ def test_is_date(ent, tag, sentence, is_cjk, i, src_lang, sw):
         Returns ent as None, if originally tagged as 'DATE' and it's not a DATE and we don't know what it is.
      
     """
-    if len(ent) > 8 and to_int(ent) and tag == 'DATE': 
-      #this is a very long number and not a date
-      return None, tag
+    if len(ent) > 8 and to_int(ent) :
+      if tag == 'DATE': 
+        #this is a very long number and not a date
+        return None, tag
+      else:
+        #no need to check the date
+        return ent, tag 
 
     #this is most likely a date
     if is_fast_date(ent): 
@@ -878,7 +889,6 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
 
                   #now apply regex
                   for ent in list(set(list(regex.findall(sentence)))):
-                      
                       if not isinstance(ent, str):
                         continue
                       ent = ent.strip()
