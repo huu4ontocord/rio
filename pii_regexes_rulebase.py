@@ -12,7 +12,6 @@ regex_rulebase = {
       ],
        "zh": [(regex.compile(r"\d{1,3}歲|\d{1,3}岁"), None, None)],
     },
-    #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
     "DATE": {
     },
     #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
@@ -31,10 +30,6 @@ regex_rulebase = {
                   ),
                   None, None
               ),
-             #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
-              (
-                  re.compile(r"P\.? ?O\.? Box \d+", re.IGNORECASE), None, None
-              )
       ],
       #from https://github.com/Aggregate-Intellect/bigscience_aisc_pii_detection/blob/main/language/zh/rules.py which is under Apache 2
       "zh": [
@@ -96,7 +91,7 @@ regex_rulebase = {
               #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
               (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None, None),
               # generic id with dashes
-              (re.compile('[A-Z#]{0,3}(?:[- ]*\d){6,13}'), None, ('pp', 'pp.')),
+              (re.compile('[A-Z#]{0,3}(?:[-\./ ]*\d){6,13}'), None, ('PP ', 'PP. ', 'P.O. BOX', 'PO BOX', 'pp ', 'pp. ', 'p.o. box', 'po box',)),
               # IBAN
               (re.compile('[A-Z]{2}\d+\d+[A-Z]{0,4}(?:[- ]*\d){10,32}[A-Z]{0,3}'), None, None),
       ],
