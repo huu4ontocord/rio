@@ -16,7 +16,7 @@ import dateparser
 import sys, os
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))    
 from country_2_lang import *
-from pii_regexes_rulebase import *
+from pii_regexes_rulebase import regex_rulebase
 from stdnum import (bic, bitcoin, casrn, cusip, ean, figi, grid, gs1_128, iban, \
                     imei, imo, imsi, isan, isbn, isil, isin, ismn, iso11649, iso6346, \
                     iso9362, isrc, issn, lei,  mac, meid, vatin)
@@ -691,10 +691,17 @@ def test_is_date(ent, tag, sentence, is_cjk, i, src_lang, sw):
      Returns:
         (ent, tag): potentially expanded ent, and the proper tag. 
         Could return a potentially expanded ent, and the proper tag. 
-        Returns ent as None, if it means it's not a DATE and we don't know what it is.
+        Returns ent as None, if originally tagged as 'DATE' and it's not a DATE and we don't know what it is.
      
     """
-    if len(ent) > 10: return ent, tag
+    if len(ent) > 8 and to_int(ent) and tag == 'DATE': 
+      #this is a very long number and not a date
+      return None, tag
+
+    #this is most likely a date
+    if is_fast_date(ent): 
+      return ent, 'DATE'
+
     is_date =  dateparser.parse(ent, languages=[date_parser_lang_mapper.get(src_lang,src_lang)]) # use src_lang to make it faster, languages=[src_lang])
     if (not is_date and tag == 'DATE') or (is_date and tag == 'ID'):
         len_ent = len(ent)
@@ -740,10 +747,44 @@ def test_is_date(ent, tag, sentence, is_cjk, i, src_lang, sw):
             ent = ent2.strip()
             tag = "DATE"
             return ent, tag
+
     if tag == 'DATE' and not is_date:
       return None, tag
+
     return ent, tag
-    
+
+def is_fast_date(ent, year_start=1600, year_end=2050):
+ """search for patterns like, yyyy-mm-dd, yyyy-yyyy """
+ ent_arr = ent.replace("/", "-").replace(" ","-").replace(".","-")
+ is_date = False
+ if "-" in ent_arr and ent_arr.count("-") <=2:
+  has_year = has_month = has_day = 0
+  for a in ent_arr.split("-"):
+    e = to_int(a)
+    if e is None: 
+      is_date = False
+      break
+    if (e <= year_end and e >= year_start):
+      has_year+=1
+    elif e <= 12 and e >= 1:
+      has_month += 1
+    elif e <= 31 and e >= 1:
+      has_day += 1
+    else:
+      is_date = False
+      break
+  if (has_year == 1 and has_month == 1) or \
+        (has_year == 2 and has_month == 0 and has_day == 0) or \
+        (has_year == 1 and has_month == 1 and has_day == 1):
+      is_date = True
+  return is_date
+
+def to_int(s):
+  try:
+    return int(s)
+  except:
+    return None
+
 #cusip number probaly PII?
 def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, all_regex=None, context_window=20, min_id_length=6, max_id_length=50,):
       """
@@ -865,36 +906,18 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                           if not ent_is_4_digit and not is_stdnum and any(a for a in stnum_type if a in ignore_stdnum_type):
                             #a four digit entity might be a year, so don't skip this ent
                             continue
-                          #this is actually an ID and not a DATE
+                          #this is actually an ID of known stdnum and not a DATE
                           if any(a for a in stnum_type if a not in ignore_stdnum_type):
                             tag = 'ID'
                             is_stdnum = True
 
-                      #check to see if a date is really a date
-                      if tag == 'DATE':
-                        ent_arr = [a for a in ent.replace("/", "-").replace(" ","-").split()  if len(a) == 4 and a[0] in "0123456789"]
-                        is_fast_date = False
-                        for e in ent_arr:                         
-                          try:
-                            year = int(e)
-                            if year < 2050 and year > 1700: # this is an arbitrary date range for fast decision that it's a date
-                              is_fast_date = True
-                            else:
-                              is_fast_date = False
-                              break
-                          except:
-                            is_fast_date = False
-                            break
-                        if not is_fast_date: 
-                          # if at least one four digit number is not a year in our range, let's use the more expensive check
+                      #let's check the FIRST instance of this DATE or ID is really a date; 
+                      #ideally we should do this for every instance of this ID
+                      if tag == 'DATE' or (tag == 'ID' and not is_stdnum):
                           ent, tag = test_is_date(ent, tag, sentence, is_cjk, sentence.index(ent),  src_lang, sw)
-                          if ent is None: 
-                            continue
+                          if not ent: continue
 
-                      #let's check the FIRST instance of this ID is really a date; ideally we should do this for every instance of this ID
-                      if tag == 'ID' and not is_stdnum:
-                          ent, tag = test_is_date(ent, tag, sentence, is_cjk, sentence.index(ent),  src_lang, sw)
-                      #now let's turn all occurances of ent in this sentence into a span mention and also check for context
+                      #now let's turn all occurances of ent in this sentence into a span mention and also check for context and block words
                       len_ent = len(ent)
                       while True:
                         if ent not in sentence2:
