@@ -677,7 +677,7 @@ rstrip_chars = " ,،、<>{}[]|()\"'“”《》«»!:;?。.…．"
 date_parser_lang_mapper = {'st': 'en', 'ny': 'en', 'xh': 'en'}
 from stopwords import stopwords
 
-def test_is_date(ent, tag, sentence, is_cjk, i, src_lang):
+def test_is_date(ent, tag, sentence, is_cjk, i, src_lang, sw):
     """
     Helper function used to test if an ent is a date or not
     We use dateparse to find context words around the ID/date to determine if its a date or not.
