@@ -655,6 +655,7 @@ lang_2_stdnum = {'am': [],
 }
 
 def ent_2_stdnum_type(text, src_lang=None):
+  """ given a entity mention and the src_lang, determine potentially stdnum type """
   stdnum_type = []
   if src_lang is None:
     items = list(stdnum_mapper.items())
@@ -675,6 +676,74 @@ lstrip_chars = " ,،、<>{}[]|()\"'“”《》«»:;"
 rstrip_chars = " ,،、<>{}[]|()\"'“”《》«»!:;?。.…．"
 date_parser_lang_mapper = {'st': 'en', 'ny': 'en', 'xh': 'en'}
 from stopwords import stopwords
+
+def test_is_date(ent, tag, sentence, is_cjk, i):
+    """
+    Helper function used to test if an ent is a date or not
+    We use dateparse to find context words around the ID/date to determine if its a date or not.
+    For example, 100 AD is a date, but 100 might not be.
+    Input:
+      :ent: an entity mention
+      :tag: either ID or DATE
+      :sentence: the context
+      :is_cjk: if this is a Zh, Ja, Ko text
+      :i: the position of ent in the sentence
+     Returns:
+        (ent, tag): potentially expanded ent, and the proper tag. 
+        Could return a potentially expanded ent, and the proper tag. 
+        Returns ent as None, if it means it's not a DATE and we don't know what it is.
+     
+    """
+    if len(ent) > 10: return ent, tag
+    is_date =  dateparser.parse(ent, languages=[date_parser_lang_mapper.get(src_lang,src_lang)]) # use src_lang to make it faster, languages=[src_lang])
+    if (not is_date and tag == 'DATE') or (is_date and tag == 'ID'):
+        len_ent = len(ent)
+        j = i + len_ent
+        #for speed we can just use these 6 windows to check for a date.
+        #but for completeness we could check a sliding window. 
+        #Maybe in some countries a year could
+        #be in the middle of a date: Month Year Day
+        ent_spans = [(-1,0), (-2, 0), (-3, 0), \
+              (0, 1), (0, 2), (0, 3)]
+        before = sentence[:i]
+        after = sentence[j:]
+        if  not is_cjk:
+          before = before.split()
+          after = after.split()
+        len_after = len(after)
+        len_before = len(before)
+        for before_words, after_words in ent_spans:
+          if after_words > len_after: continue
+          if -before_words > len_before: continue 
+          if before_words == 0: 
+              before1 = []
+          else:
+              before1 = before[max(-len_before,before_words):]
+          after1 = after[:min(len_after,after_words)]
+          if is_cjk:
+            ent2 = "".join(before1)+ent+"".join(after1)
+          else:
+            ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
+          if ent2.strip() == ent: continue
+          is_date = dateparser.parse(ent2, languages=[date_parser_lang_mapper.get(src_lang,src_lang)])# use src_lang to make it faster, languages=[src_lang])
+          if is_date:
+            #sometimes dateparser says things like "in 2020" is a date, which it is
+            #but we want to strip out the stopwords.
+            if before1 and before1[-1].lower() in sw:
+              before1 = before1[:-1]
+            if after1 and after1[0].lower() in sw:
+              after1 = after1[1:]
+            if is_cjk:
+              ent2 = "".join(before1)+ent+"".join(after1)
+            else:
+              ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
+            ent = ent2.strip()
+            tag = "DATE"
+            return ent, tag
+    if tag == 'DATE' and not is_date:
+      return None, tag
+    return ent, tag
+    
 #cusip number probaly PII?
 def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, all_regex=None, context_window=20, min_id_length=6, max_id_length=50,):
       """
@@ -712,62 +781,6 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
         matching extremely nosiy imput that might have patterns of numbers in long strings.
       
       """
-      def test_is_date(ent, tag, sentence, is_cjk, i):
-        """
-        Helper function used to test if an ent is a date or not
-        We use dateparse to find context words around the ID/date to determine if its a date or not.
-        For example, 100 AD is a date, but 100 might not be.
-        Returns a potentially expanded ent, and the proper tag. Returns a potentially expanded ent, and the proper tag. Returns ent is None, if it means it's not a DATE and we don't know what it is.
-        """
-        if len(ent) > 10: return ent, tag
-        is_date =  dateparser.parse(ent, languages=[date_parser_lang_mapper.get(src_lang,src_lang)]) # use src_lang to make it faster, languages=[src_lang])
-        if (not is_date and tag == 'DATE') or (is_date and tag == 'ID'):
-            len_ent = len(ent)
-            j = i + len_ent
-            #for speed we can just use these 6 windows to check for a date.
-            #but for completeness we could check a sliding window. 
-            #Maybe in some countries a year could
-            #be in the middle of a date: Month Year Day
-            ent_spans = [(-1,0), (-2, 0), (-3, 0), \
-              (0, 1), (0, 2), (0, 3)]
-            before = sentence[:i]
-            after = sentence[j:]
-            if  not is_cjk:
-              before = before.split()
-              after = after.split()
-            len_after = len(after)
-            len_before = len(before)
-            for before_words, after_words in ent_spans:
-              if after_words > len_after: continue
-              if -before_words > len_before: continue 
-              if before_words == 0: 
-                  before1 = []
-              else:
-                  before1 = before[max(-len_before,before_words):]
-              after1 = after[:min(len_after,after_words)]
-              if is_cjk:
-                ent2 = "".join(before1)+ent+"".join(after1)
-              else:
-                ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
-              if ent2.strip() == ent: continue
-              is_date = dateparser.parse(ent2, languages=[date_parser_lang_mapper.get(src_lang,src_lang)])# use src_lang to make it faster, languages=[src_lang])
-              if is_date:
-                #sometimes dateparser says things like "in 2020" is a date, which it is
-                #but we want to strip out the stopwords.
-                if before1 and before1[-1].lower() in sw:
-                  before1 = before1[:-1]
-                if after1 and after1[0].lower() in sw:
-                  after1 = after1[1:]
-                if is_cjk:
-                  ent2 = "".join(before1)+ent+"".join(after1)
-                else:
-                  ent2 = "".join(before1)+" "+ent+" "+"".join(after1)
-                ent = ent2.strip()
-                tag = "DATE"
-                return ent, tag
-        if tag == 'DATE' and not is_date:
-          return None, tag
-        return ent, tag
 
       # main
       # if we are doing 'ID', we would still want to see if we catch DATE and ADDRESS. 
