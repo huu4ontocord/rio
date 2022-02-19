@@ -95,7 +95,7 @@ regex_rulebase = {
               #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
               (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None, None),
               # generic id with dashes
-              (re.compile('[A-Z#]{0,3}(?:[-\./ ]*\d){6,13}'), None, ('PP ', 'PP. ', 'pp ', 'pp. ', )),
+              (re.compile('[A-Z#]{0,3}(?:[-\./ ]*\d){6,13}'), None, ('pp ', 'pp. ', )),
               # IBAN
               (re.compile('[A-Z]{2}\d+\d+[A-Z]{0,4}(?:[- ]*\d){10,32}[A-Z]{0,3}'), None, None),
       ],
