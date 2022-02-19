@@ -861,7 +861,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                           
                           #if the stdnum is one of the non PII types, we will ignore it
                           if prioritize_lang_match_over_ignore:
-                                is_stdnum = any(a for a in stnum_type if "." in a and src_lang in country_2_lang.get(a.split(".")[0]))
+                                is_stdnum = any(a for a in stnum_type if "." in a and src_lang in country_2_lang.get(a.split(".")[0], []))
                           if not ent_is_4_digit and not is_stdnum and any(a for a in stnum_type if a in ignore_stdnum_type):
                             #a four digit entity might be a year, so don't skip this ent
                             continue
