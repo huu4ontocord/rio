@@ -701,13 +701,9 @@ def test_is_date(ent, tag, sentence, is_cjk, i, src_lang, sw):
         Returns ent as None, if originally tagged as 'DATE' and it's not a DATE and we don't know what it is.
      
     """
-    if len(ent) > 8 and to_int(ent) :
-      if tag == 'DATE': 
-        #this is a very long number and not a date
-        return None, tag
-      else:
-        #no need to check the date
-        return ent, tag 
+    if len(ent) > 8 and to_int(ent) and tag == 'DATE': 
+      #this is a very long number and not a date
+      return None, tag
 
     #this is most likely a date
     if is_fast_date(ent): 
@@ -806,13 +802,14 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
        :src_lang: the language of the sentence
        :context_window: the contxt window in characters to check for context characters for any rules that requries context
        :max_id_length: the maximum length of an ID
+       :min_id_length: the minimum length of an ID
        :tag_type: the type of NER tags we are detecting. If None, then detect everything.
        :ignore_stdnum_type: the set of stdnum we will consider NOT PII and not match as an ID
        :prioritize_lang_match_over_ignore: if true, and an ID matches an ingore list, we still keep it as an ID if there was an ID match for this particular src_lang
        :all_regex: a rulebase of the form {tag: {lang: [(regex, context, block), ...], 'default': [(regex, context, block), ...]}}. 
          context are words that must be found surronding the entity. block are words that must not be found.
          If all_regex is none, then we use the global regex_rulebase
-       :do_context_check: if we require a context match
+       
       ALGORITHM:
         For each regex, we check the sentence to find a match and a required context, if the context exists in a window.
         If the regex is an ID or a DATE, test to see if it's a stdnum we know. Stdnum are numbers formatted to specific regions, or generally.
