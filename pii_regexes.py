@@ -887,13 +887,13 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                             break
                         if not is_fast_date: 
                           # if at least one four digit number is not a year in our range, let's use the more expensive check
-                          ent, tag = test_is_date(ent, tag, sentence, is_cjk, sentence.index(ent),  src_lang)
+                          ent, tag = test_is_date(ent, tag, sentence, is_cjk, sentence.index(ent),  src_lang, sw)
                           if ent is None: 
                             continue
 
                       #let's check the FIRST instance of this ID is really a date; ideally we should do this for every instance of this ID
                       if tag == 'ID' and not is_stdnum:
-                          ent, tag = test_is_date(ent, tag, sentence, is_cjk, sentence.index(ent),  src_lang)
+                          ent, tag = test_is_date(ent, tag, sentence, is_cjk, sentence.index(ent),  src_lang, sw)
                       #now let's turn all occurances of ent in this sentence into a span mention and also check for context
                       len_ent = len(ent)
                       while True:
