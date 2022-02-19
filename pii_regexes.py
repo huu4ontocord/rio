@@ -836,7 +836,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
         We use dateparse to find context words around the ID/date to determine if its a date or not.
         For example, 100 AD is a date, but 100 might not be.
 
-        Returns a potentially expanded ent, and the proper tag. If ent is None, it means it's not a DATE and we don't know what it is.
+        Returns a potentially expanded ent, and the proper tag. Returns a potentially expanded ent, and the proper tag. Returns ent is None, if it means it's not a DATE and we don't know what it is.
         """
         if len(ent) > 10: return ent, tag
         is_date =  dateparser.parse(ent, languages=[date_parser_lang_mapper.get(src_lang,src_lang)]) # use src_lang to make it faster, languages=[src_lang])
