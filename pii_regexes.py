@@ -823,10 +823,10 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
       
       """
 
-      # main
+      sw = stopwords.get(src_lang, {})
+      
       # if we are doing 'ID', we would still want to see if we catch DATE and ADDRESS. 
       # DATE and ADDRESS may have higher precedence, in which case it might overide an ID match. 
-      sw = stopwords.get(src_lang, {})
       no_date = False
       if tag_type is not None and 'ID' in tag_type and 'DATE' not in tag_type:
          no_date = True
@@ -835,6 +835,12 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
       if tag_type is not None and 'ID' in tag_type and 'ADDRESS' not in tag_type:
          no_address = True
          tag_type = set(list(tag_type)+['ADDRESS'])
+         
+      # if we are doing 'DATE' we would still want to do ID because they intersect.
+      no_id = False
+      if tag_type is not None and 'DATE' in tag_type and 'ID' not in tag_type:
+         no_id = True
+         tag_type = set(list(tag_type)+['ID'])
         
       is_cjk = src_lang in ("zh", "ko", "ja")
       if is_cjk:
@@ -980,5 +986,6 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
          all_ner = [a for a in all_ner if a[3] != 'DATE']
       if no_address:
          all_ner = [a for a in all_ner if a[3] != 'ADDRESS']
-     
+      if no_id:
+         all_ner = [a for a in all_ner if a[3] != 'ID']    
       return all_ner
