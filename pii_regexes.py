@@ -701,10 +701,14 @@ def test_is_date(ent, tag, sentence, is_cjk, i, src_lang, sw):
         Returns ent as None, if originally tagged as 'DATE' and it's not a DATE and we don't know what it is.
      
     """
-    if len(ent) > 8 and to_int(ent) and tag == 'DATE': 
-      #this is a very long number and not a date
-      return None, tag
-
+    if len(ent) > 8 and to_int(ent) :
+      if tag == 'DATE': 
+        #this is a very long number and not a date
+        return None, tag
+      else:
+        #no need to check the date
+        return ent, tag 
+    
     #this is most likely a date
     if is_fast_date(ent): 
       return ent, 'DATE'
