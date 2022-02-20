@@ -1034,13 +1034,12 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
         prev_mention = None
         for mention in all_ner:
           if prev_mention:
-            if (prev_mention[1] == mention[1] and prev_mention[3] == mention[3] and prev_mention[4] != mention[4]) or\
+            if (prev_mention[1] == mention[1] and prev_mention[3] == mention[3] and prev_mention[4] > 0 and prev_mention[4] != mention[4]) or\
               (prev_mention[2] >= mention[1] and prev_mention[2] >= mention[2]): 
-              #either a shoter lang specific mention takes predence or a subsuming mention takes precedence
-              #and prev_mention[3] in ('ID', 'DATE', 'ADDRESS') and 
-              # if there is any complete overlap, then we use the precedence rules
-              # an alternate: if there is a complete overlap to an ID in an ADDRESS or a DATE, we ignore this ID
-              #               this is because we have more context for the DATE or ADDRESS to determine it is so. 
+              #either a lang specific mention takes predence or a subsuming mention takes precedence
+              #OLD code: and prev_mention[3] in ('ID', 'DATE', 'ADDRESS') and 
+              #     - if there is a complete overlap to an ID in an ADDRESS or a DATE, we ignore this ID
+              #     - this is because we have more context for the DATE or ADDRESS to determine it is so. 
               #if mention[3] in ('DATE', 'ID', 'PHONE'): 
                 continue
             else:
