@@ -835,7 +835,10 @@ def is_fast_date(ent, int_arr=None, year_start=1600, year_end=2050):
   return False
 
 #cusip number probaly PII?
-def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, all_regex=None, context_window=20, min_id_length=6, max_id_length=50,):
+def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prioritize_lang_match_over_ignore=True, \
+      ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, \
+      all_regex=None, context_window=20, min_id_length=6, max_id_length=50, \
+      precedence={'ID':0, 'PHONE':1, 'IP_ADDRESS':2, 'DATE':3, 'TIME':4, 'LICENSE_PLATE':5, 'USER':6, 'AGE':7, 'ADDRESS':8, 'URL':9}):
       """
       Output:
        - This function returns a list of 4 tuples, representing an NER detection for [(entity, start, end, tag), ...]
@@ -915,7 +918,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
       for tag in all_tags_to_check:
           regex_group = all_regex.get(tag)
           if not regex_group: continue
-          for regex_context in regex_group.get(src_lang, []) + regex_group.get("default", []):
+          for regex_context, extra_weight in [(a, 1) for a in regex_group.get(src_lang, [])] + [(a, 0) for a in regex_group.get("default", [])]:
               if True:
                   regex, context, block = regex_context
                   #if this regex rule requires a context, find if it is satisified in general. this is a quick check.
@@ -1015,33 +1018,36 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                           #check to see if the entity is really a standalone word or part of another longer word.
                           # for example, we wont match a partial set of very long numbers as a 7 digit ID for example
                           if is_cjk or ((i+delta == 0 or sentence2[i-1]  in lstrip_chars) and (j+delta >= len_sentence-1 or sentence2[j] in rstrip_chars)): 
-                            all_ner.append((ent, delta+i, delta+j, tag))
+                            all_ner.append((ent, delta+i, delta+j, tag, extra_weight))
                           sentence2 = sentence2[i+len(ent):]
                           delta += j
                             
       all_ner = list(set(all_ner))
-      # sort by length and position, favoring non-IDs first.
+      # sort by length and position, favoring non-IDs first using the precedence list, 
+      # and additionaly giving one extra weight to language specific regex (as opposed to default rules).
       # this doesn't do a perfect overlap match; just an overlap to the prior item.
-      all_ner.sort(key=lambda a: a[1]+(1.0/(1.0+((a[3]!='ID'))+a[2]-a[1])))
+      all_ner.sort(key=lambda a: a[1]+(1.0/(1.0+((precedence.get(a[3], len(a[3]))+a[4])+a[2]-a[1]))))
       if not tag_type or 'ID' in tag_type:
-        # now do overlaps prefering longer ents, and dates and addresses over embedded IDs or dates
+        # now do overlaps prefering longer ents, and higher prededence items over embedded IDs or dates, etc.
         all_ner2 = []
         prev_mention = None
         for mention in all_ner:
           if prev_mention:
-            if prev_mention[3] in ('ID', 'DATE', 'ADDRESS') and prev_mention[2] >= mention[1] and prev_mention[2] >= mention[2]:
-              # if there is a complete overlap to an ID in an ADDRESS or a DATE, we ignore this ID
-              # this is because we have more context for the DATE or ADDRESS to determine it is so. 
-              if mention[3] in ('DATE', 'ID', 'PHONE'): 
+            if prev_mention[2] >= mention[1] and prev_mention[2] >= mention[2]: #and prev_mention[3] in ('ID', 'DATE', 'ADDRESS') and 
+              # if there is any complete overlap, then we use the precedence rules
+              # an alternate: if there is a complete overlap to an ID in an ADDRESS or a DATE, we ignore this ID
+              #               this is because we have more context for the DATE or ADDRESS to determine it is so. 
+              #if mention[3] in ('DATE', 'ID', 'PHONE'): 
                 continue
             else:
               prev_mention = mention
           else:
             prev_mention = mention
-          all_ner2.append(mention)
+          all_ner2.append(mention[:4])
         all_ner = all_ner2
       if no_address:
          all_ner = [a for a in all_ner if a[3] != 'ADDRESS']
       if no_id:
-         all_ner = [a for a in all_ner if a[3] != 'ID']    
+         all_ner = [a for a in all_ner if a[3] != 'ID']   
+        
       return all_ner
