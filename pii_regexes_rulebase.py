@@ -13,6 +13,8 @@ regex_rulebase = {
        "zh": [(regex.compile(r"\d{1,3}歲|\d{1,3}岁"), None, None)],
     },
     "DATE": {
+       "default": [(re.compile('\d{4}'), None, None),],
+
     },
     #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
     "TIME": {
