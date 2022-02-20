@@ -22,6 +22,7 @@ try:
   sys.path.append(os.path.abspath(os.path.dirname(__file__)))    
 except:
   pass
+from stopwords import stopwords
 from country_2_lang import *
 from pii_regexes_rulebase import regex_rulebase
 from stdnum import (bic, bitcoin, casrn, cusip, ean, figi, grid, gs1_128, iban, \
@@ -682,9 +683,9 @@ def ent_2_stdnum_type(text, src_lang=None):
 lstrip_chars = " ,،、<>{}[]|()\"'“”《》«»:;"
 rstrip_chars = " ,،、<>{}[]|()\"'“”《》«»!:;?。.…．"
 date_parser_lang_mapper = {'st': 'en', 'ny': 'en', 'xh': 'en'}
-from stopwords import stopwords
 
-def test_is_date(ent, tag, sentence, is_cjk, i, src_lang, sw, year_start=1600, year_end=2050):
+
+def test_is_date(ent, tag, sentence, len_sentence, is_cjk, i, src_lang, sw, year_start=1600, year_end=2050):
     """
     Helper function used to test if an ent is a date or not
     We use dateparse to find context words around the ID/date to determine if its a date or not.
@@ -701,19 +702,38 @@ def test_is_date(ent, tag, sentence, is_cjk, i, src_lang, sw, year_start=1600, y
         Returns ent as None, if originally tagged as 'DATE' and it's not a DATE and we don't know what it is.
      
     """
-
+    # perform some fast heuristics so we don't have to do dateparser
     len_ent = len(ent)
-    if len_ent > 8 and to_int(ent) :
+    if len_ent > 17 or (len_ent > 8 and to_int(ent)):
       if tag == 'DATE': 
         #this is a very long number and not a date
         return None, tag
       else:
         #no need to check the date
         return ent, tag 
-    
-    #this is most likely a date
-    if is_fast_date(ent): 
+        
+    if not is_cjk:
+      if i > 0 and sentence[i-1] not in lstrip_chars: 
+        if tag == 'DATE': 
+          return None, tag
+        else:
+          return ent, tag
+      if i+len_ent < len_sentence - 1 and sentence[i+len_ent+1] not in rstrip_chars: 
+        if tag == 'DATE': 
+          return None, tag
+        else:
+          return ent, tag
+
+    int_arr = [(e, to_int(e)) for e in ent.replace("/", "-").replace(" ","-").replace(".","-").split("-")]
+    if is_fast_date(ent, int_arr): 
+      #this is most likely a date
       return ent, 'DATE'
+
+    for e, val in int_arr:
+      if val is not None and len(e) > 8:
+        if tag == 'DATE': 
+          #this is a very long number and not a date
+          return None, tag
 
     #test if this is a 4 digit year. we need to confirm it's a real date
     is_date = False
@@ -721,6 +741,8 @@ def test_is_date(ent, tag, sentence, is_cjk, i, src_lang, sw, year_start=1600, y
     if tag == 'DATE' and len_ent == 4:
       e = to_int(ent)
       is_4_digit_year = (e <= year_end and e >= year_start)
+    
+    #now do dateparser
     if not is_4_digit_year:
       is_date =  dateparser.parse(ent, languages=[date_parser_lang_mapper.get(src_lang,src_lang)]) # use src_lang to make it faster, languages=[src_lang])
     
@@ -778,37 +800,39 @@ def test_is_date(ent, tag, sentence, is_cjk, i, src_lang, sw, year_start=1600, y
 
     return ent, tag
 
-def is_fast_date(ent, year_start=1600, year_end=2050):
- """search for patterns like, yyyy-mm-dd, yyyy-yyyy """
- ent_arr = ent.replace("/", "-").replace(" ","-").replace(".","-")
- is_date = False
- if "-" in ent_arr and ent_arr.count("-") <=2:
-  has_year = has_month = has_day = 0
-  for a in ent_arr.split("-"):
-    e = to_int(a)
-    if e is None: 
-      is_date = False
-      break
-    if (e <= year_end and e >= year_start):
-      has_year+=1
-    elif e <= 12 and e >= 1:
-      has_month += 1
-    elif e <= 31 and e >= 1:
-      has_day += 1
-    else:
-      is_date = False
-      break
-  if (has_year == 1 and has_month == 1) or \
-        (has_year == 2 and has_month == 0 and has_day == 0) or \
-        (has_year == 1 and has_month == 1 and has_day == 1):
-      is_date = True
-  return is_date
-
 def to_int(s):
   try:
     return int(s)
   except:
     return None
+
+def is_fast_date(ent, int_arr=None, year_start=1600, year_end=2050):
+  """search for patterns like, yyyy-mm-dd, dd-mm-yyyy, yyyy-yyyy """
+  if int_arr:
+    len_int_arr = len(int_arr)
+    if len_int_arr == 1 or len_int_arr > 3: return False
+  if int_arr is None:
+    ent_arr = ent.replace("/", "-").replace(" ","-").replace(".","-")
+    if not ("-" in ent_arr and ent_arr.count("-") <=2): return False
+    int_arr = [(e, to_int(e)) for e in ent_arr.split("-")]
+  is_date = False
+  has_year = has_month = has_day = 0
+  for e, val in int_arr:
+    if val is None: 
+      break
+    if (val <= year_end and val >= year_start):
+      has_year +=1
+    elif val <= 12 and val >= 1:
+      has_month += 1
+    elif val <= 31 and val >= 1:
+      has_day += 1
+    else:
+      return False
+  if (has_year == 1 and has_month == 1) or \
+        (has_year == 2 and has_month == 0 and has_day == 0) or \
+        (has_year == 1 and has_month == 1 and has_day == 1):
+      return True
+  return False
 
 #cusip number probaly PII?
 def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prioritize_lang_match_over_ignore=True, ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, all_regex=None, context_window=20, min_id_length=6, max_id_length=50,):
@@ -851,12 +875,8 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
 
       sw = stopwords.get(src_lang, {})
       
-      # if we are doing 'ID', we would still want to see if we catch DATE and ADDRESS. 
-      # DATE and ADDRESS may have higher precedence, in which case it might overide an ID match. 
-      no_date = False
-      if tag_type is not None and 'ID' in tag_type and 'DATE' not in tag_type:
-         no_date = True
-         tag_type = set(list(tag_type)+['DATE'])
+      # if we are doing 'ID', we would still want to see if we catch an ADDRESS. 
+      # ADDRESS may have higher precedence, in which case it might overide an ID match. 
       no_address = False
       if tag_type is not None and 'ID' in tag_type and 'ADDRESS' not in tag_type:
          no_address = True
@@ -872,7 +892,16 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
       if is_cjk:
           sentence_set = set(sentence.lower())
       else:
-          sentence_set = set(sentence.lower().split(" "))
+          sentence_set = []
+          #let's do a sanity check. there should be no words beyond 100 chars.
+          #this will really mess up our regexes.
+          for word in sentence.split(" "):
+            len_word = len(word)
+            if len_word > 100:
+              sentence = sentence.replace(word, " "*len_word)
+            else:
+              sentence_set.append(word.lower())
+          sentence_set = set(sentence_set)
       all_ner = []
       len_sentence = len(sentence)
         
@@ -904,11 +933,15 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
 
                   #now apply regex
                   for ent in list(set(list(regex.findall(sentence)))):
+                      
                       if not isinstance(ent, str):
                         continue
                       ent = ent.strip()
+                      #ent = ent.rstrip(rstrip_chars)
+                      #ent = ent.lstrip(lstrip_chars)
                       if not ent:
                         continue
+ 
                       ent_is_4_digit=False
                       len_ent = len(ent)
                       if len_ent == 4:
@@ -945,9 +978,9 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                       #let's check the FIRST instance of this DATE or ID is really a date; 
                       #ideally we should do this for every instance of this ID
                       if tag == 'DATE' or (tag == 'ID' and not is_stdnum):
-                          ent, tag = test_is_date(ent, tag, sentence, is_cjk, sentence.index(ent),  src_lang, sw)
-                          if not ent: continue
-
+                        ent, tag = test_is_date(ent, tag, sentence, len_sentence, is_cjk, sentence.index(ent),  src_lang, sw)
+                        if not ent: continue
+                      
                       #now let's turn all occurances of ent in this sentence into a span mention and also check for context and block words
                       len_ent = len(ent)
                       while True:
@@ -957,9 +990,9 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                           i = sentence2.index(ent)
                           j = i + len_ent
                           if potential_context or block:
-                              len_sentence = len(sentence2)
+                              len_sentence2 = len(sentence2)
                               left = sentence2[max(0, i - context_window) : i].lower()
-                              right = sentence2[j : min(len_sentence, j + context_window)].lower()
+                              right = sentence2[j : min(len_sentence2, j + context_window)].lower()
                               found_context = False
                               if context:
                                 for c in context:
@@ -1007,8 +1040,6 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
             prev_mention = mention
           all_ner2.append(mention)
         all_ner = all_ner2
-      if no_date:
-         all_ner = [a for a in all_ner if a[3] != 'DATE']
       if no_address:
          all_ner = [a for a in all_ner if a[3] != 'ADDRESS']
       if no_id:
