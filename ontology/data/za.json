@@ -1,50 +1,99 @@
 {
- "ORG": [
-  "hagdangz",
-  "dahvangzhoz",
-  "va",
-  "sawfuengz",
-  "gozminzdangj",
-  "sa"
+ "ANIMAL": [
+  "noucoengz",
+  "nonsei",
+  "roegga",
+  "goep",
+  "roeggyaeujmeuz",
+  "gaeq"
  ],
  "PLANT": [
-  "maenzfaex",
   "lauxbaeghoengz",
+  "maenzfaex",
+  "faexndoek",
+  "makmaenj",
   "goliux",
   "moegsawz",
-  "maklangz",
-  "makmaenj"
+  "faexcuk",
+  "maklangz"
+ ],
+ "POLITICAL_PARTY": [
+  "gozminzdangj"
  ],
  "FOOD": [
+  "byaekgap",
+  "lwgmanh",
+  "gyahfeih",
+  "gahfeih",
   "ciengqyouz"
- ],
- "PUBLIC_FIGURE": [
-  "a"
  ],
  "SOC_ECO_CLASS": [
   "sevei"
  ],
- "FAC": [
-  "guengjciengz"
+ "EVENT": [
+  "singj",
+  "ndiu",
+  "dauqndiu"
+ ],
+ "ORG": [
+  "gozminzdangj",
+  "hagdangz",
+  "nga",
+  "doengnamzya_guekgya_lenzmungz",
+  "asean",
+  "sawfuengz",
+  "yozyau",
+  "va",
+  "sa",
+  "cwngfuj",
+  "dahvangzhoz",
+  "ginhdui",
+  "ranzhag"
+ ],
+ "GENDER": [
+  "caeuzyah",
+  "dozyah",
+  "dihmeh"
  ],
  "JOB": [
-  "lauxsae",
   "canghyw",
-  "gingjcaz"
- ],
- "DISEASE": [
-  "bingh",
-  "haeb"
+  "myauj",
+  "lauxsae",
+  "gingjcaz",
+  "miux"
  ],
  "LOCATION": [
+  "meijcouh",
+  "dwgrengz_mwngz_loz",
   "meijgoz",
-  "meijcouh"
+  "dahvangzhoz"
  ],
- "EVENT": [
-  "singj"
+ "PERSON_PRONOUN": [
+  "duh_mwngz",
+  "mwngz",
+  "duh_gou",
+  "coiq"
  ],
  "RELIGION_MEMBER": [
   "beixneungx"
+ ],
+ "PRODUCT": [
+  "saen_saelanz"
+ ],
+ "PUBLIC_FIGURE": [
+  "so\u014b",
+  "\u014bei\u0185",
+  "ngeih",
+  "a"
+ ],
+ "LANGUAGE": [
+  "bouxcuengh"
+ ],
+ "DISEASE": [
+  "haeb"
+ ],
+ "FAC": [
+  "guengjciengz"
  ],
  "OTHER_PRONOUN": [
   "it"
@@ -60,7 +109,7 @@
  "binary_gender_swap": {
   "beixmbwk": "nuengx",
   "dahnuengx": "beix",
-  "nuengx": "beix",
+  "nuengx": "beixneungx",
   "beixsau": "nuengx",
   "beix": "beixneungx"
  },
@@ -75,10 +124,10 @@
  "en_pronoun2pronoun": {
   "they": [
    "vajde",
-   "dohde",
-   "gyoengqde",
+   "mbongmiz",
    "hongminz",
-   "mbongmiz"
+   "gyoengqde",
+   "dohde"
   ],
   "it": [
    "it"

@@ -1,20 +1,27 @@
 {
+ "JOB": [
+  "mate",
+  "matato_a"
+ ],
+ "LOCATION": [
+  "rapa_nui",
+  "vananga_rapa_nui"
+ ],
+ "PERSON_PRONOUN": [
+  "korua",
+  "maua",
+  "i"
+ ],
  "DISEASE": [
   "ki"
  ],
- "PERSON_PRONOUN": [
-  "i",
-  "korua"
- ],
- "JOB": [
-  "mate"
- ],
- "PUBLIC_FIGURE": [
-  "o",
-  "i"
- ],
  "GENDER": [
   "vahine"
+ ],
+ "PUBLIC_FIGURE": [
+  "i",
+  "o",
+  "ka_tahi"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

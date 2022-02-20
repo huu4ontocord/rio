@@ -1,53 +1,70 @@
 {
- "GPE": [
-  "nupela_testamen"
- ],
- "LANGUAGE": [
-  "inglis"
- ],
  "FOOD": [
+  "loliwara_bilong_cranberi",
   "retsos",
   "loliwara",
-  "muliwara",
   "lemonad",
+  "muliwara",
   "moliwara"
+ ],
+ "PERSON_PRONOUN": [
+  "me",
+  "we",
+  "mitupela",
+  "yumi",
+  "mipela"
  ],
  "JOB": [
   "minista",
-  "boskru",
+  "bigman",
+  "rat",
   "nating",
+  "boskru",
+  "man",
   "loman",
   "bisop",
-  "man"
+  "dokta",
+  "sekreteri"
  ],
- "PERSON_PRONOUN": [
-  "yumi",
-  "mitupela",
-  "we",
-  "me"
+ "GPE": [
+  "nupela_testamen"
+ ],
+ "PUBLIC_FIGURE": [
+  "palpal",
+  "jisas_kraist",
+  "jisas",
+  "a"
  ],
  "ORG": [
+  "andorra_la_vella",
   "yurop",
+  "gavman",
+  "sios_bilong_jisas_krais_bilong_ol_seint_long_las_de",
   "husat",
   "kolwara"
+ ],
+ "LOCATION": [
+  "sanap",
+  "tenkyu",
+  "kolwara",
+  "hepi_nuyia"
+ ],
+ "PLANT": [
+  "palpal",
+  "karot"
+ ],
+ "PRODUCT": [
+  "nupela_testamen"
  ],
  "ANIMAL": [
   "tangir"
  ],
- "PUBLIC_FIGURE": [
-  "palpal",
-  "a",
-  "jisas"
- ],
- "PLANT": [
-  "karot",
-  "palpal"
- ],
- "DISEASE": [
-  "rabis"
- ],
  "GENDER": [
   "man"
+ ],
+ "LANGUAGE": [
+  "inglis",
+  "nauru"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

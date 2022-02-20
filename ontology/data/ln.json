@@ -1,26 +1,56 @@
 {
+ "DISEASE": [
+  "bul\u00e9",
+  "maba"
+ ],
+ "PLANT": [
+  "ns\u0254ng\u0254\u0301",
+  "many\u0254\u0301k\u0254",
+  "mbala"
+ ],
  "FOOD": [
+  "l\u00edki",
   "like\u00ed"
+ ],
+ "LANGUAGE": [
+  "ling\u00e1la",
+  "kik\u0254\u0301ng\u0254",
+  "tonga",
+  "falans\u00e9",
+  "nep\u00e1li",
+  "liafr\u00edk\u00e1nsi"
+ ],
+ "LOCATION": [
+  "sri_lanka",
+  "mob\u00fa_el\u00e1mu",
+  "bon\u00e1na",
+  "but\u00fa_el\u00e1mu"
+ ],
+ "PERSON_PRONOUN": [
+  "y\u011b"
+ ],
+ "ORG": [
+  "andorra_la_vella",
+  "eklezia_ya_yesu_klisto_ya_basantu_ba_mikolo_mya_nsuka"
+ ],
+ "PUBLIC_FIGURE": [
+  "m\u0254\u030ck\u0254\u0301"
  ],
  "RELIGION_MEMBER": [
   "mozilmani"
  ],
- "PLANT": [
-  "many\u0254\u0301k\u0254"
- ],
- "LANGUAGE": [
-  "ling\u00e1la",
-  "falans\u00e9",
-  "tonga"
- ],
- "JOB": [
-  "mokomi"
- ],
- "LOCATION": [
-  "sri_lanka"
- ],
  "EVENT": [
   "kolamuka"
+ ],
+ "JOB": [
+  "mokomi",
+  "mo\u00fambu"
+ ],
+ "ANIMAL": [
+  "esul\u00fang\u00fatu"
+ ],
+ "GENDER": [
+  "mwasi"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -36,10 +66,10 @@
  "other_gender_swap": {},
  "en_pronoun2gender": {
   "she": [
-   "m\u00e1i",
    "bambola",
-   "mwasi",
-   "bimba"
+   "m\u00e1i",
+   "bimba",
+   "mwasi"
   ]
  },
  "en_pronoun2pronoun": {

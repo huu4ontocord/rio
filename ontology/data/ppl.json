@@ -1,33 +1,38 @@
 {
  "ANIMAL": [
   "mistun",
-  "masat",
-  "mututzin"
+  "mututzin",
+  "akuyut",
+  "masat"
  ],
  "GENDER": [
-  "siwat"
+  "siwat",
+  "cihuat"
+ ],
+ "ORG": [
+  "nimetztasujta"
  ],
  "PERSON_PRONOUN": [
-  "i",
-  "tehemet",
   "tejemet",
   "nech",
-  "metzin",
-  "tech"
+  "tehemet",
+  "tech",
+  "i",
+  "metzin"
  ],
  "GPE": [
   "shiktal"
  ],
- "PUBLIC_FIGURE": [
-  "a",
-  "i"
- ],
  "DISEASE": [
-  "cucua",
-  "kukua"
+  "kukua",
+  "cucua"
  ],
- "ORG": [
-  "nimetztasujta"
+ "PUBLIC_FIGURE": [
+  "i",
+  "a"
+ ],
+ "DATE": [
+  "wipta"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -43,35 +48,35 @@
  },
  "other_gender_swap": {
   "yejemet": "yaha",
-  "yehemet": "yaja",
+  "yehemet": "yaha",
   "yaja": "yehemet",
-  "yaha": "yehemet"
+  "yaha": "yejemet"
  },
  "en_pronoun2gender": {
   "she": [
    "cihuat",
-   "kak",
-   "siwat"
+   "siwat",
+   "kak"
   ]
  },
  "en_pronoun2pronoun": {
   "he": [
-   "yaja",
    "yaha",
-   "neki"
+   "neki",
+   "yaja"
   ],
   "she": [
-   "yaja",
-   "yaha"
+   "yaha",
+   "yaja"
   ],
   "they": [
-   "yehemet",
-   "yejemet"
+   "yejemet",
+   "yehemet"
   ],
   "it": [
-   "yaja",
+   "yaha",
    "esti",
-   "yaha"
+   "yaja"
   ]
  },
  "en_pronoun2title": {},

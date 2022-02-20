@@ -1,18 +1,22 @@
 {
- "ANIMAL": [
-  "hunal"
+ "GENDER": [
+  "nichill"
  ],
- "FOOD": [
-  "tevat"
+ "ANIMAL": [
+  "alwet",
+  "hunal",
+  "maxayill",
+  "qaxal"
  ],
  "DISEASE": [
   "kukul"
  ],
- "PLANT": [
-  "chivnish"
+ "FOOD": [
+  "tevat"
  ],
- "GENDER": [
-  "nichill"
+ "PLANT": [
+  "chivnish",
+  "saxat"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

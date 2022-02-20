@@ -1,26 +1,38 @@
 {
- "GENDER": [
-  "molota"
- ],
- "DISEASE": [
-  "alijkwa'takochi",
-  "chukchu"
- ],
  "JOB": [
   "shileti",
   "kumali",
   "lota'c\u0308homa",
   "soltalo"
  ],
- "PLANT": [
-  "kinili"
- ],
  "ANIMAL": [
   "askoli",
-  "cheshana",
-  "ma'sheti",
+  "oshlo",
+  "tis\u0308ha",
   "shani",
+  "ma'sheti",
+  "kwe'la",
+  "cheshana",
+  "kujpawa'to",
   "tsemo'ye"
+ ],
+ "GENDER": [
+  "meploneye",
+  "molota"
+ ],
+ "PUBLIC_FIGURE": [
+  "ma'pojta",
+  "u'ti"
+ ],
+ "PERSON_PRONOUN": [
+  "a'ti"
+ ],
+ "PLANT": [
+  "ocha'tina",
+  "kinili"
+ ],
+ "ORG": [
+  "na'shanana"
  ],
  "TITLE": [
   "chmes\u0308hona"

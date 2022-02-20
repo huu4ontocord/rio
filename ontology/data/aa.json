@@ -1,9 +1,19 @@
 {
- "PUBLIC_FIGURE": [
-  "a"
- ],
  "DISEASE": [
   "le"
+ ],
+ "LANGUAGE": [
+  "qaf\u00e1r_af",
+  "\u12a0\u134b\u122d"
+ ],
+ "LOCATION": [
+  "gadda_ge"
+ ],
+ "FOOD": [
+  "buun"
+ ],
+ "PUBLIC_FIGURE": [
+  "a"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

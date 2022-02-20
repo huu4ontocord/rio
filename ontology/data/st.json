@@ -1,41 +1,74 @@
 {
- "DISEASE": [
-  "robala",
-  "tlhokofatso"
+ "LOCATION": [
+  "kea_leboha",
+  "amerika",
+  "lewatle_la_phasifiki",
+  "botjhabela_bohare",
+  "lewatle_la_india",
+  "lewatle_la_atlelantiki"
  ],
  "JOB": [
+  "mmusi",
+  "moruti",
   "molemi",
+  "modulasetulo",
+  "moambasadara",
+  "radibuka",
+  "mofetoledi",
+  "ngaka",
+  "titjhere",
+  "sebini",
+  "molepi",
+  "rameriana",
   "moeletsi",
   "lepolesa",
-  "rameriana",
-  "molepi",
-  "moruti",
-  "sebini",
-  "modulasetulo"
+  "mohlokomedi_wa_lelapa"
  ],
- "RELIGION_MEMBER": [
-  "moselamose"
+ "FOOD": [
+  "dit\u0161humamel\u00f4mo",
+  "k\u00f4fi",
+  "dijo_tsa_hoseng",
+  "mofihlolo",
+  "aesekerimi"
  ],
- "GENDER": [
-  "moshemane",
-  "mosadi"
+ "PERSON": [
+  "boitshwaro"
  ],
- "ANIMAL": [
-  "ho_tsamaea_thupa"
+ "FAC": [
+  "letamo_la_ho_tola_le_sesa"
  ],
  "PLANT": [
+  "sehwete",
   "khabetjhe",
   "kholifolawa"
  ],
  "ORG": [
-  "ke_a_go_rata"
+  "ke_a_go_rata",
+  "equatorial_guinea",
+  "sekolo"
  ],
  "LANGUAGE": [
+  "se_french",
   "seburu",
-  "se_french"
+  "seafrekanse"
  ],
- "FOOD": [
-  "mofihlolo"
+ "RELIGION_MEMBER": [
+  "moprotestanta",
+  "moselamose"
+ ],
+ "GENDER": [
+  "mosadi",
+  "moshemane",
+  "ausi"
+ ],
+ "GPE": [
+  "tsela_tsweu",
+  "amerika_borwa"
+ ],
+ "ANIMAL": [
+  "kgoho",
+  "ho_tsamaea_thupa",
+  "lephela"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -54,8 +87,8 @@
    "moshemane"
   ],
   "she": [
-   "mosadi",
-   "ausi"
+   "ausi",
+   "mosadi"
   ]
  },
  "en_pronoun2pronoun": {},

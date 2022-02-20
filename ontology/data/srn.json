@@ -1,39 +1,48 @@
 {
- "PLANT": [
-  "furu"
+ "QUANTITY": [
+  "keti"
  ],
  "PUBLIC_FIGURE": [
   "bari",
   "krin"
  ],
- "JOB": [
-  "don",
-  "man"
- ],
- "ORG": [
-  "oni",
-  "sa"
- ],
  "DISEASE": [
-  "grati",
   "tan"
  ],
+ "GENDER": [
+  "woy",
+  "omu",
+  "frow",
+  "man"
+ ],
  "ANIMAL": [
+  "kindi",
   "sabaku",
-  "kindi"
+  "watradagu",
+  "ekosi",
+  "krape"
  ],
  "PERSON_PRONOUN": [
   "we",
   "noso"
  ],
+ "JOB": [
+  "man",
+  "don"
+ ],
+ "PLANT": [
+  "bambu",
+  "furu"
+ ],
+ "ORG": [
+  "sa",
+  "oni"
+ ],
+ "TITLE": [
+  "sra"
+ ],
  "SOC_ECO_CLASS": [
   "waki"
- ],
- "QUANTITY": [
-  "keti"
- ],
- "GENDER": [
-  "man"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -44,7 +53,7 @@
  "SUFIX_MALE": [],
  "SUFIX_FEMALE": [],
  "binary_gender_swap": {
-  "woy": "omu",
+  "woy": "man",
   "frow": "man"
  },
  "other_gender_swap": {},
@@ -60,13 +69,13 @@
  },
  "en_pronoun2pronoun": {
   "he": [
-   "sibi",
    "iya",
+   "sibi",
    "neki"
   ],
   "she": [
-   "sibi",
-   "iya"
+   "iya",
+   "sibi"
   ],
   "it": [
    "sibi"

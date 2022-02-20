@@ -1,4 +1,19 @@
 {
+ "ORG": [
+  "\ud800\udf8e\ud800\udf8a"
+ ],
+ "RELIGION_MEMBER": [
+  "\ud800\udf80\ud800\udf83"
+ ],
+ "JOB": [
+  "\ud800\udf8e\ud800\udf8d\ud800\udf8b"
+ ],
+ "LOCATION": [
+  "\ud800\udf8c\ud800\udf84"
+ ],
+ "PERSON_PRONOUN": [
+  "\ud800\udf85\ud800\udf8a"
+ ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
  "FIRST_NAME_FEMALE": [],

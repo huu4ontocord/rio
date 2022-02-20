@@ -1,28 +1,79 @@
 {
- "DATE": [
-  "namesdaag",
-  "vaderdaag",
-  "trinitatis"
- ],
- "PUBLIC_FIGURE": [
-  "maria_magdalena",
-  "petrus",
-  "e",
-  "titus"
- ],
- "LANGUAGE": [
-  "lingalisj",
-  "gallesisj",
-  "nachoeroe",
-  "ido",
-  "quechua",
-  "tonga"
- ],
  "RELIGION": [
   "calvinisme"
  ],
+ "LANGUAGE": [
+  "jiddisch",
+  "t\u00f6rksj",
+  "gallesisj",
+  "afrikaans",
+  "sanskriet",
+  "\u00e8spransj",
+  "zw\u00e8dsj",
+  "sardiens",
+  "arpitaans",
+  "afrikaansj",
+  "die\u00ebnsj",
+  "quechua",
+  "lingalisj",
+  "nachoeroe",
+  "tonga",
+  "ieslands",
+  "xhosa",
+  "yiddish",
+  "\u00f3ksittaonsj",
+  "baskisj",
+  "ido",
+  "nie\u00ebderlandjsj",
+  "h\u00e8rzeentj_\u00e8spransj",
+  "macedonisch"
+ ],
+ "ORG": [
+  "europese_unie",
+  "frygische_mutsj",
+  "kerk_van_jezus_christus_en_de_heilige_der_letste_daag",
+  "equatoriaal_guinee",
+  "g\u00f3rdische_knoup",
+  "l\u00f3chh\u00e8\u00e8r",
+  "art_nouveau",
+  "regiering",
+  "verenigde_naties",
+  "\u00f3ppernuuj",
+  "sjang"
+ ],
  "JOB": [
-  "hand"
+  "j\u00f6ppie",
+  "hand",
+  "pliesj"
+ ],
+ "LOCATION": [
+  "sri_lanka",
+  "colorado",
+  "zwarte_zie",
+  "l\u00f3chh\u00e8\u00e8r"
+ ],
+ "PUBLIC_FIGURE": [
+  "maria_magdalena",
+  "zjez\u00f6s_k\u00e8rst\u00f6s",
+  "e",
+  "zjez\u00f6s",
+  "petrus",
+  "titus"
+ ],
+ "PRODUCT": [
+  "ruimteveer",
+  "johannes_de_duiper"
+ ],
+ "FOOD": [
+  "weuste",
+  "vet_breudje",
+  "v\u00e8tslaever",
+  "w\u00f3sdje",
+  "koffie"
+ ],
+ "GPE": [
+  "zwart_waadj",
+  "zwarsb\u00f3sj"
  ],
  "QUANTITY": [
   "leechjaor"
@@ -30,16 +81,16 @@
  "PLANT": [
   "craemsjnitje"
  ],
- "ORG": [
-  "l\u00f3chh\u00e8\u00e8r"
+ "DISEASE": [
+  "aids"
  ],
- "GPE": [
-  "zwarsb\u00f3sj"
- ],
- "LOCATION": [
-  "sri_lanka"
+ "DATE": [
+  "trinitatis",
+  "namesdaag",
+  "vaderdaag"
  ],
  "ANIMAL": [
+  "kr\u00f3w",
   "gelidpoetege"
  ],
  "FIRST_NAME_MALE": [],

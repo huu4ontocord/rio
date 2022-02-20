@@ -1,6 +1,37 @@
 {
+ "JOB": [
+  "kalavo"
+ ],
+ "FOOD": [
+  "kofe"
+ ],
+ "FAC": [
+  "tolusagavulu_ka_tolu"
+ ],
+ "QUANTITY": [
+  "ruasagavulu_ka_rua",
+  "ruasagavulu_ka_va",
+  "ruasagavulu_ka_ciwa",
+  "ruasagavulu_ka_tolu",
+  "ruasagavulu_ka_lima",
+  "ruasagavulu_ka_dua",
+  "ruasagavulu_ka_vitu",
+  "ruasagavulu_ka_ono",
+  "ruasagavulu_ka_walu"
+ ],
  "PUBLIC_FIGURE": [
   "jisu"
+ ],
+ "PERSON": [
+  "tolusagavulu_ka_rua"
+ ],
+ "PLANT": [
+  "tavioka",
+  "dovu",
+  "kareti"
+ ],
+ "ANIMAL": [
+  "vivini"
  ],
  "PRODUCT": [
   "na_masu"
@@ -9,14 +40,8 @@
   "va",
   "na_lotu_i_jisu_karisito_ni_yalododonu_edaidai"
  ],
- "ANIMAL": [
-  "vivini"
- ],
- "PLANT": [
-  "kareti"
- ],
- "JOB": [
-  "kalavo"
+ "LOCATION": [
+  "vinaka"
  ],
  "DISEASE": [
   "veivakararawataki"

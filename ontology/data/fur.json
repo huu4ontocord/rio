@@ -1,135 +1,236 @@
 {
- "DISEASE": [
-  "struc",
-  "schelfe",
-  "sanglo\u00e7",
-  "starnud\u00e2",
-  "muardi",
-  "lichil",
-  "durm\u00ee",
-  "gangrene",
-  "ruzin",
-  "mi",
-  "rabie",
-  "torment"
- ],
- "PERSON_PRONOUN": [
-  "nestri",
-  "m\u00ea",
-  "me"
- ],
- "ANIMAL": [
-  "mardar",
-  "cheche",
-  "tortorele",
-  "pole\u00e7",
-  "forcel",
-  "sparv\u00e2l",
-  "vari\u0171l",
-  "dordei",
-  "stambec",
-  "falcu\u00e7",
-  "martar",
-  "cornile",
-  "cengl\u00e2r",
-  "viespe",
-  "bo_salvadi",
-  "cagne",
-  "mierli",
-  "gjesp\u00e2r",
-  "falcon",
-  "jespe",
-  "bilite",
-  "cavie",
-  "barbezuan",
-  "cjavr\u00fbl",
-  "cast\u00f4r",
-  "cagn\u0155s"
+ "JOB": [
+  "pit\u00f4r",
+  "dot\u00f4r",
+  "libr\u00e2r",
+  "d\u00fbs",
+  "fevelant",
+  "pior\u00e2r",
+  "guide",
+  "cusin\u00e2",
+  "bo\u00e2r",
+  "cjavr\u00e2r",
+  "scov\u00e2",
+  "abit",
+  "zuiad\u00f4r",
+  "lat\u00e2r",
+  "zugadore",
+  "past\u00f4r",
+  "fed\u00e2r",
+  "vuarzen\u00e2r",
+  "arad\u00f4r",
+  "vescul",
+  "marangon",
+  "\u010dhavr\u00e2r",
+  "miedi",
+  "scrit\u00f4r",
+  "vacj\u00e2r",
+  "operari",
+  "sold\u00e2t",
+  "pantiane",
+  "\u011fujad\u00f4r",
+  "vendit\u00f4r"
  ],
  "ORG": [
-  "doi",
-  "un",
   "lav\u00f4r",
+  "doi",
   "justizie",
-  "ai",
-  "europe",
+  "cumier\u00e7",
   "mi",
-  "cumier\u00e7"
+  "esercit",
+  "armade",
+  "guvi\u00ear",
+  "union_europeane",
+  "scuele",
+  "ai",
+  "sintoisim",
+  "un",
+  "sec",
+  "europe"
+ ],
+ "PLANT": [
+  "cjastin\u00e2r",
+  "papaver",
+  "ceriese",
+  "urtie",
+  "ceries\u00e2r",
+  "ul\u00eef",
+  "brocul",
+  "fave",
+  "cauli",
+  "emul",
+  "brugnul",
+  "latuie",
+  "aieresse",
+  "bromb",
+  "molec",
+  "ciespe",
+  "\u00e7aries\u00e2r",
+  "siespe",
+  "car\u00f2tule",
+  "ces\u00e2r",
+  "cjaries\u00e2r",
+  "ven\u010dh\u00e2r",
+  "ul\u00eev",
+  "cjariese"
+ ],
+ "ANIMAL": [
+  "dordei",
+  "pud\u00ees_blanc",
+  "bufal",
+  "mierli",
+  "gjal_forcj\u0155s",
+  "viespe",
+  "bisont_american",
+  "gjat",
+  "falcu\u00e7",
+  "sparv\u00e2l",
+  "coc\u00e2l",
+  "falcon",
+  "smurgnic",
+  "vari\u0171l",
+  "corvat",
+  "cagn\u0155s",
+  "bo_salvadi",
+  "bilite",
+  "cagne",
+  "bisont_european",
+  "cheche",
+  "martar",
+  "tortorele",
+  "past\u00f4r_todesc",
+  "forcel",
+  "mardar",
+  "cierv",
+  "barbezuan",
+  "\u00e7ore",
+  "cast\u00f4r",
+  "gjal_forcel",
+  "stambec",
+  "cierf",
+  "gjesp\u00e2r",
+  "jespe",
+  "cavie",
+  "cjavr\u00fbl",
+  "cornile",
+  "civuite",
+  "pole\u00e7",
+  "colomp_salvadi",
+  "poiane",
+  "gjaline_faraone",
+  "lodre",
+  "d\u0171c",
+  "d\u0171t",
+  "\u00e7us",
+  "gl\u00eer",
+  "cengl\u00e2r",
+  "sghirat",
+  "ocje_salvadie",
+  "cat\u016fs",
+  "ast\u00f4r",
+  "sghirate",
+  "corvat_pi\u00e7ul",
+  "ocje_di_pr\u00e2t"
+ ],
+ "PERSON_PRONOUN": [
+  "me",
+  "j\u00ea",
+  "m\u00ea",
+  "nestri",
+  "noaltris",
+  "gno"
  ],
  "FOOD": [
-  "desert",
   "gust\u00e0",
-  "ging\u00ece"
+  "zinzie",
+  "\u00fbf",
+  "disiert",
+  "ging\u00ece",
+  "desert",
+  "\u00fbv",
+  "zinz\u00ece"
  ],
- "RELIGION_MEMBER": [
-  "fradi"
- ],
- "JOB": [
-  "miedi",
-  "past\u00f4r",
-  "arad\u00f4r",
-  "pior\u00e2r",
-  "marangon",
-  "guide",
-  "fevelant",
-  "pantiane",
-  "vuarzen\u00e2r",
-  "cusin\u00e2"
+ "DISEASE": [
+  "dul\u00ee",
+  "aids",
+  "mi",
+  "schelfe",
+  "rem"
  ],
  "PUBLIC_FIGURE": [
-  "bari",
-  "e",
-  "lurin\u00e7",
-  "davide",
-  "liston",
-  "most",
+  "v\u00e2t",
   "sper\u00e2",
-  "mois\u00e8s",
+  "v\u00e2d",
   "sperance",
+  "d\u00f4s",
+  "bari",
+  "tas\u00ea",
+  "lenart",
+  "liston",
+  "bu\u0161",
+  "tom\u00e2s",
+  "davide",
   "griv\u00f4r",
-  "lenart"
+  "lurin\u00e7",
+  "e",
+  "most",
+  "mois\u00e8s"
  ],
- "PRODUCT": [
-  "spirtussant",
-  "cavie"
+ "LANGUAGE": [
+  "greche",
+  "gr\u00eac",
+  "alban\u00eas",
+  "greghe",
+  "portugh\u00eas"
+ ],
+ "GPE": [
+  "spirtussant"
+ ],
+ "LOCATION": [
+  "\u010dhamp",
+  "pic_neri",
+  "buine_sere",
+  "cjamp",
+  "cit\u00e2t"
+ ],
+ "GENDER": [
+  "frutate",
+  "mascli",
+  "frutat",
+  "dame"
  ],
  "TITLE": [
   "miss\u00e2r",
   "sign\u00f4r"
  ],
- "PLANT": [
-  "siespe",
-  "papaver",
-  "urtie",
-  "fave",
-  "bromb",
-  "brocul",
-  "molec",
-  "brugnul"
- ],
- "LANGUAGE": [
-  "greche",
-  "greghe",
-  "portugh\u00eas"
- ],
- "GENDER": [
-  "frutat",
-  "dame",
-  "frutate",
-  "mascli"
- ],
- "QUANTITY": [
-  "ton"
- ],
- "LOCATION": [
-  "pic_neri"
- ],
  "RELIGION": [
   "islam",
   "sintoisim"
  ],
- "GPE": [
+ "DATE": [
+  "ete_di_mie\u00e7",
+  "et\u00e2t_di_mie\u00e7"
+ ],
+ "RELIGION_MEMBER": [
+  "apuestul",
+  "fradi"
+ ],
+ "POLITICAL_PARTY": [
+  "lav\u00f4r"
+ ],
+ "PRODUCT": [
+  "f\u00fbc_voladi",
+  "cavie",
   "spirtussant"
+ ],
+ "SOC_ECO_CLASS": [
+  "p\u00f4c"
+ ],
+ "BIO_CHEM_ENTITY": [
+  "fri\u00fbl_vignesie_julie"
+ ],
+ "QUANTITY": [
+  "ton"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -145,13 +246,13 @@
   "madrigne": "padreu",
   "vedue": "vedul",
   "cristiane": "mar\u00eet",
-  "mu\u00eer": "cristian",
-  "femine": "cristian",
+  "mu\u00eer": "omp",
+  "femine": "mar\u00eet",
   "frut": "frutate",
   "frutat": "frutate"
  },
  "other_gender_swap": {
-  "l\u00f4r": "sun",
+  "l\u00f4r": "j\u00ea",
   "j\u00ea": "l\u00f4r",
   "sun": "l\u00f4r",
   "s\u00f4": "l\u00f4r"
@@ -163,10 +264,10 @@
    "frut"
   ],
   "she": [
+   "frutate",
    "frute",
    "dame",
-   "femine",
-   "frutate"
+   "femine"
   ]
  },
  "en_pronoun2pronoun": {
@@ -174,9 +275,9 @@
    "s\u00f4"
   ],
   "she": [
-   "sun",
    "j\u00ea",
-   "s\u00f4"
+   "s\u00f4",
+   "sun"
   ],
   "they": [
    "l\u00f4r"
@@ -188,5 +289,7 @@
  "en_pronoun2title": {},
  "PREFIX_MALE": [],
  "PREFIX_FEMALE": [],
- "person2religion": {}
+ "person2religion": {
+  "cristian": "cristianisim"
+ }
 }

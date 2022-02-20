@@ -1,10 +1,26 @@
 {
- "ANIMAL": [
-  "curn\u00e0cia"
+ "JOB": [
+  "dut\u00e5ur"
+ ],
+ "RELIGION_MEMBER": [
+  "agust\u00e9n",
+  "cat\u00f2lgo"
  ],
  "DISEASE": [
-  "brun\u015b\u014dl",
-  "sgaram\u00f2ffia"
+  "brun\u015b\u014dl"
+ ],
+ "PUBLIC_FIGURE": [
+  "p\u00eer"
+ ],
+ "FOOD": [
+  "cafa",
+  "des\u00eart"
+ ],
+ "GENDER": [
+  "d\u00f2na"
+ ],
+ "ANIMAL": [
+  "curn\u00e0cia"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -23,8 +39,8 @@
  },
  "en_pronoun2pronoun": {
   "it": [
-   "st\u00e9",
-   "taj"
+   "taj",
+   "st\u00e9"
   ]
  },
  "en_pronoun2title": {},

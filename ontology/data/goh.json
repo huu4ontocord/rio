@@ -1,16 +1,27 @@
 {
- "ANIMAL": [
-  "heigaro",
-  "reigaro"
+ "ORG": [
+  "ir"
  ],
- "DISEASE": [
-  "brehhan",
-  "hungar"
+ "PLANT": [
+  "kerfola",
+  "pfruma",
+  "fiuhta"
+ ],
+ "ANIMAL": [
+  "uwila",
+  "heigaro",
+  "kazza",
+  "reigaro"
  ],
  "PERSON_PRONOUN": [
   "her"
  ],
+ "JOB": [
+  "mahhon",
+  "cuning"
+ ],
  "PUBLIC_FIGURE": [
+  "ihh",
   "lulli"
  ],
  "FIRST_NAME_MALE": [],

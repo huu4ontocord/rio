@@ -2,8 +2,12 @@
  "JOB": [
   "alfarero"
  ],
+ "GENDER": [
+  "mugier"
+ ],
  "QUANTITY": [
-  "migero"
+  "migero",
+  "peso"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

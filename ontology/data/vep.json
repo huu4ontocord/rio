@@ -1,27 +1,46 @@
 {
- "FOOD": [
-  "munari\u010d"
- ],
- "JOB": [
-  "maid",
-  "kunigaz"
- ],
  "ANIMAL": [
-  "vari\u0161"
+  "orav",
+  "must_vari\u0161",
+  "hir'pulo",
+  "vari\u0161",
+  "hirb",
+  "gurbakaz_kit"
+ ],
+ "LOCATION": [
+  "hahk_vari\u0161",
+  "kit\u00e4n"
+ ],
+ "FOOD": [
+  "kofe",
+  "j\u00e4hine",
+  "munari\u010d"
  ],
  "GENDER": [
   "maid"
  ],
+ "ORG": [
+  "mi",
+  "h\u00fcv\u00e4d_litud",
+  "san_francisko"
+ ],
  "DISEASE": [
-  "s\u00e4dai",
+  "mi\u0161",
   "mi"
  ],
+ "JOB": [
+  "s\u00e4dai",
+  "kunigaz",
+  "maid"
+ ],
  "PUBLIC_FIGURE": [
+  "lendai_alamalaine",
+  "\u00fcks",
   "bethoven",
   "putin"
  ],
- "ORG": [
-  "mi"
+ "PRODUCT": [
+  "h\u00fcv\u00e4d_homendest"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -35,8 +54,8 @@
  "other_gender_swap": {},
  "en_pronoun2gender": {
   "she": [
-   "naine",
-   "maid"
+   "maid",
+   "naine"
   ]
  },
  "en_pronoun2pronoun": {

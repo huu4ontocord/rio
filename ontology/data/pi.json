@@ -1,12 +1,31 @@
 {
+ "JOB": [
+  "va\u1e0d\u1e0dhak\u012b",
+  "r\u0101ja",
+  "s\u016bdo",
+  "\u092d\u0942\u092a\u093e\u0932\u094b",
+  "\u0938\u0942\u0926\u094b"
+ ],
+ "LANGUAGE": [
+  "p\u0101\u1e37i",
+  "p\u0101li"
+ ],
  "ORG": [
+  "becia",
+  "va\u1e47ijj\u0101",
   "kasikamma"
  ],
- "SOC_ECO_CLASS": [
-  "kasikamma"
+ "GENDER": [
+  "ka\u00f1\u00f1\u0101"
  ],
  "GPE": [
   "buddh\u0101bhiseka"
+ ],
+ "RELIGION_MEMBER": [
+  "bh\u0101tar"
+ ],
+ "SOC_ECO_CLASS": [
+  "kasikamma"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -17,7 +36,7 @@
  "SUFIX_MALE": [],
  "SUFIX_FEMALE": [],
  "binary_gender_swap": {
-  "amm\u0101": "\u091c\u0928\u0915\u094b",
+  "amm\u0101": "janako",
   "bhagin\u012b": "bh\u0101tar"
  },
  "other_gender_swap": {},

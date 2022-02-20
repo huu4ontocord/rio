@@ -1,19 +1,30 @@
 {
+ "PERSON_PRONOUN": [
+  "me",
+  "pwisin",
+  "we"
+ ],
+ "ORG": [
+  "ewe_mwichefenin_jises_kraist_ren_aramas_mi_pin_non_fansoun_soponon",
+  "un"
+ ],
  "LOCATION": [
   "kinisou"
  ],
- "ORG": [
-  "un"
- ],
  "GENDER": [
+  "feefin",
   "nemin"
  ],
- "JOB": [
-  "nakkich"
+ "PUBLIC_FIGURE": [
+  "jises_kraist"
  ],
- "PERSON_PRONOUN": [
-  "we",
-  "me"
+ "JOB": [
+  "nounou",
+  "nakkich",
+  "f\u00f6ri"
+ ],
+ "LANGUAGE": [
+  "ewe"
  ],
  "OTHER_PRONOUN": [
   "it"
@@ -30,8 +41,8 @@
  "other_gender_swap": {},
  "en_pronoun2gender": {
   "she": [
-   "feefin",
    "nemin",
+   "feefin",
    "awewe"
   ]
  },

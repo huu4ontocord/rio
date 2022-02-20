@@ -1,26 +1,48 @@
 {
+ "DISEASE": [
+  "heku",
+  "gandu"
+ ],
+ "RELIGION_MEMBER": [
+  "jew"
+ ],
+ "PLANT": [
+  "yew",
+  "bananku"
+ ],
+ "GENDER": [
+  "woy"
+ ],
+ "LOCATION": [
+  "bere_bere",
+  "sar_sar",
+  "jiji"
+ ],
  "RELIGION": [
+  "zen"
+ ],
+ "FOOD": [
+  "gum"
+ ],
+ "GPE": [
+  "jara_jara"
+ ],
+ "PERSON_PRONOUN": [
+  "gure",
+  "iddu"
+ ],
+ "JOB": [
+  "minister"
+ ],
+ "PERSON": [
+  "yee"
+ ],
+ "ORG": [
   "zen"
  ],
  "PUBLIC_FIGURE": [
   "berra",
   "a"
- ],
- "LOCATION": [
-  "jiji"
- ],
- "JOB": [
-  "minister"
- ],
- "DISEASE": [
-  "gandu"
- ],
- "PLANT": [
-  "bananku",
-  "yew"
- ],
- "PERSON_PRONOUN": [
-  "gure"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -41,8 +63,8 @@
  },
  "en_pronoun2pronoun": {
   "he": [
-   "iddu",
-   "yaha"
+   "yaha",
+   "iddu"
   ],
   "she": [
    "yaha"

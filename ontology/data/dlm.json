@@ -1,43 +1,53 @@
 {
+ "RELIGION_MEMBER": [
+  "jain",
+  "frutro"
+ ],
  "ORG": [
   "doi"
  ],
  "LOCATION": [
-  "cuomp"
+  "cuomp",
+  "cituot"
  ],
  "JOB": [
-  "depentaur",
+  "medco",
+  "pascu",
   "pentaur",
-  "burbur",
-  "pascu"
+  "depentaur",
+  "dotuar",
+  "burbur"
  ],
- "EVENT": [
-  "desmissur"
+ "GENDER": [
+  "muosclo"
  ],
- "ANIMAL": [
-  "miarla"
- ],
- "PUBLIC_FIGURE": [
-  "e"
- ],
- "DISEASE": [
-  "morscuor",
-  "moscuar",
-  "aura",
-  "tormiant"
+ "PERSON_PRONOUN": [
+  "nuester"
  ],
  "TITLE": [
   "sinaur"
  ],
+ "PLANT": [
+  "nochiera",
+  "vaple"
+ ],
+ "ANIMAL": [
+  "miarla"
+ ],
  "FAC": [
   "plaza"
  ],
- "PLANT": [
-  "nochiera"
+ "PUBLIC_FIGURE": [
+  "e"
  ],
- "RELIGION_MEMBER": [
-  "jain",
-  "frutro"
+ "EVENT": [
+  "desmissur"
+ ],
+ "FOOD": [
+  "juf"
+ ],
+ "DISEASE": [
+  "aura"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

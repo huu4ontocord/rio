@@ -1,24 +1,42 @@
 {
- "JOB": [
-  "waziri",
-  "upiha"
- ],
  "PERSON_PRONOUN": [
+  "angu",
   "she",
-  "angu"
+  "waye"
+ ],
+ "PUBLIC_FIGURE": [
+  "daud",
+  "\u00eesa_kiristi"
+ ],
+ "ORG": [
+  "\u0257agoni",
+  "sa"
  ],
  "DISEASE": [
   "pasuha",
   "fusiha"
  ],
  "FOOD": [
+  "mtsuzi",
+  "tsala",
   "buni"
  ],
- "ORG": [
-  "sa"
+ "JOB": [
+  "mwalimu",
+  "mulivisa_latete",
+  "waziri",
+  "mukizi_mbeli",
+  "upiha"
  ],
- "PUBLIC_FIGURE": [
-  "daud"
+ "RELIGION_MEMBER": [
+  "muvingizi_risala",
+  "isilamu"
+ ],
+ "GENDER": [
+  "\u0253akoko"
+ ],
+ "LOCATION": [
+  "zarde_ya_eden"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

@@ -1,6 +1,32 @@
 {
  "PUBLIC_FIGURE": [
+  "\ud808\udc00\ud808\ude3e\ud808\uddaa",
+  "\ud808\udc79\ud808\udc79",
+  "\ud808\udc79"
+ ],
+ "FOOD": [
+  "\ud808\ude6d"
+ ],
+ "JOB": [
+  "\ud808\ude17",
+  "\ud808\udcb5\ud808\udf05",
+  "\ud808\udcf6\ud808\udf5d\ud808\udc40\ud808\ude92",
+  "\ud808\udc6e\ud808\udcfc"
+ ],
+ "DISEASE": [
+  "\ud808\ude2a\ud808\ude6d"
+ ],
+ "GENDER": [
+  "\ud808\udea9"
+ ],
+ "RELIGION_MEMBER": [
+  "\ud808\udec0"
+ ],
+ "PERSON_PRONOUN": [
   "\ud808\udc00\ud808\ude3e\ud808\uddaa"
+ ],
+ "LOCATION": [
+  "\ud808\udc00\ud808\udeae"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

@@ -1,38 +1,50 @@
 {
- "ANIMAL": [
-  "queruja"
- ],
- "PERSON_PRONOUN": [
-  "i"
- ],
- "ORG": [
-  "un"
- ],
  "PUBLIC_FIGURE": [
+  "jasus",
+  "speran\u00e7a",
   "sperar",
   "i",
-  "speran\u00e7a",
   "l"
+ ],
+ "ORG": [
+  "eigreija_de_jasus_cristo_de_ls_santos_de_ls_redadeiros_dies",
+  "banco_central_ouropeu",
+  "un"
+ ],
+ "JOB": [
+  "abogada",
+  "abogado",
+  "suldado"
+ ],
+ "GENDER": [
+  "mulhier"
+ ],
+ "FOOD": [
+  "uobo",
+  "almuor\u00e7o",
+  "zerto",
+  "farina"
+ ],
+ "ANIMAL": [
+  "queruja",
+  "husky_siberiano",
+  "perro_d_auga",
+  "pastor_aleman"
+ ],
+ "DISEASE": [
+  "deseio"
  ],
  "SOC_ECO_CLASS": [
   "sociadade"
  ],
- "FOOD": [
-  "farina"
+ "LOCATION": [
+  "mar_negro"
  ],
  "RELIGION_MEMBER": [
   "armano"
  ],
- "DISEASE": [
-  "almorragie",
-  "drumir",
-  "deseio"
- ],
- "LOCATION": [
-  "mar_negro"
- ],
- "GENDER": [
-  "mulhier"
+ "PERSON_PRONOUN": [
+  "i"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

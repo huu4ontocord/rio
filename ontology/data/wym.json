@@ -1,27 +1,65 @@
 {
- "PUBLIC_FIGURE": [
-  "e"
- ],
- "JOB": [
-  "bisk\u00fcp",
-  "rodmaher",
-  "katachet"
+ "ANIMAL": [
+  "r\u014dw",
+  "h\u016b\u0107",
+  "hjenc",
+  "aoj\u0142",
+  "kiwic",
+  "o\u0142aoster",
+  "wesp",
+  "filc\u0142auz",
+  "kr\u022bw",
+  "\u01e1h\u0301kj\u0113n\u0142a"
  ],
  "ORG": [
   "baon",
+  "aojsbildung",
   "draowa"
  ],
- "FOOD": [
-  "faonk\u00fcch"
+ "JOB": [
+  "\u0161najder",
+  "kyng",
+  "rodmaher",
+  "katachet",
+  "\u015bnajder",
+  "bisk\u00fcp",
+  "bekier",
+  "b\u014dder",
+  "tepper",
+  "bekieryn",
+  "tepperyn",
+  "raobin",
+  "ko\u0142od\u017aej"
  ],
  "DISEASE": [
-  "maojs"
- ],
- "PLANT": [
-  "wajd"
+  "\u015bn\u00f6p",
+  "kw\u022b\u0142",
+  "rut"
  ],
  "DATE": [
   "nomastaog"
+ ],
+ "GENDER": [
+  "b\u014dw",
+  "fraoj"
+ ],
+ "FAC": [
+  "halikier_\u0142ajchnaomstaog"
+ ],
+ "PLANT": [
+  "f\u0142aojm",
+  "wajd",
+  "b\u01e1nwa\u0142"
+ ],
+ "FOOD": [
+  "epu\u0142k\u00fccha",
+  "b\u0142\u00fctwiy\u015bt",
+  "faonk\u00fcch",
+  "t\u0233b\u0142\u014dt"
+ ],
+ "PUBLIC_FIGURE": [
+  "e",
+  "cwe"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

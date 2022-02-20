@@ -1,68 +1,111 @@
 {
- "FOOD": [
-  "glasse",
-  "billere",
-  "hanewasser",
-  "chile",
-  "glassee"
+ "ORG": [
+  "iis",
+  "en_guet\u00e4",
+  "en_guete",
+  "jugendstil",
+  "europ\u00e4ische_wirtschaftsgemeinschaft",
+  "ewg",
+  "gresch\u00f2ney_drifaltigkeit",
+  "orthodoxi_chille",
+  "regierig",
+  "b\u00ebtzgi"
  ],
- "GENDER": [
-  "maidle",
-  "maitli",
-  "meidschi",
-  "meiki",
-  "meetle"
+ "FOOD": [
+  "cheshire_ch\u00e4\u00e4s",
+  "glassee",
+  "hanewasser",
+  "k\u00e0ffe",
+  "glasse",
+  "chile",
+  "w\u00fceschti",
+  "billere"
  ],
  "PERSON": [
   "hans_trapp",
   "sit_ewig"
  ],
- "PUBLIC_FIGURE": [
-  "maria_magdalena",
-  "e",
-  "a",
-  "maria_vo_magdala"
+ "JOB": [
+  "brootler",
+  "pfischter",
+  "sekunde",
+  "r\u00f6\u00f6tel",
+  "gspaane",
+  "ch\u00fceni"
  ],
  "ANIMAL": [
-  "alebock",
-  "chrott",
-  "chats",
   "haselmuus",
+  "alebock",
   "h\u00e0",
-  "vole"
+  "chr\u00e4\u00e4e",
+  "chats",
+  "vole",
+  "b\u00e4rr",
+  "gliiderf\u00fcesser",
+  "ch\u00fcngel",
+  "chrott",
+  "giir"
+ ],
+ "LOCATION": [
+  "sri_lanka",
+  "maria_vo_magdala",
+  "mittlerer_osten",
+  "gueten_abig"
+ ],
+ "PUBLIC_FIGURE": [
+  "maria_magdalena",
+  "maria_vo_magdala",
+  "ant\u00f6\u00f6ni",
+  "e",
+  "a"
  ],
  "PLANT": [
+  "kiifer",
+  "gr\u00fcbli",
   "christbaum",
-  "farechruut"
+  "farechruut",
+  "fluume",
+  "r\u00fcebli"
+ ],
+ "GENDER": [
+  "meetle",
+  "meitle",
+  "maidle",
+  "maitli",
+  "bueb",
+  "meiki",
+  "meitji",
+  "moadle",
+  "meidschi"
+ ],
+ "SOC_ECO_CLASS": [
+  "niidel"
+ ],
+ "RELIGION_MEMBER": [
+  "br\u00fceder"
  ],
  "DISEASE": [
-  "schlaaffe",
-  "chranket"
- ],
- "ORG": [
-  "en_guete",
-  "orthodoxi_chille",
-  "en_guet\u00e4"
+  "chranket",
+  "zit"
  ],
  "DATE": [
   "mittelalter"
  ],
  "PRODUCT": [
-  "christbaum"
+  "erst_w\u00e4ltchrieg",
+  "christbaum",
+  "erst_weltchrieg"
+ ],
+ "LANGUAGE": [
+  "afar",
+  "nauru"
  ],
  "QUANTITY": [
-  "schweizer_franken",
-  "quadratmeter"
+  "quadratmeter",
+  "schweizer_franken"
  ],
- "JOB": [
-  "pfischter",
-  "brootler"
- ],
- "RELIGION_MEMBER": [
-  "br\u00fceder"
- ],
- "LOCATION": [
-  "sri_lanka"
+ "PERSON_PRONOUN": [
+  "\u00f6ise"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -75,7 +118,7 @@
  "binary_gender_swap": {
   "mueter": "vatter",
   "schw\u00f6schter": "br\u00fceder",
-  "bueb": "modi"
+  "bueb": "goof"
  },
  "other_gender_swap": {},
  "en_pronoun2gender": {
@@ -86,24 +129,24 @@
    "bueb"
   ],
   "she": [
-   "goof",
+   "meitle",
    "meitji",
-   "maidle",
-   "moadle",
-   "meiki",
-   "modi",
    "meetle",
-   "meidschi",
+   "moadle",
+   "maidle",
+   "modi",
    "maitli",
-   "meitle"
+   "meiki",
+   "meidschi",
+   "goof"
   ]
  },
  "en_pronoun2pronoun": {
   "he": [
-   "siin",
+   "egli",
    "sini",
-   "siis",
-   "egli"
+   "siin",
+   "siis"
   ]
  },
  "en_pronoun2title": {},

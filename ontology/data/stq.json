@@ -1,23 +1,46 @@
 {
- "JOB": [
-  "biskop",
-  "man"
- ],
- "PLANT": [
-  "alhouden",
-  "klokkebloume"
+ "LOCATION": [
+  "st\u00e4\u00e4d"
  ],
  "ORG": [
-  "skoule"
+  "skoule",
+  "hillige_roomske_riek",
+  "berliner_muure",
+  "jugendstil"
+ ],
+ "PLANT": [
+  "klokkebloume",
+  "alhouden",
+  "fjuurenboom"
+ ],
+ "ANIMAL": [
+  "lidef\u00e4ite",
+  "hauk",
+  "uule"
+ ],
+ "PRODUCT": [
+  "ruumtefeer"
+ ],
+ "JOB": [
+  "man",
+  "biskop",
+  "k\u00f6\u00f6nich",
+  "fodder"
+ ],
+ "RELIGION_MEMBER": [
+  "mon"
+ ],
+ "GPE": [
+  "swootwoold"
  ],
  "GENDER": [
   "man"
  ],
- "ANIMAL": [
-  "lidef\u00e4ite"
+ "LANGUAGE": [
+  "afrikoansk"
  ],
- "RELIGION_MEMBER": [
-  "mon"
+ "PUBLIC_FIGURE": [
+  "two"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

@@ -1,4 +1,27 @@
 {
+ "PUBLIC_FIGURE": [
+  "n\u0304\u02bbn\u0304",
+  "n\u0304"
+ ],
+ "DATE": [
+  "\u01c1g\u00e2a",
+  "kh\u00fama",
+  "\u02bb\u01c1n\u0101hu"
+ ],
+ "DISEASE": [
+  "\u01c1x\u00e0a"
+ ],
+ "PERSON_PRONOUN": [
+  "\u00e3_h",
+  "\u012bh",
+  "\u012bs\u00ee\u02bb\u012b",
+  "\u012bh\u02bb\u012b",
+  "\u012bs\u00ee",
+  "\u00e3_h\u02bb\u00e3"
+ ],
+ "QUANTITY": [
+  "qh\u0101\u00e3"
+ ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
  "FIRST_NAME_FEMALE": [],
@@ -8,18 +31,18 @@
  "SUFIX_MALE": [],
  "SUFIX_FEMALE": [],
  "binary_gender_swap": {
-  "\u00e3_h\u02bb\u00e3": "\u00e8h",
-  "\u00e3_h": "\u00e8h",
-  "\u00e8h\u02bb\u00e8": "\u00e3_h\u02bb\u00e3",
-  "\u00e8h": "\u00e8h\u02bb\u00e8",
+  "\u00e3_h\u02bb\u00e3": "\u00e3_h",
+  "\u00e3_h": "\u00e3_h\u02bb\u00e3",
+  "\u00e8h\u02bb\u00e8": "\u00e3_h",
+  "\u00e8h": "\u00e3_h\u02bb\u00e3",
   "t\u00e2a_q\u00e1e": "t\u00e2a_a\u0330a"
  },
  "other_gender_swap": {
-  "\u00f9h": "\u00e3_h\u02bb\u00e3",
-  "\u00f9h\u02bb\u00f9": "\u00e3_h",
+  "\u00f9h": "\u00e3_h",
+  "\u00f9h\u02bb\u00f9": "\u00e3_h\u02bb\u00e3",
   "\u00e3_h\u02bb\u00e3": "\u00f9h\u02bb\u00f9",
   "\u00e3_h": "\u00f9h\u02bb\u00f9",
-  "\u00e8h\u02bb\u00e8": "\u00f9h\u02bb\u00f9",
+  "\u00e8h\u02bb\u00e8": "\u00f9h",
   "\u00e8h": "\u00f9h"
  },
  "en_pronoun2gender": {
@@ -29,14 +52,14 @@
  },
  "en_pronoun2pronoun": {
   "he": [
-   "\u00e3_h\u02bb\u00e3",
    "\u00e8h",
+   "\u00e3_h\u02bb\u00e3",
    "\u00e8h\u02bb\u00e8",
    "\u00e3_h"
   ],
   "she": [
-   "\u00e3_h\u02bb\u00e3",
    "\u00e8h",
+   "\u00e3_h\u02bb\u00e3",
    "\u00e8h\u02bb\u00e8",
    "\u00e3_h"
   ],
@@ -45,15 +68,15 @@
    "\u00f9h"
   ],
   "it": [
-   "tvv\u02bbvv",
-   "\u02bbvv",
-   "\u00e8h",
-   "\u00e8h\u02bb\u00e8",
    "tv\u02bbvv",
+   "\u00e3h",
+   "\u02bbvv",
+   "\u00e8h\u02bb\u00e8",
    "\u00e3h\u02bb\u00e3",
-   "tv\u02bbv",
    "\u00ech",
-   "\u00e3h"
+   "tv\u02bbv",
+   "\u00e8h",
+   "tvv\u02bbvv"
   ]
  },
  "en_pronoun2title": {},

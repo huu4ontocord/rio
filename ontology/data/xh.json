@@ -1,16 +1,54 @@
 {
+ "ANIMAL": [
+  "uqongqothwane",
+  "unomyani",
+  "impangele",
+  "ixhwili"
+ ],
+ "PLANT": [
+  "umnqathe",
+  "umngcunube"
+ ],
+ "FOOD": [
+  "intlango",
+  "ikofu",
+  "iqanda"
+ ],
+ "RELIGION_MEMBER": [
+  "ubhuti",
+  "umntase",
+  "umnakwe"
+ ],
+ "LANGUAGE": [
+  "isibhulu",
+  "isixhosa",
+  "isiafrikansi",
+  "ewe",
+  "isihindi"
+ ],
+ "ORG": [
+  "izizwe_ezimanyeneyo",
+  "umkhosi",
+  "ibandla_likayesu_krestu_labangcwele_bemihla_yokugqibela",
+  "ukonwabele_ukutya_kwakho",
+  "igama_lam_ngu"
+ ],
+ "JOB": [
+  "ibuzi",
+  "inkosi"
+ ],
  "LOCATION": [
   "idolophu",
   "enkosi"
  ],
- "ANIMAL": [
-  "impangele"
- ],
- "JOB": [
-  "inkosi"
- ],
  "DISEASE": [
   "sentuthumbo"
+ ],
+ "GENDER": [
+  "umfazi"
+ ],
+ "PUBLIC_FIGURE": [
+  "mbini"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -22,7 +60,7 @@
  "SUFIX_FEMALE": [],
  "binary_gender_swap": {
   "komani": "inkosi",
-  "usisi": "ubhuti"
+  "usisi": "umntase"
  },
  "other_gender_swap": {},
  "en_pronoun2gender": {

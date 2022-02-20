@@ -1,88 +1,174 @@
 {
- "JOB": [
-  "saniye",
-  "komandan",
-  "ressam",
-  "minder",
+ "LOCATION": [
+  "te\u015fekk\u00fcr",
+  "\u015feer",
+  "amerika_qo\u015fma_\u015ftatlar\u0131",
+  "orta_\u015farq",
+  "t\u0131n\u00e7_okean",
+  "felemenk",
+  "k\u00e2be_yolu",
+  "\u015fri_lanka",
+  "sa\u011f_olu\u00f1\u0131z"
+ ],
+ "DISEASE": [
+  "yara",
   "para",
-  "tefti\u015f\u00e7i",
-  "kitaphaneci",
+  "acc\u0131",
+  "a\u011fr\u0131",
+  "yuqu",
+  "tutuqlanmaq"
+ ],
+ "JOB": [
+  "para",
+  "muallim",
+  "m\u00fcendis",
+  "m\u00fcfetti\u015f",
+  "qap\u0131c\u0131",
+  "i\u015f\u011falci",
+  "\u015fof\u00f6r",
   "kurator",
   "mustaqil",
+  "tefti\u015f\u00e7i",
+  "terciman",
+  "qul",
+  "kompozitor",
+  "vezir",
+  "advokat",
   "tornac\u0131",
-  "terciman"
- ],
- "LANGUAGE": [
-  "ermeni"
+  "ressam",
+  "yaz\u0131c\u0131",
+  "qad\u0131",
+  "\u00e7ilengir",
+  "qotur",
+  "m\u00fcellif",
+  "akem",
+  "kitaphaneci",
+  "komandan",
+  "s\u0131\u00e7avul",
+  "minder",
+  "saniye"
  ],
  "ORG": [
   "a\u015f_tatl\u0131_olsun",
-  "batalyon",
-  "a\u015f_olsun",
-  "mektep",
-  "iptidaiy_mektep",
+  "\u015fimaliy_q\u0131br\u0131z",
   "maarif",
-  "saq\u0131z",
+  "ba\u015flan\u011f\u0131\u00e7_mektep",
+  "\u015fqtc",
+  "batalyon",
+  "saylav_\u00e7evresi",
+  "sual_i\u015fareti",
   "a\u015f_bols\u0131n",
-  "siyasiy_f\u0131rqa"
- ],
- "ANIMAL": [
-  "savusqan",
-  "muratqu\u015f",
-  "baqa",
-  "atmaca"
- ],
- "PUBLIC_FIGURE": [
-  "frenk",
-  "e",
-  "mamet",
-  "o"
- ],
- "DISEASE": [
-  "yuqu",
-  "tutuqlanmaq",
-  "para",
-  "materializm",
-  "hamilelik"
- ],
- "PERSON_PRONOUN": [
-  "bizim",
-  "seni\u00f1"
+  "saq\u0131z",
+  "\u015fimaliy_q\u0131br\u0131z_t\u00fcrk_cumhuriyeti",
+  "f\u0131rqa",
+  "iptidaiy_mektep",
+  "avropa_birligi",
+  "rus_ortodoks_kilsesi",
+  "siyasiy_f\u0131rqa",
+  "babil_qullesi",
+  "a\u015f_olsun",
+  "birle\u015fken_milletler_te\u015fkil\u00e2t\u0131",
+  "mektep",
+  "tasil",
+  "aq_alt\u0131n"
  ],
  "GENDER": [
-  "men",
+  "di\u015fi",
   "boy",
+  "men",
   "qad\u0131n"
  ],
+ "LANGUAGE": [
+  "g\u00fcrci_tili",
+  "ermeni",
+  "nauru"
+ ],
+ "RELIGION_MEMBER": [
+  "musulman",
+  "kad\u00e2"
+ ],
+ "ANIMAL": [
+  "baqa",
+  "de\u00f1iz_kirpisi",
+  "suvbaqa",
+  "k\u00f6k_qoyan",
+  "muratqu\u015f",
+  "pempe",
+  "yer_tav\u015fan\u0131",
+  "q\u0131r_baqa",
+  "tavuq",
+  "m\u0131\u015f\u0131q",
+  "k\u00f6k\u00f6kmiyav",
+  "atmaca",
+  "savusqan",
+  "e\u015fek",
+  "pu\u011fu",
+  "s\u0131\u011f\u0131n",
+  "cercumuran"
+ ],
+ "FOOD": [
+  "saq\u0131z",
+  "\u00e7am_f\u0131st\u0131\u011f\u0131",
+  "salca",
+  "i\u00e7ilgen_suv",
+  "qave",
+  "dondurma"
+ ],
  "PLANT": [
+  "aq_tav\u015fan",
+  "\u00f6ks\u00fcz_tal",
+  "meyva_teregi",
+  "\u00e7ibin_mantar\u0131",
+  "nehl",
+  "markof",
   "qap\u0131sta",
-  "markof"
+  "hurma_nehli"
  ],
- "LOCATION": [
-  "felemenk"
+ "FAC": [
+  "osmanl\u0131_devleti",
+  "basseyn",
+  "iptidaiy_mektep",
+  "ta\u015f_divar",
+  "ba\u015flan\u011f\u0131\u00e7_mektep"
  ],
- "GPE": [
-  "aq_alt\u0131n"
+ "QUANTITY": [
+  "s\u0131ra_say\u0131s\u0131",
+  "on_bi\u00f1"
+ ],
+ "MEDICAL_THERAPY": [
+  "qan_bas\u0131m\u0131"
+ ],
+ "PERSON_PRONOUN": [
+  "seni\u00f1",
+  "sizge",
+  "bizim",
+  "\u00f6z\u00fcm"
+ ],
+ "POLITICAL_PARTY": [
+  "siyasiy_f\u0131rqa",
+  "f\u0131rqa"
+ ],
+ "PUBLIC_FIGURE": [
+  "mamet",
+  "qoruy\u0131c\u0131_melek",
+  "i\u0307sa_mesih",
+  "e",
+  "o",
+  "frenk"
+ ],
+ "DATE": [
+  "kelecek_zaman",
+  "er_\u015feyden_evel",
+  "\u011falebe_k\u00fcn\u00fc"
+ ],
+ "PRODUCT": [
+  "a\u00e7\u0131q_mekt\u00fcp"
  ],
  "RACE": [
   "frans\u0131z"
  ],
- "FOOD": [
-  "dondurma",
-  "salca"
- ],
- "POLITICAL_PARTY": [
-  "f\u0131rqa"
- ],
- "FAC": [
-  "ba\u015flan\u011f\u0131\u00e7_mektep",
-  "basseyn"
- ],
- "QUANTITY": [
-  "on_bi\u00f1"
- ],
- "DATE": [
-  "er_\u015feyden_evel"
+ "GPE": [
+  "aq_alt\u0131n"
  ],
  "OTHER_PRONOUN": [
   "it"
@@ -98,8 +184,8 @@
  "binary_gender_swap": {
   "siya": "elli",
   "abla": "kad\u00e2",
-  "apay": "aqay",
-  "apaqay": "qoca",
+  "apay": "refiq",
+  "apaqay": "aqay",
   "bike": "ki\u015fi",
   "qad\u0131n": "ki\u015fi",
   "boy": "q\u0131z",
@@ -108,21 +194,21 @@
  "other_gender_swap": {
   "eali": "siya",
   "olar": "siya",
-  "siya": "olar",
-  "elli": "eali"
+  "siya": "eali",
+  "elli": "olar"
  },
  "en_pronoun2gender": {
   "he": [
+   "boy",
    "ki\u015fi",
-   "o\u011flan",
-   "boy"
+   "o\u011flan"
   ],
   "she": [
-   "abla",
-   "q\u0131z",
+   "di\u015fi",
    "bike",
+   "q\u0131z",
    "qad\u0131n",
-   "di\u015fi"
+   "abla"
   ]
  },
  "en_pronoun2pronoun": {
@@ -144,5 +230,7 @@
  "en_pronoun2title": {},
  "PREFIX_MALE": [],
  "PREFIX_FEMALE": [],
- "person2religion": {}
+ "person2religion": {
+  "musulman": "i\u0307sl\u00e2m"
+ }
 }

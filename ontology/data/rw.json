@@ -1,31 +1,42 @@
 {
- "JOB": [
-  "guru",
-  "koga"
+ "PLANT": [
+  "ishu",
+  "inyumbati",
+  "umuhengeri",
+  "ikaroti"
  ],
- "RELIGION_MEMBER": [
-  "guru"
+ "FOOD": [
+  "ikawa",
+  "iri_gi",
+  "agahawa",
+  "akawa"
  ],
  "LANGUAGE": [
-  "ikinyarwanda"
+  "ikinyarwanda",
+  "icyesiperanto"
  ],
- "PRODUCT": [
-  "gongo"
- ],
- "DISEASE": [
-  "im_beba"
+ "ANIMAL": [
+  "inkoko",
+  "imbwebwe"
  ],
  "PERSON_PRONOUN": [
   "he"
  ],
- "ANIMAL": [
-  "inkoko"
- ],
- "PLANT": [
-  "ikaroti"
- ],
  "ORG": [
   "sa"
+ ],
+ "JOB": [
+  "koga",
+  "guru"
+ ],
+ "LOCATION": [
+  "urakoze"
+ ],
+ "PRODUCT": [
+  "gongo"
+ ],
+ "RELIGION_MEMBER": [
+  "guru"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

@@ -1,31 +1,78 @@
 {
- "PLANT": [
-  "lepp",
-  "dugoor",
-  "pulloox",
-  "karoot",
-  "ariko"
- ],
- "GENDER": [
-  "guy"
+ "PRODUCT": [
+  "seland_gu_bees"
  ],
  "ANIMAL": [
-  "wundu",
-  "looy",
   "saafaandu",
+  "looy",
+  "xodd",
+  "mbeexeer",
+  "jaar_ji",
+  "mbott",
+  "golo_bu_nuul",
+  "njaxat_bu_r\u00eby",
+  "piipa",
+  "njulli_kaata",
   "warapul\u00f3",
-  "ganaar"
- ],
- "PUBLIC_FIGURE": [
-  "piyeer"
+  "wundu",
+  "nagu_\u00e0ll",
+  "mb\u00f3ot",
+  "fasu_g\u00e9ej_wi",
+  "tan_mi",
+  "ganaar",
+  "d\u00e0ngin"
  ],
  "DISEASE": [
-  "bunt",
   "suba",
-  "janax"
+  "neg",
+  "bunt",
+  "fas"
+ ],
+ "PLANT": [
+  "suf\u00f3l\u00f3or",
+  "lepp",
+  "karoot",
+  "du\u00f1oor",
+  "beteraaw",
+  "pulloox",
+  "dugoor",
+  "ariko",
+  "suf\u00ebl\u00eber"
+ ],
+ "LANGUAGE": [
+  "xar_mu_jig\u00e9en",
+  "afar",
+  "nauru"
+ ],
+ "ORG": [
+  "andorra_la_vella",
+  "addis_abeba"
+ ],
+ "JOB": [
+  "ndaw",
+  "b\u00fbr"
+ ],
+ "GENDER": [
+  "jig\u00e9en",
+  "guy"
+ ],
+ "PUBLIC_FIGURE": [
+  "piyeer",
+  "\u00f1aar",
+  "daawuda"
+ ],
+ "LOCATION": [
+  "mb\u00e0mbulaan_gu_dal",
+  "j\u00ebr\u00ebj\u00ebf",
+  "d\u00ebkk"
  ],
  "FOOD": [
   "tiga_dege"
+ ],
+ "RELIGION_MEMBER": [
+  "mag_ju_g\u00f3or",
+  "r\u00e0kk_ju_g\u00f3or",
+  "c\u00e0mmi\u00f1"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -37,14 +84,14 @@
  "SUFIX_FEMALE": [],
  "binary_gender_swap": {
   "buumi": "b\u00fbr",
-  "mag_ju_jig\u00e9en": "r\u00e0kk_ju_g\u00f3or",
+  "mag_ju_jig\u00e9en": "c\u00e0mmi\u00f1",
   "rakk_ju_jig\u00e9en": "dimas"
  },
  "other_gender_swap": {
   "wao": "moom",
   "\u00f1oom": "moom",
   "tey": "moom",
-  "moom": "wao"
+  "moom": "tey"
  },
  "en_pronoun2gender": {
   "he": [
@@ -56,17 +103,17 @@
  },
  "en_pronoun2pronoun": {
   "he": [
-   "siin",
-   "moom"
+   "moom",
+   "siin"
   ],
   "she": [
    "moom"
   ],
   "they": [
-   "wao",
-   "leen",
+   "\u00f1oom",
    "tey",
-   "\u00f1oom"
+   "leen",
+   "wao"
   ],
   "it": [
    "moom"

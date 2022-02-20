@@ -1,19 +1,30 @@
 {
- "GENDER": [
-  "moller"
- ],
- "JOB": [
-  "marinneiro",
-  "celorgi\u00e3o"
- ],
- "PUBLIC_FIGURE": [
-  "muller"
+ "ANIMAL": [
+  "a\u00e7or",
+  "sirgo"
  ],
  "RELIGION_MEMBER": [
   "crisch\u00e3o"
  ],
+ "PERSON_PRONOUN": [
+  "nostro"
+ ],
  "RACE": [
   "negro"
+ ],
+ "JOB": [
+  "marinneiro",
+  "celorgi\u00e3o",
+  "ceo"
+ ],
+ "GENDER": [
+  "moller"
+ ],
+ "PLANT": [
+  "az\u1ef9eira"
+ ],
+ "PUBLIC_FIGURE": [
+  "muller"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

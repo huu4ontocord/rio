@@ -1,31 +1,71 @@
 {
- "PLANT": [
-  "mamona",
-  "sinapi",
-  "taloti"
- ],
- "JOB": [
-  "epikop\u014d",
-  "tusitala"
- ],
- "ORG": [
-  "ai",
-  "po"
- ],
  "FOOD": [
+  "kofe",
+  "toafa",
   "aisakulimi"
- ],
- "FAC": [
-  "vai_taele"
  ],
  "PERSON_PRONOUN": [
   "me"
  ],
  "LOCATION": [
+  "iunaite_sitete_o_amerika",
+  "vasa_pasefika",
   "sri_lanka"
+ ],
+ "QUANTITY": [
+  "luasefulu_fitu",
+  "luasefulu_valu",
+  "luasefulu_tasi",
+  "luasefulu_tolu",
+  "luasefulu_lua",
+  "luasefulu_iva",
+  "luasefulu_fa",
+  "luasefulu_lima",
+  "luasefulu_ono"
+ ],
+ "PRODUCT": [
+  "manuia_le_kerisimasi",
+  "peret\u0101nia_tele",
+  "tatalo_o_le_ali_i"
+ ],
+ "GENDER": [
+  "fafine"
+ ],
+ "PLANT": [
+  "taloti",
+  "moso_oi",
+  "sinapi",
+  "mamona"
+ ],
+ "JOB": [
+  "tusitala",
+  "epikop\u014d"
+ ],
+ "ORG": [
+  "ekalesia_a_iesu_keriso_o_le_au_pa_ia_o_aso_e_gata_ai",
+  "faa",
+  "ai",
+  "malo_afaatasi",
+  "po",
+  "uasigitone_d.c"
  ],
  "DISEASE": [
   "le"
+ ],
+ "PUBLIC_FIGURE": [
+  "siosi",
+  "iesu_keriso",
+  "\u02bbou"
+ ],
+ "ANIMAL": [
+  "s\u00e1hp\u00e1nboaimm\u00e1\u0161",
+  "s\u00e1hp\u00e1nf\u00e1lli"
+ ],
+ "FAC": [
+  "vai_taele"
+ ],
+ "LANGUAGE": [
+  "nauru"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

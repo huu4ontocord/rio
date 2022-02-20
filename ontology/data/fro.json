@@ -1,94 +1,111 @@
 {
- "ORG": [
-  "dominion",
-  "tranque",
-  "porte"
+ "ANIMAL": [
+  "heiron",
+  "hairon",
+  "oisel_de_proie",
+  "bievre",
+  "duc",
+  "chate",
+  "moisset",
+  "merel",
+  "moigne",
+  "luberne",
+  "tapir"
+ ],
+ "RELIGION_MEMBER": [
+  "sarrazin",
+  "apostre",
+  "apostle"
  ],
  "JOB": [
-  "creator",
+  "gaite",
+  "pastor",
+  "plombeur",
+  "grip",
+  "rancher",
+  "fisician",
+  "char",
+  "chief",
   "mercator",
   "ranger",
-  "char",
   "sommelier",
-  "grip",
-  "chief",
-  "plombeur",
+  "creator",
+  "aoire",
+  "aumosnier",
   "paisan",
-  "pastor",
-  "cop",
-  "rancher",
-  "gaite"
- ],
- "ANIMAL": [
-  "moisset",
-  "duc",
-  "bievre",
-  "chate",
-  "merel",
-  "luberne"
- ],
- "FOOD": [
-  "mousse",
-  "saus"
- ],
- "RACE": [
-  "fran\u00e7oyse",
-  "franceis",
-  "franceise",
-  "fraunceise"
- ],
- "DISEASE": [
-  "ki",
-  "carbuncle",
-  "complaint",
-  "pecol",
-  "espasme",
-  "toser",
-  "crache",
-  "fugue",
-  "eschalfer"
+  "cop"
  ],
  "PUBLIC_FIGURE": [
-  "quine",
-  "k",
-  "beauvoir",
-  "galois",
-  "david",
-  "chaplin",
-  "buison",
-  "robert",
+  "beaumont",
+  "lorenz",
   "edward",
-  "mansart",
-  "i",
   "davi",
+  "buison",
+  "beauvoir",
+  "robert",
+  "moyses",
+  "chaplin",
+  "galois",
   "paige",
   "jacob",
-  "moyses",
-  "beaumont",
-  "lorenz"
+  "david",
+  "quine",
+  "mansart",
+  "jhesu",
+  "k",
+  "roi_artur",
+  "morgain_la_fee",
+  "i",
+  "roy_artur",
+  "jhesu_christ"
  ],
  "PERSON_PRONOUN": [
   "dain",
   "i"
  ],
- "PRODUCT": [
-  "se_dex_me_gart"
- ],
- "RELIGION_MEMBER": [
-  "sarrazin"
- ],
- "SOC_ECO_CLASS": [
-  "pairie"
- ],
- "GENDER": [
-  "dame",
-  "pucelle"
+ "ORG": [
+  "dominion",
+  "porte",
+  "tranque"
  ],
  "PLANT": [
-  "caboche"
+  "caboche",
+  "orval"
+ ],
+ "GENDER": [
+  "pucelle",
+  "dame"
+ ],
+ "RACE": [
+  "fran\u00e7oyse",
+  "fraunceise",
+  "franceise",
+  "franceis"
+ ],
+ "DISEASE": [
+  "ruir",
+  "complaint",
+  "ki",
+  "pecol",
+  "espasme"
  ],
  "GPE": [
   "nostre_dame"
+ ],
+ "FOOD": [
+  "saus",
+  "mousse"
+ ],
+ "PRODUCT": [
+  "jehan_baptiste",
+  "se_dex_me_gart"
+ ],
+ "LANGUAGE": [
+  "breton",
+  "ewe"
+ ],
+ "SOC_ECO_CLASS": [
+  "pairie"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -102,9 +119,9 @@
  "other_gender_swap": {},
  "en_pronoun2gender": {
   "she": [
-   "pucelle",
    "dame",
-   "feme"
+   "feme",
+   "pucelle"
   ]
  },
  "en_pronoun2pronoun": {
@@ -112,10 +129,10 @@
    "eles"
   ],
   "it": [
-   "issu",
    "ces",
+   "cestui",
    "cest",
-   "cestui"
+   "issu"
   ]
  },
  "en_pronoun2title": {},

@@ -1,112 +1,256 @@
 {
- "DISEASE": [
-  "isleg",
-  "hassalyk",
-  "hastal\u0131k",
-  "hasylsyzlyk",
-  "para",
-  "sakawlamak"
+ "LOCATION": [
+  "demirgazyk_de\u0148zi",
+  "hindi_okeany",
+  "ab\u015f",
+  "gara_de\u0148iz",
+  "me\u00fddan",
+  "t\u00e4ze_\u00fdyl_bilendan",
+  "allah_akbar",
+  "atlantik_okean",
+  "\u00fdedigen",
+  "amerikany\u0148_birle\u015fen_\u015ftatlary",
+  "mineral_suw",
+  "amerika",
+  "orta_g\u00fcndogar",
+  "\u0441\u0430\u0433_\u0431\u043e\u043b\u0443\u043d",
+  "\u00fduwa\u015f_okean",
+  "\u015fri_lanka",
+  "sag_bolu\u0148"
+ ],
+ "PUBLIC_FIGURE": [
+  "umyt",
+  "tama_etmek",
+  "isus_hristos",
+  "umyt_etmek",
+  "isa_pygamber",
+  "gyrymsylyk",
+  "don_kihot",
+  "jorj",
+  "hal"
+ ],
+ "PLANT": [
+  "hudo\u017enik",
+  "surat\u00e7y",
+  "bambuk",
+  "k\u00e4\u015fir",
+  "\u015fugundyr",
+  "kebze",
+  "s\u00f6w\u00fct",
+  "kelem",
+  "kellem",
+  "\u015feker\u00e7i\u0148rik",
+  "ite\u015fen"
+ ],
+ "PRODUCT": [
+  "\u00e7e\u00fde_disk",
+  "t\u00e4ze_zelandi\u00fda",
+  "be\u00fdik_britani\u00fda",
+  "ynsan_hukuklary",
+  "saz_gurallary",
+  "rim_imperi\u00fdasy",
+  "ertiri\u0148iz_ha\u00fdyrly_bolsun"
  ],
  "JOB": [
-  "tans\u00e7y",
-  "kitaphana\u00e7y",
-  "terjime\u00e7i",
-  "sazanda",
-  "serdar",
-  "dellal",
-  "grip",
   "para",
+  "wezir",
+  "i\u015f\u00e7i",
+  "\u00f6zba\u015fdak",
+  "m\u00fcdir",
+  "\u00fdazyjy",
+  "kazy",
+  "a\u015fpez",
+  "polisi\u00fda",
+  "admiral",
   "mugallym",
-  "hekim",
-  "korol",
-  "dellek",
-  "gara\u015fsyz",
-  "hukuk\u00e7y",
+  "be\u00fdem\u00e7i",
+  "ser\u017eant",
+  "awtor",
+  "kopi\u00fda",
+  "grip",
+  "py\u00fdada",
+  "injener",
+  "wra\u00e7",
+  "kitaphana\u00e7y",
+  "\u00e7opan",
+  "dellal",
+  "nusga",
   "line\u00fdka",
+  "arhitektor",
+  "serdar",
+  "esger",
+  "s\u00fcp\u00fcrmek",
+  "korol",
+  "\u00fdurist",
+  "di\u015f_doktory",
+  "ikinji",
+  "s\u00f6wdag\u00e4r",
+  "\u00e7\u00f6rek\u00e7i",
   "ruhany",
+  "sekretar",
+  "sazanda",
+  "dellek",
+  "dilmaa\u00e7",
+  "in\u017eener",
+  "sekunt",
+  "hukuk\u00e7y",
+  "tans\u00e7y",
+  "prezident",
+  "es\u011fer",
+  "hekim",
+  "direktor",
+  "\u00fdolba\u015f\u00e7y",
+  "terjime\u00e7i",
+  "milisioner",
+  "gara\u015fsyz",
   "sazandar"
  ],
  "ANIMAL": [
-  "torsuk",
-  "gurlawuk",
-  "garga",
-  "sugun",
-  "gurbaa\u011fa",
-  "mercen",
-  "gurbaga",
+  "zubr",
+  "losy",
   "tarakan",
-  "gunduz"
+  "garga",
+  "\u00fdal",
+  "torsuk",
+  "gurbaa\u011fa",
+  "syrder\u00fda",
+  "s\u00fc\u00fddemdiriji",
+  "awusi\u00fddik",
+  "tazy",
+  "gunduz",
+  "gurbaga",
+  "e\u015fegary",
+  "gurlawuk",
+  "sa\u00e7ak\u00e7y",
+  "amyder\u00fda",
+  "ka\u015falot",
+  "e\u015fek",
+  "ba\u00fdgu\u015f",
+  "at\u00fdalman",
+  "mercen",
+  "sugun"
+ ],
+ "FOOD": [
+  "kofe",
+  "ertirlik",
+  "di\u015f_eti",
+  "g\u00fcnortanlyk",
+  "gamburger",
+  "dongdurma",
+  "gum",
+  "alma_\u015firesi",
+  "g\u00fcnortanlyk_nahar",
+  "sakgy\u00e7"
  ],
  "ORG": [
+  "\u00fdewropa_birle\u015figi",
+  "ir",
+  "gara\u015fsyz_d\u00f6wletleri\u0148_arkala\u015fyg",
   "profso\u00fduz",
-  "oba_hojalygy",
-  "un",
+  "b\u00fctind\u00fcn\u00fd\u00e4_s\u00f6wda_guramasy",
+  "parti\u00fda",
   "terbi\u00fdele\u00fdi\u015f",
-  "sakgy\u00e7",
-  "ekeran\u00e7ylyk",
-  "g\u00fcmr\u00fck",
-  "magaryf",
   "razwedka",
-  "po\u00e7ta"
+  "enegi_a",
+  "go\u015fun",
+  "gyzyl_ha\u00e7",
+  "gda",
+  "po\u00e7ta",
+  "berlin_diwar\u0131",
+  "mekdep",
+  "dhk",
+  "ab\u015f",
+  "ekeran\u00e7ylyk",
+  "adalatlylyk",
+  "h\u00f6k\u00fcmet",
+  "un",
+  "u\u00e7ili\u015f\u015fe",
+  "\u00fdedigen",
+  "sakgy\u00e7",
+  "birle\u015fen_milletler_guramasy",
+  "g\u00fcmr\u00fck",
+  "ekwatorial_gwine\u00fda",
+  "oba_hojalygy",
+  "magaryf"
  ],
- "PLANT": [
-  "surat\u00e7y",
-  "\u015feker\u00e7i\u0148rik",
-  "kellem",
-  "hudo\u017enik",
-  "kelem"
+ "RELIGION_MEMBER": [
+  "musulman",
+  "hristian",
+  "musa\u00fdy"
+ ],
+ "DISEASE": [
+  "azap",
+  "para",
+  "hassalyk",
+  "isleg",
+  "uky",
+  "\u00fdara"
+ ],
+ "FAC": [
+  "g\u00fcmr\u00fck",
+  "po\u00e7ta",
+  "basse\u00fdn"
+ ],
+ "GENDER": [
+  "boy",
+  "zenaan",
+  "oglan",
+  "a\u00fdaal",
+  "hele\u00fd"
+ ],
+ "QUANTITY": [
+  "tonna",
+  "g\u00f6ljagaz",
+  "howda",
+  "\u00fdagtylyk_\u00fdyly"
  ],
  "PERSON": [
   "ha_ha"
  ],
- "LOCATION": [
-  "allah_akbar",
-  "ab\u015f",
-  "\u00fdedigen"
+ "SOC_ECO_CLASS": [
+  "oba_hojalygy",
+  "proletariat",
+  "jemgy\u00fdet",
+  "ekeran\u00e7ylyk"
  ],
- "FOOD": [
-  "dongdurma",
-  "gamburger"
- ],
- "PUBLIC_FIGURE": [
-  "hal",
-  "don_kihot"
- ],
- "PRODUCT": [
-  "ynsan_hukuklary"
- ],
- "GENDER": [
-  "boy",
-  "hele\u00fd",
-  "oglan",
-  "zenaan"
+ "PERSON_PRONOUN": [
+  "we",
+  "her",
+  "meni\u0148"
  ],
  "UNION": [
   "profso\u00fduz"
  ],
- "PERSON_PRONOUN": [
-  "her",
-  "meni\u0148",
-  "we"
+ "DATE": [
+  "geljek_zaman",
+  "gara\u015fsyzlyk_g\u00fcni"
  ],
- "SOC_ECO_CLASS": [
-  "oba_hojalygy",
-  "proletariat",
-  "ekeran\u00e7ylyk"
+ "POLITICAL_PARTY_MEMBER": [
+  "bol\u015fewik"
+ ],
+ "RACE": [
+  "\u00fdewre\u00fd",
+  "arabistan"
  ],
  "GPE": [
+  "gyzyl_ha\u00e7",
   "kot_d_iwuar",
-  "gyzyl_ha\u00e7"
+  "ynsan_hukuklary",
+  "g\u00fcnorta_amerika",
+  "pil_s\u00fc\u0148ki_kenary",
+  "\u015fwarswald"
  ],
- "FAC": [
-  "basse\u00fdn"
+ "LANGUAGE": [
+  "\u00fdapon",
+  "fransuz_dili",
+  "somali",
+  "nauru"
  ],
  "POLITICAL_PARTY": [
   "parti\u00fda"
  ],
- "RELIGION_MEMBER": [
-  "musa\u00fdy",
-  "hristian"
+ "EVENT": [
+  "o\u00fdanmak"
  ],
  "OTHER_PRONOUN": [
   "it"
@@ -120,11 +264,11 @@
  "SUFIX_MALE": [],
  "SUFIX_FEMALE": [],
  "binary_gender_swap": {
-  "gyz_agtyk": "ogul_agtyk",
+  "gyz_agtyk": "agtyk",
   "agtyk": "ogul_agtyk",
   "\u0435\u0497\u0435": "bap",
-  "\u015fa_a\u00fdal": "pa\u015fa",
-  "u\u00fda": "a\u011fa",
+  "\u015fa_a\u00fdal": "korol",
+  "u\u00fda": "dogan",
   "ejeke": "dogan",
   "a\u00fdal": "\u00e4r",
   "boy": "gyz",
@@ -139,9 +283,9 @@
    "boy"
   ],
   "she": [
+   "gyz",
    "a\u00fdaal",
    "hele\u00fd",
-   "gyz",
    "zenaan"
   ]
  },
@@ -162,5 +306,9 @@
  "en_pronoun2title": {},
  "PREFIX_MALE": [],
  "PREFIX_FEMALE": [],
- "person2religion": {}
+ "person2religion": {
+  "hristian": "hristi\u00fdanlyk",
+  "musulman": "yslam",
+  "musa\u00fdy": "\u00fdehudylykda"
+ }
 }

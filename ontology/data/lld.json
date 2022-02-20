@@ -1,48 +1,82 @@
 {
- "ANIMAL": [
-  "ghiro",
-  "castour",
-  "gialina",
-  "passer",
-  "stambech",
-  "lustrel",
-  "falcon",
-  "capriol",
-  "schirata",
-  "valtoi",
-  "belora"
+ "PUBLIC_FIGURE": [
+  "n",
+  "laur\u00ebnz",
+  "bulsan",
+  "l"
  ],
  "ORG": [
   "doi",
   "aa",
-  "l\u00ebur",
-  "scola"
+  "cis",
+  "scola",
+  "destudafuech",
+  "guviern",
+  "l\u00ebur"
  ],
- "DISEASE": [
-  "pontes",
-  "mania",
-  "ronia",
-  "parpaiola"
+ "ANIMAL": [
+  "schirata",
+  "colomba_salvaria",
+  "ciuita",
+  "bisont_american",
+  "valtoi",
+  "belora",
+  "stambech",
+  "passer",
+  "porcel_de_mar",
+  "porcel_salvare",
+  "becalen_vert",
+  "falcon",
+  "capriol",
+  "bisont_european",
+  "aucia_salvaria",
+  "sparvel_gran",
+  "ciuch",
+  "gabian",
+  "ghiro",
+  "lustrel",
+  "sparvel_pice",
+  "gialina",
+  "gial_fosch",
+  "gabinel",
+  "lontra",
+  "castour"
+ ],
+ "LANGUAGE": [
+  "franz\u00ebus",
+  "spanuel",
+  "ngl\u00ebisc"
  ],
  "JOB": [
-  "saud\u00e9",
-  "laurant"
+  "aucat",
+  "laurant",
+  "saud\u00e9"
  ],
- "PUBLIC_FIGURE": [
-  "laur\u00ebnz",
-  "n",
-  "bulsan",
-  "l"
+ "GENDER": [
+  "\u00ebila"
+ ],
+ "PLANT": [
+  "sunjin",
+  "ejia"
+ ],
+ "LOCATION": [
+  "becalen_fosch",
+  "ciamp"
+ ],
+ "FOOD": [
+  "mar\u00ebnda"
+ ],
+ "DISEASE": [
+  "mania"
  ],
  "DATE": [
   "vedleza"
  ],
- "LANGUAGE": [
-  "spanuel",
-  "franz\u00ebus"
- ],
  "PRODUCT": [
   "porcel_de_mar"
+ ],
+ "POLITICAL_PARTY": [
+  "l\u00ebur"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -56,8 +90,8 @@
  "other_gender_swap": {},
  "en_pronoun2gender": {
   "she": [
-   "\u00ebila",
-   "femena"
+   "femena",
+   "\u00ebila"
   ]
  },
  "en_pronoun2pronoun": {

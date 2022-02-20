@@ -1,26 +1,62 @@
 {
- "ANIMAL": [
-  "lumarrallertuyuli",
-  "arlunaq"
+ "QUANTITY": [
+  "yuinaq_pingayun",
+  "yuinaq_qulngunrita_ar",
+  "yuinaq_malruk",
+  "yuinaat_cetaman_qula_pingayun",
+  "yuinaq_arvinlegen",
+  "yuinaq_pingayunlegen",
+  "yuinaq_cetaman",
+  "yuinaq_atauciq",
+  "yuinaq_talliman",
+  "yuinaat_pingayun_qula_pingayunlegen",
+  "yuinaq_malrunlegen",
+  "qula_miilicaaq",
+  "yuinaat_yuinaq_talliman",
+  "qulen_tiissitsaat"
  ],
- "PUBLIC_FIGURE": [
-  "malruk"
- ],
- "ORG": [
-  "elitnaurvik",
+ "LOCATION": [
+  "assilriamek_allrakukegtaarmek",
+  "ami_ulikaq",
   "united_states"
  ],
- "RELIGION_MEMBER": [
-  "anngaq"
+ "ANIMAL": [
+  "lumarrallertuyuli",
+  "nanuaq",
+  "arlunaq"
  ],
- "FOOD": [
-  "kuuvviaq"
+ "ORG": [
+  "eskuulaq",
+  "kituusit",
+  "wiinga_atqa",
+  "kenkamken",
+  "elitnaurvik",
+  "united_states",
+  "yuinaat_yuinaq_qula"
+ ],
+ "PUBLIC_FIGURE": [
+  "yiissus",
+  "ciissussaq",
+  "malruk"
  ],
  "GENDER": [
   "arnaq"
  ],
- "LOCATION": [
-  "ami_ulikaq"
+ "RELIGION_MEMBER": [
+  "anngaq"
+ ],
+ "PRODUCT": [
+  "alussistuaqegtaarmek_piamken",
+  "alussistuaqegcikici"
+ ],
+ "PERSON": [
+  "yuinaq_qula_malruk"
+ ],
+ "FAC": [
+  "yuinaq_qula_pingayun"
+ ],
+ "FOOD": [
+  "kuuvviaq"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

@@ -1,16 +1,49 @@
 {
+ "PUBLIC_FIGURE": [
+  "d",
+  "marie_madlaingne",
+  "m",
+  "l\u00e8yon\u00e2rd",
+  "ro\u00e9_artur",
+  "l"
+ ],
+ "QUANTITY": [
+  "nombe_d_avogadro"
+ ],
  "ANIMAL": [
-  "cat",
-  "poulhe",
-  "chevreu",
-  "bitoreau",
   "arner",
-  "baudet",
   "ch\u00e9rfe",
-  "buhorioe"
+  "bitoreau",
+  "chevreu",
+  "cat",
+  "buhorioe",
+  "bih\u00e9ron",
+  "baudet",
+  "poulhe"
+ ],
+ "GPE": [
+  "franche_comt\u00e9"
+ ],
+ "GENDER": [
+  "f\u00e9me",
+  "feume",
+  "fanme"
+ ],
+ "PLANT": [
+  "cormi\u00e9",
+  "aute",
+  "c\u00e0rote"
+ ],
+ "FOOD": [
+  "u\u00eb"
  ],
  "LOCATION": [
+  "cornalhe_\u00e0_mantl\u00e9",
   "marie_madlaingne"
+ ],
+ "RELIGION_MEMBER": [
+  "ap\u00f4te",
+  "mon"
  ],
  "JOB": [
   "char"
@@ -18,18 +51,8 @@
  "DISEASE": [
   "chi"
  ],
- "PUBLIC_FIGURE": [
-  "m",
-  "marie_madlaingne",
-  "d",
-  "l"
- ],
- "PLANT": [
-  "aute",
-  "cormi\u00e9"
- ],
- "RELIGION_MEMBER": [
-  "mon"
+ "ORG": [
+  "languedoc_roussillon"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -43,9 +66,9 @@
  "other_gender_swap": {},
  "en_pronoun2gender": {
   "she": [
-   "fanme",
    "f\u00e9me",
-   "feume"
+   "feume",
+   "fanme"
   ]
  },
  "en_pronoun2pronoun": {},

@@ -1,41 +1,71 @@
 {
- "PLANT": [
-  "asetunal",
-  "safan\u00f3rya"
+ "ORG": [
+  "iglesia_de_yesukristo_de_los_santos_de_los_\u00faltimos_dias",
+  "biznyeto",
+  "andorra_la_vella",
+  "djudaismo_reformista"
+ ],
+ "FOOD": [
+  "desyerto",
+  "chile",
+  "kav\u00e9",
+  "guevo",
+  "farina"
+ ],
+ "LOCATION": [
+  "mar_preta",
+  "giulan",
+  "colorado"
+ ],
+ "RELIGION_MEMBER": [
+  "djud\u00eda",
+  "djud\u00edo",
+  "ermano"
+ ],
+ "LANGUAGE": [
+  "idish",
+  "\u00e1rabo",
+  "lingua_fransesa"
  ],
  "RACE": [
   "djudio"
  ],
  "PUBLIC_FIGURE": [
+  "\u05d0\u05d5\u05e0\u05d5",
+  "yeshu",
   "moshe",
   "i",
   "putin"
  ],
- "PERSON_PRONOUN": [
-  "i",
-  "mozotros"
+ "JOB": [
+  "professor",
+  "\u05e8\u05d9\u05d9",
+  "injeniero",
+  "bahchev\u00e1n"
  ],
- "FOOD": [
-  "farina",
-  "chile",
-  "guevo",
-  "desyerto"
+ "PLANT": [
+  "safan\u00f3rya",
+  "asetunal"
+ ],
+ "DISEASE": [
+  "shasheo"
+ ],
+ "PRODUCT": [
+  "saint_etienne"
+ ],
+ "BIO_CHEM_ENTITY": [
+  "friuli_venezia_djulia"
  ],
  "RELIGION": [
   "djudaismo_reformista"
  ],
- "RELIGION_MEMBER": [
-  "ermano"
+ "FAC": [
+  "imperio_otomano"
  ],
- "ORG": [
-  "biznyeto"
- ],
- "LOCATION": [
-  "giulan",
-  "mar_preta"
- ],
- "DISEASE": [
-  "shasheo"
+ "PERSON_PRONOUN": [
+  "\u05de\u05d5\u05d6\u05d5\u05d8\u05e8\u05d5\u05e1",
+  "mozotros",
+  "i"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

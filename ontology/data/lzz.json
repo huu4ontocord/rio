@@ -1,4 +1,16 @@
 {
+ "GENDER": [
+  "\u10d1\u10d8\u10ed\u10d8"
+ ],
+ "JOB": [
+  "\u10e1\u10d0\u10dc\u10d8\u10f2\u10d4"
+ ],
+ "ANIMAL": [
+  "\u10d9\u10d0\u10e2\u10e3"
+ ],
+ "DISEASE": [
+  "\u10d7\u10d0\u10dc\u10d8"
+ ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
  "FIRST_NAME_FEMALE": [],

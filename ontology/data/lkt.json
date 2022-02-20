@@ -1,20 +1,64 @@
 {
+ "DATE": [
+  "w\u00edmim\u00e1",
+  "wan\u00edkiya_t\u021f\u00fa\u014bpi_a\u014bp\u00e9tu"
+ ],
+ "LOCATION": [
+  "m\u00edlaha\u014bska_t\u021fam\u00e1k\u021fo\u010dhe",
+  "phil\u00e1mayaye",
+  "phil\u00e1mayayapi",
+  "kh\u00e9ya_w\u00edta",
+  "\u00f3mak\u021fa_t\u021f\u00e9\u010da_o\u00edyokiphi"
+ ],
+ "FOOD": [
+  "wahpe_kalyapi",
+  "pejula_sapa"
+ ],
+ "PLANT": [
+  "cansapa",
+  "utahu",
+  "ituhu",
+  "wa\u021f\u010d\u00e1zi"
+ ],
+ "ORG": [
+  "mi",
+  "em\u00e1\u010diyapi",
+  "op\u00e1wi\u014b\u01e7e_\u0161\u00e1kpe"
+ ],
+ "JOB": [
+  "icinu\u014bpa",
+  "inu\u014bpa",
+  "wi\u010dh\u00e1\u0161a_it\u021f\u00e1\u014b\u010dha\u014b",
+  "it\u021f\u00e1\u014b\u010dha\u014b"
+ ],
+ "QUANTITY": [
+  "wik\u010d\u00e9mna_n\u00fa\u014bpa_ak\u00e9_wa\u014b\u017e\u00ed",
+  "wik\u010d\u00e9mna_n\u00fa\u014bpa_ak\u00e9_\u0161agl\u00f3\u01e7a\u014b",
+  "wik\u010d\u00e9mna_n\u00fa\u014bpa_ak\u00e9_y\u00e1mni",
+  "wik\u010d\u00e9mna_n\u00fa\u014bpa_ak\u00e9_t\u00f3pa",
+  "wik\u010d\u00e9mna_n\u00fa\u014bpa_ak\u00e9_\u0161ak\u00f3wi\u014b",
+  "wik\u010d\u00e9mna_n\u00fa\u014bpa_ak\u00e9_n\u00fa\u014bpa",
+  "wik\u010d\u00e9mna_n\u00fa\u014bpa_ak\u00e9_\u017e\u00e1pta\u014b",
+  "wik\u010d\u00e9mna_n\u00fa\u014bpa_ak\u00e9_nap\u010d\u00edyu\u014bka",
+  "op\u00e1wi\u014b\u01e7e_\u017e\u00e1pta\u014b",
+  "wik\u010d\u00e9mna_n\u00fa\u014bpa_ak\u00e9_\u0161\u00e1kpe"
+ ],
+ "DISEASE": [
+  "le",
+  "mi"
+ ],
  "PERSON_PRONOUN": [
   "he"
  ],
- "LOCATION": [
-  "phil\u00e1mayayapi",
-  "phil\u00e1mayaye"
+ "GENDER": [
+  "w\u00ed\u014bya\u014b"
  ],
- "PLANT": [
-  "cansapa"
+ "ANIMAL": [
+  "ho\u01e7\u00e1\u014bwi\u010dha\u0161a\u0161ni",
+  "\u021fok\u00e1"
  ],
- "DISEASE": [
-  "mi",
-  "le"
- ],
- "ORG": [
-  "mi"
+ "PUBLIC_FIGURE": [
+  "n\u00fa\u014bpa"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -38,8 +82,8 @@
    "he"
   ],
   "they": [
-   "iyepi",
-   "epi"
+   "epi",
+   "iyepi"
   ]
  },
  "en_pronoun2title": {},

@@ -1,32 +1,40 @@
 {
+ "LOCATION": [
+  "land"
+ ],
  "POLITICAL_PARTY": [
   "ar\u0180ed",
+  "arvedi",
+  "arved",
   "ar\u0180edi"
+ ],
+ "ANIMAL": [
+  "katta"
  ],
  "JOB": [
   "land",
   "man"
  ],
- "ORG": [
-  "arvedi",
-  "arved"
- ],
  "PLANT": [
+  "ahorn",
   "holm"
  ],
- "LOCATION": [
-  "land"
- ],
  "DISEASE": [
-  "brinnan",
-  "bitan",
-  "brekan"
+  "siok",
+  "brinnan"
  ],
- "PUBLIC_FIGURE": [
-  "ford"
+ "ORG": [
+  "arved",
+  "arvedi",
+  "ar\u0180ed",
+  "ar\u0180edi"
  ],
  "GENDER": [
   "man"
+ ],
+ "PUBLIC_FIGURE": [
+  "ford",
+  "hopon"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

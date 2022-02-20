@@ -1,21 +1,32 @@
 {
+ "PUBLIC_FIGURE": [
+  "n",
+  "a"
+ ],
+ "DISEASE": [
+  "tan",
+  "gaso"
+ ],
+ "PRODUCT": [
+  "hnit_thit_ku_mingalar_pa"
+ ],
+ "ORG": [
+  "faa",
+  "s\u025bn\u025bk\u025b"
+ ],
+ "ANIMAL": [
+  "yele"
+ ],
+ "SOC_ECO_CLASS": [
+  "s\u025bn\u025bk\u025b"
+ ],
  "LANGUAGE": [
-  "bambara",
   "kongo",
-  "faransekan"
+  "faransekan",
+  "bambara"
  ],
  "JOB": [
   "don"
- ],
- "ORG": [
-  "s\u025bn\u025bk\u025b"
- ],
- "PUBLIC_FIGURE": [
-  "a",
-  "n"
- ],
- "DISEASE": [
-  "tan"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

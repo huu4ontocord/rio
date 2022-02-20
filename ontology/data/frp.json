@@ -1,22 +1,39 @@
 {
- "ANIMAL": [
-  "chatta"
+ "ORG": [
+  "gresson\u00e8y_la_trinit\u00e0",
+  "alemand"
  ],
- "DISEASE": [
-  "chalor"
+ "GENDER": [
+  "fem\u00e8la"
+ ],
+ "LOCATION": [
+  "sri_lanka",
+  "oc\u00e8an_pacefico",
+  "ila_de_p\u00e2ques"
+ ],
+ "ANIMAL": [
+  "chatta",
+  "v\u00e9pa"
+ ],
+ "BIO_CHEM_ENTITY": [
+  "frioul_v\u00e8n\u00e8cie_j\u00b7uli\u00e8na"
  ],
  "LANGUAGE": [
-  "francoproven\u00e7\u00e2l",
-  "arpetan"
+  "arpetan",
+  "francoproven\u00e7\u00e2l"
+ ],
+ "JOB": [
+  "vachier",
+  "\u00e8v\u00e8que"
  ],
  "RELIGION": [
   "calvinismo"
  ],
- "LOCATION": [
-  "sri_lanka"
+ "PLANT": [
+  "s\u00f4ge"
  ],
- "ORG": [
-  "alemand"
+ "GPE": [
+  "franche_comt\u00e2t"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
