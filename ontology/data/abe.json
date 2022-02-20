@@ -1,17 +1,22 @@
 {
  "PLANT": [
-  "wachilmezi",
   "pezagwdamenakwam",
+  "wachilmezi",
   "anaskemezi"
  ],
  "ANIMAL": [
   "anikwses",
-  "namakw",
+  "chegwal",
+  "m\u00f4lazigan",
   "mamaska",
-  "chegwal"
+  "nolka",
+  "namakw"
  ],
  "GENDER": [
   "phanem"
+ ],
+ "LOCATION": [
+  "pastonki"
  ],
  "LANGUAGE": [
   "alem\u00f4n"

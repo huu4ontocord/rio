@@ -1,20 +1,62 @@
 {
- "JOB": [
-  "main\u00e2",
-  "past\u00f4",
-  "acat\u00f2u"
- ],
- "ORG": [
-  "un"
+ "FOOD": [
+  "\u00f6vo",
+  "o\u00e2"
  ],
  "PUBLIC_FIGURE": [
-  "n"
+  "n",
+  "zeuggio",
+  "gex\u00f9_cr\u00ecsto",
+  "lo\u00e9nso",
+  "ges\u00fb"
+ ],
+ "DATE": [
+  "lun\u00e2io_gregori\u00e0n",
+  "calend\u00e2io_gregori\u00e0n"
+ ],
+ "LOCATION": [
+  "o\u00e7eano_paciffigo",
+  "sri_lanka",
+  "mer\u00e7\u00ec"
  ],
  "RELIGION": [
   "scintoiximo"
  ],
- "LOCATION": [
-  "sri_lanka"
+ "ANIMAL": [
+  "z\u00ecn",
+  "lo\u00e2so"
+ ],
+ "LANGUAGE": [
+  "lengua_fran\u00e7\u00e8ise",
+  "l\u00e8ngoa_afrikaans",
+  "lengua_s\u00e0nscr\u00efa",
+  "nauru"
+ ],
+ "PLANT": [
+  "\u00e7\u00eaxa",
+  "s\u00e0rxo",
+  "car\u00f2ttoa"
+ ],
+ "JOB": [
+  "past\u00f4",
+  "acat\u00f2u",
+  "main\u00e2"
+ ],
+ "ORG": [
+  "scintoiximo",
+  "punto_di_domanda",
+  "un",
+  "addis_abeba"
+ ],
+ "BIO_CHEM_ENTITY": [
+  "fri\u00f9li_venessia_giulia"
+ ],
+ "PRODUCT": [
+  "cantego_di_canteghi"
+ ],
+ "GENDER": [
+  "v\u00eagia",
+  "m\u00e0sccio"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

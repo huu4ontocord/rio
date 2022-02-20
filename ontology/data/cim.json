@@ -1,6 +1,12 @@
 {
+ "FOOD": [
+  "ger\u00f6astatn_khes"
+ ],
  "PERSON_PRONOUN": [
   "dain"
+ ],
+ "GENDER": [
+  "b\u00e0ip"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

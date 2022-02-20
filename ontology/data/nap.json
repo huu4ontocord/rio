@@ -1,141 +1,246 @@
 {
+ "ANIMAL": [
+  "cardillo",
+  "canis_lupus",
+  "ncroja",
+  "surice",
+  "arpeglia",
+  "pietterusso",
+  "russignuolo",
+  "farcone",
+  "equus_asinus",
+  "ci\u00e0ula",
+  "capreolo",
+  "tremmula",
+  "mugil_cephalus",
+  "passaro",
+  "lapa_taliana",
+  "gallus_gallus_domesticus",
+  "gallus_gallus",
+  "pernice",
+  "p\u00f9llo",
+  "mammifere",
+  "frungillo",
+  "vufero",
+  "scarraf\u00f3ne",
+  "sorg_m\u00ebscatiegl",
+  "meles_meles",
+  "pizzestuorto"
+ ],
  "PLANT": [
-  "cazzipocchio",
-  "ardica",
-  "ceraso",
+  "brassica_oleracea",
+  "ci\u00e9v\u00ebs\u00eb_nir",
+  "cavuluciore",
+  "f\u00ecguere",
   "cucuzzigl",
-  "solanaceae",
-  "sammuch",
-  "ramegna",
-  "avrusca",
-  "catiegl",
+  "fr\u00e1v\u00ebla_salv\u00e1t\u00ebca",
+  "sovera_pelosa",
+  "\u00e9lece",
   "puocchi\u00eb",
-  "contrerva",
+  "cierr",
+  "ramegna",
+  "catiegl",
+  "ceraso",
+  "inipr",
   "alvaniegl",
   "matr\u00ebcana",
-  "cierr",
-  "cerasa",
-  "p\u00ebrcacchia",
   "pastenaca",
-  "caci\u00f2la"
- ],
- "LOCATION": [
-  "mar_tirreno"
- ],
- "ANIMAL": [
-  "passaro",
-  "russignuolo",
-  "cardillo",
-  "mammifere",
-  "pernice",
-  "surice",
-  "pietterusso",
-  "capreolo",
-  "pizzestuorto",
-  "farcone",
-  "tremmula",
-  "scarraf\u00f3ne"
- ],
- "JOB": [
-  "portal\u00e9ttere",
-  "vammana",
-  "pitt\u00f3re",
-  "don",
-  "zoccula",
-  "mammana",
-  "portalettere",
-  "pett\u00f3re"
- ],
- "PRODUCT": [
-  "justin_bieber"
- ],
- "DISEASE": [
-  "recchiune",
-  "segli\u00f9zzo",
-  "gratt\u00e0",
-  "paposcia",
-  "selluzzo",
-  "guallecchia",
-  "guallara",
-  "cacagli\u00e0",
-  "chi",
-  "scarfatura",
-  "sorece",
-  "suonno",
-  "mengr\u00e0nia",
-  "ruttura"
+  "sammuch",
+  "cerasa",
+  "solanaceae",
+  "p\u00ebrcacchia",
+  "ardica",
+  "cazzipocchio",
+  "caci\u00f2la",
+  "cagg",
+  "l\u00e9c\u00ebna",
+  "contrerva",
+  "avrusca",
+  "ci\u00e9v\u00ebs\u00eb_gghiangh",
+  "calamintha_nepeta",
+  "sequoiadendron_giganteum",
+  "gliva",
+  "fav\u00ebsaragh",
+  "m\u00e1v\u00ebla"
  ],
  "PUBLIC_FIGURE": [
-  "winston_churchill",
-  "giambattista_marini",
-  "michael_jackson",
-  "grev\u00f2rio",
-  "vincent_van_gogh",
-  "marco_aurelio",
-  "e",
-  "sarah_bernhardt",
-  "stalin",
-  "dante_alighieri",
-  "nicolas_poussin",
-  "bened\u00e8tt\u00eb",
-  "a",
-  "caravaggio",
-  "o",
-  "william_james",
-  "sandro_botticelli",
-  "al_capone",
-  "le_corbusier",
-  "adolf_hitler",
-  "giuseppe_garibaldi",
-  "ant\u00f9one",
   "gaetano_donizetti",
-  "charlie_chaplin",
+  "san_giorgio",
+  "michael_jackson",
+  "gies\u00f9_cristo",
+  "l\u2019_aquila",
+  "adolf_hitler",
   "ronald_reagan",
+  "dante_alighieri",
+  "william_james",
+  "bened\u00e8tt\u00eb",
+  "marlene_dietrich",
+  "sarah_bernhardt",
+  "bruce_lee",
+  "jacques_cartier",
+  "grev\u00f2rio",
+  "winston_churchill",
+  "gugliemo_marconi",
+  "sandro_botticelli",
+  "enrico_caruso",
+  "cicero",
+  "jean_auguste_dominique_ingres",
+  "charlie_chaplin",
+  "giambattista_marini",
+  "nicolas_poussin",
+  "plinio_o_viecchio",
+  "al_capone",
+  "george_w_bush",
   "ernest_hemingway",
+  "le_corbusier",
+  "grgorij",
+  "ant\u00f9one",
+  "giustiniano_i",
+  "g\u00e8s\u00f9",
+  "bolzano",
+  "gaio_giulio_cesare",
+  "e",
+  "giuseppe_garibaldi",
+  "caravaggio",
+  "lurenzo",
   "nelson_mandela",
-  "san_giorgio"
- ],
- "DATE": [
-  "calannario_greguriano",
-  "medioevo"
+  "sofia_loren",
+  "giordano_bruno",
+  "o",
+  "a",
+  "marco_aurelio",
+  "ba\u00e0r",
+  "vincent_van_gogh",
+  "vittorio_de_sica",
+  "stalin",
+  "gi\u00f2rg\u00eb"
  ],
  "ORG": [
-  "nasa",
-  "alessandro_magno",
-  "mar_ruosso",
   "core",
+  "aducazzione",
+  "mar_ruosso",
   "state_aunite_d_amereca",
-  "los_angeles",
+  "organizzazione_d_e_nazzione_aunite_pe_ll_aducazione_a_scienza_e_a_cultura",
+  "sucieta_ppe_azzioni",
+  "fao",
+  "san_giuseppe",
+  "aunione_europea",
+  "nasa",
+  "lengua_germanese",
+  "stanlio_e_ollio",
   "nato",
   "chiesia_cattoleca",
+  "muro_e_berlino",
   "scola",
-  "san_nicola_e_mira"
+  "alessandro_magno",
+  "san_nicola_e_mira",
+  "nord_reno_westfalia",
+  "autorit\u00e0_nazziunala_e_palestina",
+  "los_angeles",
+  "organizzazione_d_e_nazzione_aunite",
+  "barack_obama",
+  "central_intelligence_agency"
  ],
  "FOOD": [
-  "attisena",
   "sciavecaria",
-  "patanella"
+  "uoglio_e_auliva",
+  "c\u00ecmme_e_r\u00e0pa",
+  "ccaf\u00e8",
+  "patanella",
+  "attisena",
+  "ovo"
  ],
- "EVENT": [
-  "se_scet\u00e0"
+ "DATE": [
+  "1_e_majo",
+  "medioevo",
+  "juorno_e_san_giuseppe",
+  "urdemo_juorno_e_carnevale",
+  "calannario_greguriano"
  ],
  "FAC": [
-  "san_giuseppe"
+  "ascoli_piceno",
+  "san_giuseppe",
+  "chiesia_cattoleca"
+ ],
+ "JOB": [
+  "vammana",
+  "mammana",
+  "pitt\u00f3re",
+  "surdato",
+  "portalettere",
+  "fravecatore",
+  "operaio",
+  "rr\u00e9",
+  "portal\u00e9ttere",
+  "pett\u00f3re",
+  "don",
+  "zoccula"
+ ],
+ "LOCATION": [
+  "oceano_pacifeco",
+  "state_aunite_d_amereca",
+  "amereca",
+  "1_e_jennaro",
+  "oceano_indiano",
+  "cit\u00e0",
+  "mar_tirreno",
+  "curnacchia_griggia",
+  "oceano_atlanteco"
+ ],
+ "PERSON_PRONOUN": [
+  "nuje"
+ ],
+ "PRODUCT": [
+  "justin_bieber",
+  "pate_nuoste",
+  "primma_guerra_munniale",
+  "impero_rumano",
+  "novo_testamiento",
+  "magna_grecia",
+  "ice_cube",
+  "siconda_guerra_munniale",
+  "n\u00f2va_z\u00eblanna",
+  "aveta_visione",
+  "uerra_civile_merricana",
+  "red_hot_chili_peppers",
+  "gran_vretagna",
+  "aunione_sovieteca"
  ],
  "RELIGION": [
   "islam"
  ],
  "LANGUAGE": [
-  "hindjan",
   "taliano",
-  "franzese"
+  "lengua_latina",
+  "ngrese",
+  "franzese",
+  "hindjan"
  ],
- "GENDER": [
-  "peccerella"
+ "EVENT": [
+  "se_scet\u00e0"
+ ],
+ "DISEASE": [
+  "segli\u00f9zzo",
+  "ggas",
+  "chi"
  ],
  "GPE": [
+  "novo_testamiento",
+  "san_giorgio",
   "mar_ruosso",
-  "novo_testamiento"
+  "san_nicola_e_mira"
+ ],
+ "BIO_CHEM_ENTITY": [
+  "friuli_venezia_giulia"
+ ],
+ "GENDER": [
+  "ommo",
+  "nenna",
+  "peccerella",
+  "femmena"
+ ],
+ "RACE": [
+  "arabbo"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -153,13 +258,13 @@
  "other_gender_swap": {},
  "en_pronoun2gender": {
   "he": [
-   "guaglione",
-   "ommo"
+   "ommo",
+   "guaglione"
   ],
   "she": [
+   "peccerella",
    "femmena",
-   "nenna",
-   "peccerella"
+   "nenna"
   ]
  },
  "en_pronoun2pronoun": {

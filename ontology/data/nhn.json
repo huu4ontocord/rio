@@ -1,23 +1,35 @@
 {
+ "ANIMAL": [
+  "quimichpatlani",
+  "cacalotl",
+  "cuetlachtli",
+  "mazatl",
+  "tlacaxolotl",
+  "tlacuachin",
+  "cozcacuauhtli",
+  "cozahtli",
+  "cuacuauhxolotl",
+  "xomotl",
+  "ahuitzotl"
+ ],
+ "RACE": [
+  "iztac"
+ ],
+ "JOB": [
+  "coyotl",
+  "maitl"
+ ],
  "FOOD": [
   "cacahuatl"
  ],
- "ANIMAL": [
-  "tlacuachin",
-  "quimichpatlani",
-  "cuacuauhxolotl",
-  "cacalotl",
-  "ahuitzotl",
-  "tlacaxolotl",
-  "mazatl",
-  "cuetlachtli"
+ "GENDER": [
+  "cihuatl"
  ],
- "JOB": [
-  "maitl",
-  "coyotl"
+ "LOCATION": [
+  "altepetl"
  ],
- "DISEASE": [
-  "chahuiztli"
+ "PLANT": [
+  "exotl"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

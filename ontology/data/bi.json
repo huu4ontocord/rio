@@ -1,21 +1,39 @@
 {
  "PERSON_PRONOUN": [
-  "yumi",
+  "mitrifala",
   "mitufala",
-  "yumitu",
   "yumitri",
   "we",
-  "mitrifala"
+  "mifala",
+  "yumitu",
+  "yumi"
  ],
- "GENDER": [
+ "FOOD": [
+  "kofe"
+ ],
+ "ORG": [
+  "andorra_la_vella",
+  "jos_blong_jisas_kraes_blong_ol_lata_dei_sent"
+ ],
+ "LANGUAGE": [
+  "bislama"
+ ],
+ "PRODUCT": [
+  "niu_zilan"
+ ],
+ "JOB": [
   "woman",
   "man"
  ],
- "ORG": [
-  "jos_blong_jisas_kraes_blong_ol_lata_dei_sent"
+ "GENDER": [
+  "woman",
+  "wuman",
+  "man"
  ],
- "JOB": [
-  "man",
+ "ANIMAL": [
+  "flaengfoks"
+ ],
+ "SOC_ECO_CLASS": [
   "woman"
  ],
  "FIRST_NAME_MALE": [],
@@ -36,8 +54,8 @@
    "man"
   ],
   "she": [
-   "woman",
-   "wuman"
+   "wuman",
+   "woman"
   ]
  },
  "en_pronoun2pronoun": {},

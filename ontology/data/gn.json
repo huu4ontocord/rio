@@ -1,46 +1,86 @@
 {
+ "GENDER": [
+  "yvyp\u00f3ra",
+  "ku\u00f1a",
+  "mit\u00e3ku\u00f1a",
+  "ku\u00f1ata\u0129"
+ ],
+ "JOB": [
+  "para",
+  "aravo_ive"
+ ],
  "LOCATION": [
+  "kokue",
+  "ykarai",
+  "para_h\u0169",
+  "tet\u00e3_pete\u0129_reko_am\u00e9rikagua",
   "la_plata",
-  "para_h\u0169"
- ],
- "PLANT": [
-  "karanda",
-  "karanda'y"
- ],
- "ANIMAL": [
-  "guasu",
-  "okamb\u00fava",
-  "pirachuguasu"
- ],
- "PERSON_PRONOUN": [
-  "i",
-  "me"
+  "t\u00e1va"
  ],
  "PUBLIC_FIGURE": [
+  "vet\u00f3ven",
+  "mok\u00f5i",
   "y",
-  "a",
-  "i"
+  "i",
+  "a"
+ ],
+ "ORG": [
+  "washington_d_c",
+  "tet\u00e3ngu\u00e9ra_joaju",
+  "sa",
+  "hesukr\u00edsto_tupao_marangatuku\u00e9ra_arapahapegua",
+  "po",
+  "\u00f1emit\u1ef9"
+ ],
+ "PERSON_PRONOUN": [
+  "me",
+  "imba_e",
+  "i",
+  "ah\u1ebd"
+ ],
+ "DISEASE": [
+  "para",
+  "tasy",
+  "ague",
+  "rasy"
+ ],
+ "PLANT": [
+  "mbokaja",
+  "mandi_o",
+  "karanda'y",
+  "karanda",
+  "jata_i",
+  "mba'ysyvo_vai"
+ ],
+ "ANIMAL": [
+  "urukure_a",
+  "tajasu_guyra",
+  "mymba_ipy_apytimby",
+  "guasu",
+  "ryguasu",
+  "kupyju",
+  "\u00f1akurut\u00fb",
+  "yryvu",
+  "okamb\u00fava",
+  "mborev\u00ed",
+  "pirachuguasu"
+ ],
+ "PRODUCT": [
+  "ore_ru"
+ ],
+ "DATE": [
+  "t\u00fava_\u00e1ra"
  ],
  "SOC_ECO_CLASS": [
   "\u00f1emit\u1ef9"
  ],
- "JOB": [
-  "para"
- ],
- "DISEASE": [
-  "para",
-  "ague",
-  "tuguyasuka"
- ],
- "FOOD": [
-  "tave'\u00ff"
- ],
  "RACE": [
   "morot\u0129"
  ],
- "ORG": [
-  "po",
-  "sa"
+ "FOOD": [
+  "tave'\u00ff",
+  "yvyku_ipasu",
+  "ky'\u1ef9i"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -63,12 +103,12 @@
    "yvyp\u00f3ra"
   ],
   "she": [
-   "mit\u00e3ku\u00f1a",
-   "yk\u00e9ra",
+   "ku\u00f1a",
    "ku\u00f1ata\u0129",
+   "yk\u00e9ra",
    "yke",
-   "eindy",
-   "ku\u00f1a"
+   "mit\u00e3ku\u00f1a",
+   "eindy"
   ]
  },
  "en_pronoun2pronoun": {

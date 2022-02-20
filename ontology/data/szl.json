@@ -1,17 +1,50 @@
 {
- "LANGUAGE": [
-  "polski",
-  "francusko_godka",
-  "esperanto"
+ "ORG": [
+  "bauerstwo",
+  "ojropejsko_u\u0144ijo"
+ ],
+ "PRODUCT": [
+  "wjelgo_bryta\u0144ijo",
+  "radosnych_god\u014dw"
+ ],
+ "LOCATION": [
+  "sri_lanka",
+  "uocean_spokojny",
+  "amerika",
+  "mjasto",
+  "stany_zjydno\u010d\u016fne_ameryki"
  ],
  "SOC_ECO_CLASS": [
   "bauerstwo"
  ],
- "LOCATION": [
-  "sri_lanka"
+ "JOB": [
+  "sek\u016fnda"
  ],
- "ORG": [
-  "bauerstwo"
+ "PLANT": [
+  "wiyrzba",
+  "trzy\u015b\u0144a"
+ ],
+ "GENDER": [
+  "kobiyta"
+ ],
+ "ANIMAL": [
+  "wr\u016fna",
+  "uojle",
+  "cyckocz"
+ ],
+ "GPE": [
+  "dolno\u015bl\u016fnsko_godka"
+ ],
+ "LANGUAGE": [
+  "francusko_godka",
+  "polski",
+  "godka_afrikaans",
+  "esperanto"
+ ],
+ "FOOD": [
+  "gorko_szekulada",
+  "kafyj",
+  "kafej"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

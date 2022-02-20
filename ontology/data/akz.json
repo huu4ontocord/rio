@@ -1,18 +1,22 @@
 {
- "FOOD": [
-  "assikch\u00eclpa"
- ],
  "PERSON_PRONOUN": [
   "oki"
  ],
- "ANIMAL": [
-  "iskanpatha"
+ "JOB": [
+  "tayyi_alikchi"
+ ],
+ "FOOD": [
+  "assikch\u00eclpa"
  ],
  "PLANT": [
   "assikchi_laana"
  ],
  "GENDER": [
   "tayyi"
+ ],
+ "ANIMAL": [
+  "iskanpatha",
+  "foho"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

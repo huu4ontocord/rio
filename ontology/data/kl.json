@@ -1,133 +1,185 @@
 {
- "JOB": [
-  "nipilersortartoq",
-  "nutserisoq",
-  "atuakkiortoq",
-  "sakkutooq",
-  "blokfl\u00f8jte",
-  "kukkunersiuisoq",
-  "atuagaatilerisoq",
-  "kunngi",
-  "erfalasulisartoq",
-  "nakorsaq",
-  "timmisartortartoq",
-  "borgmesteri",
-  "ilisimasortaq",
-  "erruissut"
+ "ANIMAL": [
+  "kangoq",
+  "nattoraliusaq",
+  "uppik",
+  "nimeriarluk",
+  "allaq",
+  "arfivik",
+  "marloraaq",
+  "tulugaq",
+  "qilalugaq_qaqortaq",
+  "aarluk",
+  "hvepsi",
+  "tunnulik",
+  "tikaagulliusaarnaq",
+  "nerlernaq",
+  "tuttorsuaq",
+  "nanoq",
+  "paaq",
+  "aavooq",
+  "kigutilissuaq",
+  "qeriiaq",
+  "umimmak",
+  "anarnaq",
+  "qipoqqaq",
+  "naraseq",
+  "tikaagulliusaaq",
+  "niisarnaq",
+  "kiinaaleeraq",
+  "tuttorpak",
+  "kissavik",
+  "niisa",
+  "alleq",
+  "naaja",
+  "tikaagullik",
+  "miteq"
  ],
- "PRODUCT": [
-  "juullisiorluarit",
-  "juulimaaq",
-  "sinilluarna",
-  "orpiliaq"
+ "POLITICAL_PARTY_MEMBER": [
+  "bolschevikki"
+ ],
+ "ORG": [
+  "angallattut_tattoqiuttut",
+  "nunaateqarneq",
+  "andorra_la_vella",
+  "atuarfik",
+  "asavakkit",
+  "isi",
+  "nipilersoqatigiissuit",
+  "niuerneq"
  ],
  "LANGUAGE": [
+  "finlandimiutut",
   "finlandimeersoq",
+  "persiskisut",
   "franskisut",
   "qallunaatut",
-  "persiskisut",
   "islandimiusut",
+  "inuktitut",
   "svenskisut",
-  "esperanto",
+  "urdutut",
   "russeq",
-  "finlandimiutut",
-  "kalaallisut"
+  "latinerisut",
+  "swahilimiutut",
+  "kalaallisut",
+  "finskisut",
+  "esperanto"
+ ],
+ "JOB": [
+  "igavoq",
+  "oqaluttualiortoq",
+  "atuarfiit_pisortaat",
+  "atuakkiortoq",
+  "borgmesteri",
+  "politiit",
+  "kunngi",
+  "nutserisoq",
+  "erruissut",
+  "nakorsaq",
+  "igasoq",
+  "nipilersortartoq",
+  "sakkutooq",
+  "atuarfiup_pisortaa",
+  "inussiaq",
+  "arkitekti",
+  "ilisimasortaq",
+  "bibliotekari",
+  "blokfl\u00f8jte",
+  "atuagaatilerisoq",
+  "timmisartortartoq",
+  "kukkunersiuisoq",
+  "erfalasulisartoq",
+  "aqagutaarneq"
+ ],
+ "PRODUCT": [
+  "orpiliaq",
+  "juullisiorluarit",
+  "ataatarpooq",
+  "sinilluarna",
+  "juullip_aappaa",
+  "juulimaaq",
+  "juullimi_pilluarit"
+ ],
+ "LOCATION": [
+  "ukiortaami_pilluaritsi",
+  "naalagaaffeqatigiit",
+  "qallunaat_nunaat",
+  "sinilluarit",
+  "angerlarpoq",
+  "qujanaq",
+  "juulliaraq",
+  "juulimaaq"
+ ],
+ "PLANT": [
+  "eqqumiitsuliortoq",
+  "blomk\u00e5li",
+  "musaq",
+  "palleq",
+  "kaali",
+  "kuloruuju",
+  "orpiliaq",
+  "rubiia"
+ ],
+ "PUBLIC_FIGURE": [
+  "u",
+  "kaarat",
+  "neriuut",
+  "laasi",
+  "kuutak",
+  "piitaq",
+  "marluk",
+  "kaarali",
+  "jiisusi",
+  "jaaku",
+  "neriugisaq",
+  "piita",
+  "kattaliit",
+  "joorut",
+  "qupp",
+  "qingalik",
+  "i",
+  "juulut",
+  "antuut",
+  "kaalat"
+ ],
+ "FOOD": [
+  "\u00e6blejuice",
+  "ullaakkorsiutit",
+  "kaffi"
+ ],
+ "FAC": [
+  "politeeqarfik"
+ ],
+ "QUANTITY": [
+  "koruuni",
+  "krone",
+  "biilinut_uninngatitsivik"
  ],
  "GENDER": [
-  "nukappiaraq",
+  "niviarsiaq",
   "arnaq",
-  "niviarsiaq"
+  "nukappiaraq"
+ ],
+ "DATE": [
+  "juullip_aappaa",
+  "juullerujussuaq",
+  "juullip_ullua"
  ],
  "DISEASE": [
   "teriaq",
-  "anniaat",
+  "avallunneq",
   "niviarsiapilunneq",
-  "erfalavoq",
-  "herpes",
-  "gassi",
-  "fork\u00f8lelsess\u00e5r",
   "sinippoq",
-  "napparsimasoq",
-  "avallunneq"
- ],
- "ORG": [
-  "nunaateqarneq",
-  "isi",
-  "atuarfik",
-  "nipilersoqatigiissuit"
- ],
- "ANIMAL": [
-  "tikaagulliusaaq",
-  "naraseq",
-  "tikaagullik",
-  "nanoq",
-  "allaq",
-  "kigutilissuaq",
-  "anarnaq",
-  "tunnulik",
-  "tulugaq",
-  "kiinaaleeraq",
-  "miteq",
-  "kissavik",
-  "arfivik",
-  "aarluk",
-  "alleq",
-  "tikaagulliusaarnaq",
-  "marloraaq",
-  "kangoq",
-  "nimeriarluk"
- ],
- "DATE": [
-  "juullerujussuaq",
-  "juullip_aappaa"
- ],
- "PLANT": [
-  "kaali",
-  "orpiliaq",
-  "palleq",
-  "musaq",
-  "kuloruuju",
-  "rubiia",
-  "blomk\u00e5li"
- ],
- "LOCATION": [
-  "sinilluarit",
-  "angerlarpoq",
-  "juulimaaq",
-  "juulliaraq"
- ],
- "PERSON_PRONOUN": [
-  "i"
- ],
- "PUBLIC_FIGURE": [
-  "neriuut",
-  "kattaliit",
-  "qingalik",
-  "kaarali",
-  "kaarat",
-  "kuutak",
-  "u",
-  "i",
-  "marluk",
-  "antuut",
-  "juulut",
-  "joorut",
-  "neriugisaq",
-  "kaalat",
-  "laasi"
+  "herpes"
  ],
  "SOC_ECO_CLASS": [
   "nunaateqarneq"
  ],
- "QUANTITY": [
-  "krone",
-  "koruuni"
+ "PERSON_PRONOUN": [
+  "i"
  ],
- "FOOD": [
-  "ullaakkorsiutit"
- ],
- "FAC": [
-  "politeeqarfik"
+ "RELIGION_MEMBER": [
+  "qatanngut_angut"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -161,9 +213,9 @@
    "uuma"
   ],
   "it": [
-   "makku",
    "uuma",
-   "matuma"
+   "matuma",
+   "makku"
   ]
  },
  "en_pronoun2title": {},

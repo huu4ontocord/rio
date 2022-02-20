@@ -1,9 +1,13 @@
 {
+ "GPE": [
+  "agnam_goly"
+ ],
  "LOCATION": [
   "a_jaraama"
  ],
  "PLANT": [
-  "gawri"
+  "gawri",
+  "\u0257aaleehi"
  ],
  "GENDER": [
   "debbo"

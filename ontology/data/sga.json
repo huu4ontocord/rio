@@ -1,51 +1,70 @@
 {
- "ANIMAL": [
-  "drean",
-  "catt",
-  "brocc"
- ],
- "ORG": [
-  "scol",
-  "cid"
- ],
  "DISEASE": [
-  "gaethmairecht",
-  "gaethamlacht",
-  "brath",
+  "benn",
   "luch",
   "ed",
-  "benn",
-  "moirtchenn"
+  "brath"
  ],
  "PUBLIC_FIGURE": [
+  "n",
+  "erlam",
+  "drean",
+  "m",
   "b",
   "e",
-  "erlam",
-  "a",
-  "n",
-  "m",
   "i",
-  "drean",
+  "a",
   "s"
  ],
  "PERSON_PRONOUN": [
-  "i",
   "me",
+  "uib",
   "tech",
+  "unn",
+  "i",
+  "sni",
   "us"
  ],
+ "ANIMAL": [
+  "gigrann",
+  "trogan",
+  "brocc",
+  "elg",
+  "doburchu",
+  "drean",
+  "fiad",
+  "giugrann",
+  "catt"
+ ],
  "JOB": [
-  "don",
-  "muccaid",
-  "cerd",
+  "oegaire",
   "guide",
+  "muccaid",
+  "don",
+  "cerd",
   "danaim"
  ],
- "SOC_ECO_CLASS": [
-  "terc"
+ "PLANT": [
+  "airne"
  ],
  "LANGUAGE": [
   "laiten"
+ ],
+ "SOC_ECO_CLASS": [
+  "uathad",
+  "terc"
+ ],
+ "ORG": [
+  "cid",
+  "scol",
+  "cia"
+ ],
+ "GENDER": [
+  "firennach",
+  "firend"
+ ],
+ "LOCATION": [
+  "badb"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -61,8 +80,8 @@
  "other_gender_swap": {},
  "en_pronoun2gender": {
   "he": [
-   "firend",
    "firennach",
+   "firend",
    "menn"
   ]
  },

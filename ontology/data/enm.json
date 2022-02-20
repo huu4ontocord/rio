@@ -1,32 +1,41 @@
 {
- "PLANT": [
-  "cherville",
-  "houndestonge",
-  "wormwode"
+ "JOB": [
+  "instrument",
+  "musicien",
+  "kyng",
+  "hire",
+  "ratte",
+  "musiker",
+  "sheepherde",
+  "king",
+  "wever",
+  "coper"
  ],
  "DISEASE": [
-  "sorenes",
   "pippe"
  ],
  "ANIMAL": [
+  "silkwirm",
   "chike",
   "chekyn",
-  "faucoun"
- ],
- "JOB": [
-  "king",
-  "wever",
-  "sheepherde",
-  "coper"
- ],
- "PERSON_PRONOUN": [
-  "his",
-  "we",
-  "us"
+  "faucoun",
+  "aquerne"
  ],
  "PUBLIC_FIGURE": [
-  "webster",
-  "elizabeth"
+  "iesus",
+  "jhesus",
+  "elizabeth",
+  "webster"
+ ],
+ "PLANT": [
+  "houndestonge",
+  "cherville",
+  "wormwode"
+ ],
+ "PERSON_PRONOUN": [
+  "we",
+  "his",
+  "us"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

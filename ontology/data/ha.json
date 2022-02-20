@@ -1,85 +1,123 @@
 {
- "JOB": [
-  "mace",
-  "masa\u0199i",
-  "masinja",
-  "cadi",
-  "kuyanga"
- ],
- "DISEASE": [
-  "hakiya",
-  "hangum",
-  "juwa",
-  "azabtarwa",
-  "noma"
- ],
- "FAC": [
-  "firamare"
- ],
  "ANIMAL": [
+  "kyanwa",
+  "kwa\u0257o",
+  "karkandan",
   "namakiri",
   "hankaka",
-  "karkandan",
-  "mujiya"
+  "\u0253auna",
+  "mujiya",
+  "kyankyaso",
+  "ungulu"
+ ],
+ "PERSON_PRONOUN": [
+  "sh\u00edi",
+  "\u00edt\u00e1"
+ ],
+ "ORG": [
+  "kasuwar_shunku",
+  "majalisar_\u0257inkin_duniya",
+  "gwamnati",
+  "kuzari",
+  "firamare",
+  "m\u0257d",
+  "fasa_ofis",
+  "midil",
+  "jam_iyya",
+  "kotun_\u0199oli",
+  "mulki",
+  "sa",
+  "majalisar_wakilai",
+  "wanwe",
+  "gini_ta_ikwaita"
  ],
  "LOCATION": [
   "na_gode",
-  "fatakwal"
+  "siri_lanka",
+  "barka_da_rana",
+  "fatakwal",
+  "tarayyar_amurka"
  ],
  "LANGUAGE": [
-  "kongo",
   "bahaushe",
-  "bahaushiya",
-  "barbarci",
-  "hausawa",
   "hausa",
   "turanci",
-  "faransanci"
+  "barbarci",
+  "faransanci",
+  "bahaushiya",
+  "hausawa",
+  "kongo"
  ],
- "FOOD": [
-  "barkono"
- ],
- "ORG": [
-  "firamare",
-  "gwamnati",
-  "fasa_ofis",
-  "kuzari",
-  "midil",
-  "sa",
-  "mulki"
- ],
- "PRODUCT": [
-  "linjila"
- ],
- "PUBLIC_FIGURE": [
-  "a",
-  "husaini",
-  "dauda",
-  "biyu"
- ],
- "SOC_ECO_CLASS": [
-  "kasuwar_shunku"
- ],
- "RELIGION_MEMBER": [
-  "mormon"
+ "DISEASE": [
+  "noma",
+  "azabtarwa",
+  "juwa",
+  "\u0199ara",
+  "gas",
+  "hakiya",
+  "\u0253era",
+  "ha\u0253o"
  ],
  "PLANT": [
-  "zaitun"
+  "kafur",
+  "zaitun",
+  "ma\u0257aci"
  ],
- "RELIGION": [
-  "islam"
+ "RELIGION_MEMBER": [
+  "hindu",
+  "musulmi",
+  "\u0257anuwa",
+  "mormon"
+ ],
+ "PUBLIC_FIGURE": [
+  "ya\u0199ubu",
+  "husaini",
+  "dauda",
+  "a",
+  "biyu",
+  "\u0257aya"
+ ],
+ "PRODUCT": [
+  "linjila",
+  "ina_kwana",
+  "sawo_tome_da_paransip",
+  "sawo_tome_da_pirinsipe"
  ],
  "LAW": [
   "kotun_\u0199oli"
  ],
- "GENDER": [
-  "yarinya"
+ "RELIGION": [
+  "islam"
+ ],
+ "FOOD": [
+  "barkono",
+  "tsala"
+ ],
+ "JOB": [
+  "masinja",
+  "kuyanga",
+  "gwamna",
+  "cadi",
+  "mace",
+  "baiwa",
+  "masa\u0199i"
+ ],
+ "SOC_ECO_CLASS": [
+  "kasuwar_shunku"
+ ],
+ "FAC": [
+  "firamare",
+  "fasa_ofis"
+ ],
+ "GPE": [
+  "c\u00f4te_d_ivoire",
+  "linjila"
  ],
  "POLITICAL_PARTY": [
   "jam_iyya"
  ],
- "GPE": [
-  "linjila"
+ "GENDER": [
+  "yarinya"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -106,18 +144,18 @@
    "yaro"
   ],
   "she": [
-   "mace",
-   "yarinya"
+   "yarinya",
+   "mace"
   ]
  },
  "en_pronoun2pronoun": {
   "he": [
-   "iya",
-   "sh\u00edi"
+   "sh\u00edi",
+   "iya"
   ],
   "she": [
-   "iya",
-   "\u00edt\u00e1"
+   "\u00edt\u00e1",
+   "iya"
   ],
   "they": [
    "s\u00fau"
@@ -129,5 +167,8 @@
  "en_pronoun2title": {},
  "PREFIX_MALE": [],
  "PREFIX_FEMALE": [],
- "person2religion": {}
+ "person2religion": {
+  "islam": "addinin_islama",
+  "musulmi": "islam"
+ }
 }

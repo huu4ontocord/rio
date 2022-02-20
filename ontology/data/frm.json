@@ -1,26 +1,39 @@
 {
+ "PUBLIC_FIGURE": [
+  "ieorge",
+  "cauvin",
+  "robert",
+  "iesus",
+  "moyse",
+  "george",
+  "morgain",
+  "iorge",
+  "edouard",
+  "jesus_christ"
+ ],
  "PERSON_PRONOUN": [
-  "dain",
-  "me"
+  "me",
+  "dain"
+ ],
+ "DATE": [
+  "tost_ou_tard"
  ],
  "JOB": [
-  "roy"
- ],
- "PUBLIC_FIGURE": [
-  "morgain",
-  "moyse",
-  "robert",
-  "cauvin",
-  "george"
+  "roy",
+  "second"
  ],
  "ANIMAL": [
   "duc"
  ],
- "GENDER": [
-  "dame"
+ "ORG": [
+  "chevalier_errant",
+  "trois_rivieres"
  ],
  "LOCATION": [
   "trois_rivieres"
+ ],
+ "GENDER": [
+  "dame"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

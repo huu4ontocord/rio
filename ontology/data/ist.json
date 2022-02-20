@@ -1,28 +1,40 @@
 {
- "FOOD": [
-  "dazierto"
- ],
  "PLANT": [
-  "sareza"
+  "sareza",
+  "ule\u00eeo"
  ],
- "DISEASE": [
-  "mursag\u00e0"
+ "PERSON_PRONOUN": [
+  "nostro",
+  "nostra",
+  "me\u00eeo"
  ],
- "GENDER": [
-  "mas'cio"
+ "PUBLIC_FIGURE": [
+  "duj",
+  "sparansa"
  ],
  "JOB": [
-  "mare\u00eetimo",
-  "cunpagno"
+  "cunpagno",
+  "f\u00e0",
+  "zugadur",
+  "mare\u00eetimo"
  ],
  "ORG": [
   "nato"
  ],
+ "GENDER": [
+  "mas'cio"
+ ],
+ "LOCATION": [
+  "sit\u00e0"
+ ],
+ "SOC_ECO_CLASS": [
+  "puoco"
+ ],
+ "FOOD": [
+  "dazierto"
+ ],
  "LANGUAGE": [
   "abrieo"
- ],
- "PUBLIC_FIGURE": [
-  "sparansa"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

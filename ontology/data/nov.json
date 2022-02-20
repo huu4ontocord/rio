@@ -1,31 +1,71 @@
 {
  "LANGUAGE": [
-  "katalana",
+  "fransum",
   "venda",
   "spani",
+  "katalana",
   "katalane",
+  "somalianum",
   "katalano",
-  "fransum",
+  "afrikansum",
   "esperanto"
  ],
- "DISEASE": [
-  "pasione",
-  "mause",
-  "le"
+ "PERSON_PRONOUN": [
+  "me",
+  "nusen"
+ ],
+ "QUANTITY": [
+  "kalorie",
+  "duanti_sink",
+  "duanti_tri",
+  "duanti_six",
+  "duanti_un",
+  "duanti_ot",
+  "sinksent",
+  "duanti_nin",
+  "duanti_set",
+  "duanti_quar",
+  "duanti_du"
+ ],
+ "ANIMAL": [
+  "herone"
+ ],
+ "LOCATION": [
+  "sri_lanka",
+  "urbe",
+  "puerto_riko"
+ ],
+ "JOB": [
+  "profesora",
+  "farmere",
+  "medike",
+  "profesore",
+  "sub",
+  "sekunde",
+  "profesoro",
+  "amindi",
+  "kompane"
  ],
  "ORG": [
-  "fema",
+  "andorra_la_vella",
+  "sixsent",
+  "eklesie_de_jesu_kristo_de_li_sanktis_de_li_lasti_dies",
   "porte",
+  "fema",
   "un",
   "po"
  ],
- "JOB": [
-  "amindi",
-  "sub"
- ],
  "GENDER": [
-  "puera",
-  "men"
+  "men",
+  "femal",
+  "puera"
+ ],
+ "DISEASE": [
+  "mause",
+  "le"
+ ],
+ "DATE": [
+  "mihore"
  ],
  "PUBLIC_FIGURE": [
   "e",
@@ -34,22 +74,6 @@
  ],
  "RELIGION_MEMBER": [
   "fratro"
- ],
- "QUANTITY": [
-  "kalorie",
-  "sinksent"
- ],
- "DATE": [
-  "mihore"
- ],
- "PERSON_PRONOUN": [
-  "me"
- ],
- "ANIMAL": [
-  "herone"
- ],
- "LOCATION": [
-  "sri_lanka"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -73,9 +97,9 @@
    "puero"
   ],
   "she": [
+   "fema",
    "yuna",
    "femal",
-   "fema",
    "puera"
   ]
  },

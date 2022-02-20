@@ -1,33 +1,65 @@
 {
- "JOB": [
-  "amoxtlahcuiloh"
- ],
- "PERSON_PRONOUN": [
-  "i"
- ],
  "PLANT": [
+  "xochihcualcuahuitl",
   "zanahoria",
-  "xochihcualcuahuitl"
- ],
- "QUANTITY": [
-  "ton"
+  "cempohualxochitl",
+  "ococuahuitl",
+  "caxtillan_camohtli",
+  "exotl"
  ],
  "ANIMAL": [
   "cacalotl",
-  "chimalmichin",
-  "ahuitzotl",
   "mazatl",
-  "molotl"
+  "molotl",
+  "tlalcoyotl",
+  "cozcacuauhtli",
+  "chimalmichin",
+  "ahuitzotl"
+ ],
+ "QUANTITY": [
+  "cempohualli_omome",
+  "cempohualli_onchicome",
+  "cempohualli_onchicueyi",
+  "cempohualli_onchicuace",
+  "cempohualli_once",
+  "cempohualli_omeyi",
+  "cempohualli_onchiucnahui",
+  "ton"
+ ],
+ "PERSON_PRONOUN": [
+  "tehhuan",
+  "tehhuantin",
+  "i"
+ ],
+ "JOB": [
+  "tlahcuiloh",
+  "ic_ome",
+  "amoxtlahcuiloh",
+  "oztomecatl"
+ ],
+ "PERSON": [
+  "cempohualli_ommahtlactli_omome"
+ ],
+ "GENDER": [
+  "cihuatl"
+ ],
+ "PUBLIC_FIGURE": [
+  "h",
+  "i"
  ],
  "ORG": [
   "aquihqueh"
  ],
- "PUBLIC_FIGURE": [
-  "i",
-  "h"
+ "FAC": [
+  "cempohualli_ommahtlactli_omeyi"
  ],
  "LOCATION": [
-  "tlateochihualatl"
+  "tlateochihualatl",
+  "altepetl",
+  "yancuic_mexihco"
+ ],
+ "DATE": [
+  "ompa"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -48,9 +80,9 @@
  },
  "en_pronoun2pronoun": {
   "it": [
-   "inihqueh_on",
    "inihqueh_in",
-   "inin"
+   "inin",
+   "inihqueh_on"
   ]
  },
  "en_pronoun2title": {},

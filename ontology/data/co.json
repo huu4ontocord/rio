@@ -1,69 +1,98 @@
 {
- "GENDER": [
-  "lonna",
-  "ronna"
- ],
  "PLANT": [
-  "bardana",
-  "melissa",
-  "carotta",
-  "sorbu",
-  "susina",
-  "castagnu",
-  "veccia",
   "pinu",
+  "melissa",
+  "veccia",
+  "susina",
+  "carotta",
   "belladonna",
   "vitalba",
-  "lattuca"
- ],
- "DISEASE": [
-  "gratt\u00e0",
-  "firita",
-  "mursic\u00e0",
-  "cacarella",
-  "forfula",
-  "vaccina",
-  "merre"
- ],
- "JOB": [
-  "muratore",
-  "mammana",
-  "scultore",
-  "pastore"
- ],
- "PERSON": [
-  "giuconda",
-  "san_petru"
+  "lattuca",
+  "viola",
+  "bardana",
+  "mandarina",
+  "castagnu",
+  "sorbu"
  ],
  "ORG": [
   "core",
+  "capu_verde",
+  "guvernu",
+  "andorra_la_vella",
+  "cavaddu_di_troia",
+  "cavallu_di_troia",
   "mi_chjamu",
-  "guvernu"
+  "chjesa_di_ghjes\u00f9_cristu_di_i_santi_di_l\u2019_ultimi_ghjorni",
+  "guinea_equatoriale"
  ],
- "LANGUAGE": [
-  "navajo"
+ "PERSON": [
+  "ghjuconda",
+  "san_petru",
+  "giuconda"
  ],
- "FOOD": [
-  "farina"
+ "JOB": [
+  "scultore",
+  "architettu",
+  "chjavaghjolu",
+  "mammana",
+  "muratore",
+  "m\u00e8dicu",
+  "chjavaghju",
+  "operaiu",
+  "pastore"
  ],
  "ANIMAL": [
+  "san_petru",
+  "biccazza",
+  "rospu",
   "malacedda",
+  "ghjumenta_di_preti",
+  "turturella",
+  "cuccu",
   "corbu",
-  "ciocciu",
-  "gattu"
+  "gattu",
+  "merula",
+  "lontra",
+  "ciocciu"
  ],
  "RELIGION": [
   "islam"
  ],
  "PUBLIC_FIGURE": [
-  "sperenza"
+  "sperenza",
+  "\u00e9iu",
+  "ghjorghju"
+ ],
+ "BIO_CHEM_ENTITY": [
+  "friuli_\u00e8_venezia_ghjulia"
+ ],
+ "PRODUCT": [
+  "bon_natale_\u00e8_pace_\u00e8_salute",
+  "patre_nostru"
+ ],
+ "GENDER": [
+  "ronna",
+  "omu",
+  "lonna"
+ ],
+ "LOCATION": [
+  "cit\u00e0",
+  "capu_verde"
  ],
  "RELIGION_MEMBER": [
   "fratellu",
   "frateddu"
  ],
- "LOCATION": [
-  "capu_verde"
+ "DISEASE": [
+  "vaccina",
+  "forfula"
+ ],
+ "LANGUAGE": [
+  "navajo",
+  "afar"
+ ],
+ "FOOD": [
+  "farina"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -86,8 +115,8 @@
   ],
   "she": [
    "lonna",
-   "ronna",
-   "femina"
+   "femina",
+   "ronna"
   ]
  },
  "en_pronoun2pronoun": {

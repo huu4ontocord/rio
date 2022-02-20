@@ -1,32 +1,70 @@
 {
  "ANIMAL": [
+  "l\u00f3mundr",
+  "hj\u01ebrtr",
   "brant",
+  "hrafn",
+  "hn\u00edsa",
   "ketta",
-  "korpr"
- ],
- "PLANT": [
-  "reynir"
- ],
- "DATE": [
-  "palmasunnudagr",
-  "palmadr\u00f3ttinsdagr"
- ],
- "LOCATION": [
-  "svartahaf",
-  "innbyr\u00f0is"
- ],
- "DISEASE": [
-  "hungr"
- ],
- "LANGUAGE": [
-  "finnskr"
+  "korpr",
+  "\u00farr",
+  "geirfugl",
+  "\u00fer\u01ebstr",
+  "ugla",
+  "dr\u00f3ttinn_d\u00fdranna",
+  "\u00feeisti",
+  "sk\u00fafr",
+  "kyklingr",
+  "\u00edkorni"
  ],
  "PUBLIC_FIGURE": [
   "pedr",
-  "lafranz"
+  "lafranz",
+  "p\u00e9tr",
+  "j\u00e9s\u00fas"
+ ],
+ "DATE": [
+  "palmadr\u00f3ttinsdagr",
+  "sk\u00edri\u00fe\u00f3rsdagr",
+  "palmasunnudagr"
+ ],
+ "LANGUAGE": [
+  "ermskr",
+  "finnskr",
+  "afar"
+ ],
+ "PLANT": [
+  "reynir",
+  "\u01eblr",
+  "hlynr",
+  "heggr"
+ ],
+ "RELIGION_MEMBER": [
+  "br\u00f3\u00f0ir"
+ ],
+ "GENDER": [
+  "kvinna"
+ ],
+ "LOCATION": [
+  "svartahaf",
+  "innbyr\u00f0is",
+  "helsingjabotn"
+ ],
+ "ORG": [
+  "ek_elska_\u00feik",
+  "innbyr\u00f0is",
+  "ek_heit"
  ],
  "JOB": [
-  "kongr"
+  "kongr",
+  "konungr",
+  "\u00fer\u00e6ll"
+ ],
+ "DISEASE": [
+  "b\u00edta"
+ ],
+ "PRODUCT": [
+  "fa\u00feer_v\u00e1r"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -37,7 +75,7 @@
  "SUFIX_MALE": [],
  "SUFIX_FEMALE": [],
  "binary_gender_swap": {
-  "dr\u00f3ttning": "kongr",
+  "dr\u00f3ttning": "konungr",
   "systir": "br\u00f3\u00f0ir"
  },
  "other_gender_swap": {},

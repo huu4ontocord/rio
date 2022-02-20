@@ -1,18 +1,24 @@
 {
- "PUBLIC_FIGURE": [
-  "ha_u"
- ],
- "GENDER": [
-  "dame"
+ "PLANT": [
+  "ai_farina"
  ],
  "ORG": [
   "eskola"
  ],
+ "PUBLIC_FIGURE": [
+  "ha_u"
+ ],
+ "LANGUAGE": [
+  "lia_meto"
+ ],
+ "GENDER": [
+  "dame"
+ ],
  "PERSON_PRONOUN": [
   "ami_nia"
  ],
- "PLANT": [
-  "ai_farina"
+ "LOCATION": [
+  "est\u00e1diun"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -26,8 +32,8 @@
  "other_gender_swap": {},
  "en_pronoun2gender": {
   "she": [
-   "dame",
-   "feto"
+   "feto",
+   "dame"
   ]
  },
  "en_pronoun2pronoun": {

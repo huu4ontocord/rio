@@ -1,82 +1,127 @@
 {
- "DISEASE": [
-  "kalor",
-  "ki",
+ "JOB": [
   "para",
-  "seif",
+  "gobernador",
+  "general",
+  "autor",
+  "regular",
+  "embahador",
+  "fot\u00f3grafo",
+  "inspektor",
+  "matros",
+  "sekretario",
+  "abogado",
+  "barbero",
+  "apoticario",
+  "kapitan",
+  "hardinero",
+  "man",
+  "obispu",
+  "master",
+  "partera",
+  "kahero",
+  "amtenar",
+  "int\u00e9rprete",
+  "ingeniero",
   "straik",
+  "rabino",
+  "arkitekto",
+  "vrumun"
+ ],
+ "LANGUAGE": [
+  "latin",
+  "rumano",
+  "indones"
+ ],
+ "ANIMAL": [
+  "bison",
+  "bin\u00e1",
+  "ronka"
+ ],
+ "DISEASE": [
+  "para",
+  "gas",
+  "ki",
   "mi",
-  "malaria"
+  "kalor",
+  "seif",
+  "tia",
+  "djus"
+ ],
+ "LOCATION": [
+  "arena",
+  "park",
+  "usa"
+ ],
+ "PUBLIC_FIGURE": [
+  "bari",
+  "parker",
+  "spera",
+  "speransa",
+  "capa_cora",
+  "lars",
+  "hal",
+  "i",
+  "o"
  ],
  "PLANT": [
+  "preimu",
+  "kar\u00f2t",
   "peper",
-  "preimu"
+  "bambu"
+ ],
+ "ORG": [
+  "mi",
+  "domi",
+  "dia",
+  "labor",
+  "nashonan_uni",
+  "testigunan_di_yehova",
+  "usa",
+  "iglesia_di_hesucristo_di_e_santonan_di_e_delaster_dianan",
+  "muraya_di_berlin"
+ ],
+ "GENDER": [
+  "muh\u00e9",
+  "man",
+  "muher"
+ ],
+ "RELIGION_MEMBER": [
+  "testigu_di_yehova",
+  "fr\u00e8",
+  "budista"
+ ],
+ "DATE": [
+  "luna_yen"
+ ],
+ "RACE": [
+  "negro",
+  "blanko",
+  "latin",
+  "latino"
+ ],
+ "PRODUCT": [
+  "musikal_instrument",
+  "bon_pascu"
+ ],
+ "POLITICAL_PARTY": [
+  "labor"
  ],
  "PERSON_PRONOUN": [
   "hers",
   "i"
  ],
- "JOB": [
-  "obispu",
-  "para",
-  "kahero",
-  "master",
-  "partera",
-  "straik",
-  "rabino",
-  "ingeniero",
-  "man",
-  "barbero",
-  "hardinero",
-  "regular",
-  "autor"
+ "FOOD": [
+  "k\u00f2fi",
+  "aperitivo",
+  "kr\u00e8m",
+  "desayuno"
  ],
- "RELIGION_MEMBER": [
-  "budista"
+ "FAC": [
+  "zu\u00e8mpul"
  ],
  "SOC_ECO_CLASS": [
   "labor"
- ],
- "RACE": [
-  "latino",
-  "latin",
-  "blanko",
-  "negro"
- ],
- "PUBLIC_FIGURE": [
-  "spera",
-  "bari",
-  "hal",
-  "parker",
-  "o",
-  "i",
-  "lars",
-  "speransa"
- ],
- "LOCATION": [
-  "park",
-  "usa",
-  "arena"
- ],
- "FOOD": [
-  "aperitivo",
-  "desayuno"
- ],
- "GENDER": [
-  "muher",
-  "man"
- ],
- "LANGUAGE": [
-  "rumano"
- ],
- "POLITICAL_PARTY": [
-  "labor"
- ],
- "ORG": [
-  "testigunan_di_yehova",
-  "dia",
-  "mi",
-  "domi"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -87,9 +132,8 @@
  "SUFIX_MALE": [],
  "SUFIX_FEMALE": [],
  "binary_gender_swap": {
-  "heroina": "hero",
   "eroina": "hero",
-  "abla": "bruder",
+  "abla": "fr\u00e8",
   "bini": "esposo",
   "esposa": "esposo",
   "duna": "esposo",
@@ -124,5 +168,7 @@
  "en_pronoun2title": {},
  "PREFIX_MALE": [],
  "PREFIX_FEMALE": [],
- "person2religion": {}
+ "person2religion": {
+  "ateista": "ateismo"
+ }
 }

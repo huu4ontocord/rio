@@ -1,60 +1,116 @@
 {
- "PRODUCT": [
-  "wangushia",
-  "hulia"
- ],
- "PLANT": [
-  "karoti",
-  "popoo"
- ],
- "DISEASE": [
-  "harara",
+ "JOB": [
   "para",
-  "le"
+  "pulisi",
+  "twa\u0253i\u0253u",
+  "kadhi",
+  "mwalimu",
+  "mkazi",
+  "mtafsiri",
+  "kadhwi",
+  "ndrume",
+  "mtawalifu",
+  "waziri",
+  "sudjaa",
+  "mlimadji",
+  "hatwibu",
+  "mkalimani",
+  "upiha"
+ ],
+ "PRODUCT": [
+  "hulia",
+  "ka_mngu_hapvendze",
+  "\u0253ari_za_husha",
+  "wangushia",
+  "tsua"
  ],
  "ORG": [
-  "nasa",
   "we_n\u0257o",
-  "shia",
   "hazina",
+  "shia",
+  "nasa",
+  "nga",
   "mi_uparwa",
   "sa",
-  "eu"
- ],
- "RELIGION_MEMBER": [
-  "mnaswara",
-  "swahaba"
- ],
- "LOCATION": [
-  "asanta",
-  "usa"
- ],
- "JOB": [
-  "kadhi",
-  "para",
-  "sudjaa",
-  "waziri",
-  "upiha",
-  "kadhwi",
-  "hatwibu"
- ],
- "PERSON_PRONOUN": [
-  "i",
-  "ahangu",
-  "angu"
- ],
- "PUBLIC_FIGURE": [
-  "yakuba",
-  "daudu",
-  "yakub",
-  "a",
-  "i"
+  "usa",
+  "eu",
+  "i\u00eashi"
  ],
  "LANGUAGE": [
   "hindi"
  ],
  "ANIMAL": [
-  "yiha"
+  "nyatri",
+  "dji",
+  "yiha",
+  "mfulwa_m\u0253e",
+  "nkuhu"
+ ],
+ "DISEASE": [
+  "para",
+  "le"
+ ],
+ "PERSON_PRONOUN": [
+  "angu",
+  "nyi",
+  "waye",
+  "ahangu",
+  "enafsi_ya_hahe",
+  "i"
+ ],
+ "PUBLIC_FIGURE": [
+  "yakub",
+  "isa_al_masihi",
+  "vao",
+  "daudu",
+  "i",
+  "yakuba",
+  "a"
+ ],
+ "TITLE": [
+  "mshe"
+ ],
+ "LOCATION": [
+  "maraha\u0253a",
+  "hiri",
+  "asanta",
+  "sawa_sawa",
+  "mwaha_mwema",
+  "pveza",
+  "usa"
+ ],
+ "RELIGION_MEMBER": [
+  "mnaswara",
+  "isilamu",
+  "swahaba"
+ ],
+ "PLANT": [
+  "mri_mzungu",
+  "mtre\u0257e",
+  "mri_wa_marunda",
+  "karoti",
+  "popoo",
+  "ntsandzi",
+  "pvopvoo",
+  "mhogo"
+ ],
+ "SOC_ECO_CLASS": [
+  "ulaza"
+ ],
+ "GENDER": [
+  "mndru_m\u0253aye",
+  "mza\u0257e"
+ ],
+ "QUANTITY": [
+  "dirhamu",
+  "pauni",
+  "rupia"
+ ],
+ "FOOD": [
+  "mtuzi"
+ ],
+ "DATE": [
+  "undru_\u0257uhazi"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -79,9 +135,9 @@
  },
  "en_pronoun2pronoun": {
   "he": [
-   "nya",
    "enafsi_ya_hahe",
-   "waye"
+   "waye",
+   "nya"
   ],
   "it": [
    "oyi"
@@ -90,5 +146,7 @@
  "en_pronoun2title": {},
  "PREFIX_MALE": [],
  "PREFIX_FEMALE": [],
- "person2religion": {}
+ "person2religion": {
+  "mnaswara": "masihi"
+ }
 }

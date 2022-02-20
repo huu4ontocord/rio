@@ -1,25 +1,39 @@
 {
  "JOB": [
-  "don",
-  "para"
+  "para",
+  "ikinci",
+  "patkan",
+  "yaz\u0131c\u0131",
+  "don"
  ],
  "DISEASE": [
-  "para"
+  "para",
+  "aar\u0131",
+  "uyku"
  ],
  "ANIMAL": [
-  "mink"
- ],
- "ORG": [
-  "ekincilik"
+  "mink",
+  "e\u015fek",
+  "vizon"
  ],
  "PUBLIC_FIGURE": [
-  "o",
-  "zambak"
+  "zambak",
+  "umut",
+  "o"
+ ],
+ "GENDER": [
+  "kad\u0131n"
+ ],
+ "PLANT": [
+  "\u00e7am"
  ],
  "LANGUAGE": [
   "saksan"
  ],
  "SOC_ECO_CLASS": [
+  "ekincilik"
+ ],
+ "ORG": [
   "ekincilik"
  ],
  "FIRST_NAME_MALE": [],
@@ -41,8 +55,8 @@
    "ki\u015fi"
   ],
   "she": [
-   "kad\u0131n",
-   "kar\u0131"
+   "kar\u0131",
+   "kad\u0131n"
   ]
  },
  "en_pronoun2pronoun": {

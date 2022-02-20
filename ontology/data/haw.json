@@ -1,71 +1,180 @@
 {
- "LOCATION": [
-  "he_mea_\u02bbole",
-  "kanakaloka",
-  "he_mea_iki"
+ "ANIMAL": [
+  "p\u0101pul\u014d",
+  "kalapuna",
+  "\u02bbalal\u0101",
+  "\u02bbauku\u02bbu",
+  "pak\u016bka\u02bb\u0101",
+  "\u02bb\u0101laluka",
+  "\u02bbawinaka",
+  "kokei\u02bba",
+  "wulekula",
+  "\u02bbakuiki",
+  "aeko_kula",
+  "pipi_p\u0101k\u0113",
+  "kohol\u0101_kuapi\u02bbo",
+  "\u02bbamaulik\u0101ka",
+  "nanuka",
+  "pueo",
+  "poloka",
+  "\u02bbahi",
+  "w\u0101wae\u02bbami"
+ ],
+ "ORG": [
+  "aupuni",
+  "laeuliuli",
+  "k\u016b_ho\u02bbokele_waiwai_l\u0101hui",
+  "wakinekona_d.c",
+  "\u02bbo_ko\u02bbu_inoa",
+  "ho\u02bbona\u02bbauao",
+  "kapalakiko",
+  "w\u0113lau_hema"
  ],
  "JOB": [
+  "p\u012bhopa",
   "mea_unuhi",
-  "potter",
+  "m\u014d\u02bb\u012b",
+  "luna_\u02bbauhau",
+  "polopeka",
+  "kauka_niho",
   "make",
   "mea_\u02bbohi",
-  "polopeka"
+  "potter"
+ ],
+ "PLANT": [
+  "k\u0101hai",
+  "waiola",
+  "pal\u0101naka",
+  "wauke",
+  "\u02bbohe",
+  "p\u0101ma",
+  "\u02bbiliahi",
+  "w\u012blou",
+  "lanalana"
  ],
  "PUBLIC_FIGURE": [
+  "\u02bb\u0101",
+  "\u02bb\u016b",
+  "\u02bb\u012b",
+  "mana\u02bbolana",
+  "pekelo",
+  "kakalina",
+  "iakoba",
   "lopaka",
+  "lea",
+  "kelekolio",
+  "henel\u0113",
+  "keoki",
+  "ekewaka",
+  "d\u0101vida",
   "hanal\u0113",
   "e",
-  "a",
-  "kakalina",
-  "henel\u0113",
   "one",
-  "kelekolio",
-  "mana\u02bbolana",
-  "lea",
-  "pekelo"
+  "keiki_ali\u02bbi_o_wale",
+  "\u02bb\u0113",
+  "ies\u016b",
+  "a",
+  "noho_m\u0101lie"
+ ],
+ "LOCATION": [
+  "aloha_awakea",
+  "hau\u02bboli_makahiki_hou",
+  "aloha_\u02bbauinal\u0101",
+  "huina_k\u016bpono",
+  "he_mea_iki",
+  "kanakaloka",
+  "ka_piko_o_ka_honua",
+  "k\u016blanakauhale",
+  "lapa_nui",
+  "he_mea_\u02bbole",
+  "\u02bbamelika_huip\u016b\u02bbia",
+  "\u02bbamelika",
+  "mahalo",
+  "laeuliuli",
+  "aloha_ahiahi",
+  "moana_\u02bbakelanika",
+  "aloha_p\u014d",
+  "\u02bbamelika_hui",
+  "moana_p\u0101k\u012bpika"
+ ],
+ "PRODUCT": [
+  "mele_a_solomona",
+  "aloha_kakahiaka",
+  "pule_alaka\u2018i_a_ka_haku",
+  "p\u0101_malule",
+  "mele_kalikimaka",
+  "aotearoa",
+  "h\u014dk\u016b_welowelo",
+  "h\u014dk\u016bpa\u02bba",
+  "kanakaloka"
+ ],
+ "DISEASE": [
+  "ho\u02bbom\u0101inoino",
+  "ma\u02bbi",
+  "pilikia"
+ ],
+ "PERSON_PRONOUN": [
+  "o\u02bbu",
+  "\u02bbo_wau_pono\u02bb\u012b",
+  "k\u0101kou",
+  "\u0101na",
+  "\u02bbo_wau_n\u014d",
+  "\u02bb\u012b",
+  "m\u0101ua",
+  "\u02bbo_wau_iho_n\u014d",
+  "k\u0101ua",
+  "ka\u02bbu",
+  "ko\u02bbu",
+  "m\u0101kou",
+  "he",
+  "k\u0101u"
+ ],
+ "LANGUAGE": [
+  "kepania",
+  "\u02bb\u014dlelo",
+  "kepan\u012b",
+  "pelek\u0101ne",
+  "pali",
+  "pukik\u012b",
+  "l\u0101kina",
+  "\u014dlelo_ekepel\u0101nako",
+  "h\u014dlani"
+ ],
+ "SOC_ECO_CLASS": [
+  "kakaikahi",
+  "\u02bbahahui"
  ],
  "FOOD": [
+  "\u02bbaina_awakea",
+  "wai_paipu",
+  "\u02bbaina_kakahiaka",
+  "wai_lemi",
   "liliko\u02bbi"
  ],
- "RELIGION_MEMBER": [
-  "moramona"
+ "RACE": [
+  "\u02bbeulopa"
+ ],
+ "LAW": [
+  "lawehala_\u02bb\u014dpiopio"
  ],
  "QUANTITY": [
   "ikehu\u02bb\u0101"
  ],
- "PERSON_PRONOUN": [
-  "he",
-  "\u02bb\u012b"
+ "GPE": [
+  "\u02bbamelika_hema"
  ],
- "PLANT": [
-  "lanalana",
-  "pal\u0101naka"
+ "PERSON": [
+  "\u02bbo_au_p\u016b"
  ],
- "LANGUAGE": [
-  "pali",
-  "pelek\u0101ne"
+ "RELIGION_MEMBER": [
+  "moramona"
  ],
- "PRODUCT": [
-  "mele_kalikimaka",
-  "kanakaloka",
-  "mele_a_solomona"
+ "FAC": [
+  "lae_mana\u02bbolana"
  ],
- "ANIMAL": [
-  "poloka",
-  "wulekula",
-  "kokei\u02bba",
-  "kalapuna"
- ],
- "SOC_ECO_CLASS": [
-  "kakaikahi"
- ],
- "ORG": [
-  "laeuliuli",
-  "kapalakiko"
- ],
- "DISEASE": [
-  "pilikia",
-  "ho\u02bbom\u0101inoino"
+ "GENDER": [
+  "k\u0101ne_\u02bb\u014dpio",
+  "wahine_\u02bb\u014dpio"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -76,26 +185,27 @@
  "SUFIX_MALE": [],
  "SUFIX_FEMALE": [],
  "binary_gender_swap": {
-  "p\u0101lona_wahine": "p\u0101lona",
-  "barona_wahine": "barona",
+  "p\u0101lona_wahine": "barona",
+  "barona_wahine": "p\u0101lona",
   "duke_wahine": "duke",
   "\u0101na": "k\u0101na",
   "k\u0101na": "\u0101na",
   "m\u014d\u02bb\u012b_wahine": "m\u014d\u02bb\u012b",
-  "kaikuahine": "kaikua\u02bbana",
+  "kaikua\u02bbana": "uka",
+  "kaikuahine": "uka",
   "kaikaina": "kaikua\u02bbana",
   "wahine": "k\u0101ne",
-  "k\u0101ne_\u02bb\u014dpio": "wahine_\u02bb\u014dpio",
-  "keiki_k\u0101ne": "wahine_\u02bb\u014dpio"
+  "k\u0101ne_\u02bb\u014dpio": "kaikamahine",
+  "keiki_k\u0101ne": "kaikamahine"
  },
  "other_gender_swap": {
-  "one": "\u0101na",
+  "one": "k\u0101na",
   "l\u0101kou": "\u0101na",
-  "k\u0101": "\u0101na",
+  "k\u0101": "k\u0101na",
   "l\u0101ua": "k\u0101na",
-  "he": "l\u0101ua",
+  "he": "l\u0101kou",
   "\u0101na": "k\u0101",
-  "k\u0101na": "l\u0101kou"
+  "k\u0101na": "k\u0101"
  },
  "en_pronoun2gender": {
   "he": [
@@ -104,25 +214,25 @@
   ],
   "she": [
    "kaikamahine",
-   "wahine",
-   "wahine_\u02bb\u014dpio"
+   "wahine_\u02bb\u014dpio",
+   "wahine"
   ]
  },
  "en_pronoun2pronoun": {
   "he": [
    "k\u0101na",
-   "\u0101na",
-   "he"
+   "he",
+   "\u0101na"
   ],
   "she": [
    "k\u0101na",
    "\u0101na"
   ],
   "they": [
-   "one",
-   "k\u0101",
    "l\u0101kou",
-   "l\u0101ua"
+   "l\u0101ua",
+   "k\u0101",
+   "one"
   ],
   "it": [
    "k\u0101na",

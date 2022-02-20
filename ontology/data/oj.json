@@ -1,57 +1,130 @@
 {
+ "PERSON_PRONOUN": [
+  "giin",
+  "niinawind",
+  "wiin"
+ ],
+ "ORG": [
+  "waawaashkesh",
+  "midaaso_diba_igane",
+  "aaniin_dina",
+  "ingodwaaswaak",
+  "onashowediiwigamig",
+  "onashowediiwigamigoons",
+  "anishinaabeg_gichigami",
+  "awenen",
+  "indizhinikaaz",
+  "niizhwaaso_diba_igane",
+  "giigidoowininiwag"
+ ],
+ "ANIMAL": [
+  "omakakii",
+  "moonz",
+  "ajidamoo",
+  "bizhiw",
+  "namegos",
+  "waabizheshi",
+  "gichi_bine",
+  "gayaashk",
+  "agongos",
+  "waabizheshiwag",
+  "namegoshens",
+  "mooz",
+  "gookooko_oo",
+  "jachakanoo"
+ ],
+ "PLANT": [
+  "okaadaak",
+  "odatagaagominagaawanzh",
+  "niiwo_diba_igane",
+  "moosewijiibik",
+  "aninaatig",
+  "moose_ojiibik",
+  "mitigomizh",
+  "askiibwaan",
+  "bakwanagemag",
+  "\u017eingw\u0101k",
+  "ashi_bezhigo_diba_igane",
+  "okaadaakoons"
+ ],
+ "GENDER": [
+  "akiwenzii",
+  "ikwe"
+ ],
+ "PRODUCT": [
+  "gaawiin_go_onjidaa",
+  "zaagi_iwe_mazina_igan",
+  "kogaan_omaa",
+  "anang_bangishin"
+ ],
+ "QUANTITY": [
+  "niishtana_ashi_naanan",
+  "ningodwaak_daso_midaaswaak",
+  "niishtana_ashi_niizhwaaswi",
+  "niishtana_ashi_zhaangaswi",
+  "niishtana_ashi_niiwin",
+  "niishtana_ashi_niizh",
+  "naanwaak",
+  "niishtana_ashi_nswi",
+  "niishtanashi_bezhig",
+  "niishtana_ashi_nishwaaswi",
+  "niishtana_ashi_ingodwaaswi",
+  "midaasosagoons"
+ ],
+ "PUBLIC_FIGURE": [
+  "niizh",
+  "enizaabet",
+  "\u14c3\u14d0",
+  "o"
+ ],
+ "GPE": [
+  "besh_naa_geget"
+ ],
+ "LOCATION": [
+  "ashi_niizho_diba_igane",
+  "debizi",
+  "ojiindiwini_giizhigad",
+  "mishigami",
+  "anishinaabeg_gichigami",
+  "miigwech",
+  "gichi_miigwech",
+  "anamikodaadin",
+  "maazhise",
+  "mino_oshki_biboon",
+  "chi_miigwech"
+ ],
+ "PERSON": [
+  "nisimidana_ashi_niizh",
+  "ge_niin"
+ ],
+ "JOB": [
+  "gichi_mekadewikwanaye",
+  "giigidoowinini",
+  "eyebig",
+  "gaashpinajiged",
+  "gekinoo_amaaged",
+  "anama_e_ogimaa",
+  "ogimaa",
+  "ganoodiye"
+ ],
+ "FOOD": [
+  "miskwaaboo",
+  "naano_diba_igane",
+  "makade_mashkikiwaaboo",
+  "gaapii",
+  "gigizhebaa_wiisiniwin"
+ ],
+ "LANGUAGE": [
+  "wemitigoozhiimowin"
+ ],
+ "FAC": [
+  "nisimidana_ashi_niswi"
+ ],
  "RELIGION_MEMBER": [
   "nisayenh"
  ],
  "DATE": [
   "bekaa"
- ],
- "ANIMAL": [
-  "bizhiw",
-  "moonz",
-  "agongos",
-  "namegos",
-  "jachakanoo",
-  "omakakii",
-  "gayaashk",
-  "namegoshens",
-  "ajidamoo"
- ],
- "JOB": [
-  "ogimaa",
-  "ganoodiye",
-  "gaashpinajiged"
- ],
- "QUANTITY": [
-  "naanwaak",
-  "midaasosagoons"
- ],
- "PLANT": [
-  "aninaatig",
-  "askiibwaan",
-  "mitigomizh",
-  "moosewijiibik"
- ],
- "ORG": [
-  "ingodwaaswaak",
-  "giigidoowininiwag",
-  "indizhinikaaz",
-  "anishinaabeg_gichigami"
- ],
- "PUBLIC_FIGURE": [
-  "o"
- ],
- "PERSON": [
-  "ge_niin"
- ],
- "PERSON_PRONOUN": [
-  "niinawind"
- ],
- "LOCATION": [
-  "debizi",
-  "chi_miigwech"
- ],
- "FOOD": [
-  "miskwaaboo"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

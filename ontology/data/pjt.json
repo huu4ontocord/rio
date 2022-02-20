@@ -1,12 +1,21 @@
 {
+ "PERSON_PRONOUN": [
+  "palanya",
+  "ngayuku",
+  "palunyanya",
+  "ngaanya",
+  "nyaranya"
+ ],
+ "ANIMAL": [
+  "kurpa\u1e5fu",
+  "nyii_nyii"
+ ],
  "GENDER": [
   "kungka",
   "minyma"
  ],
- "PERSON_PRONOUN": [
-  "palunyanya",
-  "palanya",
-  "nyaranya"
+ "PLANT": [
+  "a\u1e3bipi\u1e5fi"
  ],
  "PRODUCT": [
   "ma_pitja"
@@ -20,8 +29,8 @@
  "SUFIX_MALE": [],
  "SUFIX_FEMALE": [],
  "binary_gender_swap": {
-  "palunya": "ngaanya",
-  "nyara": "palunyanya"
+  "palunya": "nyaranya",
+  "nyara": "palanya"
  },
  "other_gender_swap": {
   "palunya": "nyara",
@@ -29,7 +38,7 @@
   "palanya": "nyara",
   "ngaanya": "nyara",
   "palunyanya": "nyara",
-  "nyaranya": "palunya"
+  "nyaranya": "nyara"
  },
  "en_pronoun2gender": {
   "she": [
@@ -39,12 +48,12 @@
  },
  "en_pronoun2pronoun": {
   "he": [
+   "palunyanya",
    "nyara",
+   "nyaranya",
    "palunya",
    "palanya",
-   "ngaanya",
-   "palunyanya",
-   "nyaranya"
+   "ngaanya"
   ],
   "she": [
    "nyara",

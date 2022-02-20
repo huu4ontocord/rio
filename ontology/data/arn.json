@@ -2,14 +2,28 @@
  "DISEASE": [
   "trekef\u00fcn"
  ],
+ "PRODUCT": [
+  "ayiw\u00fcn_paskon"
+ ],
  "GENDER": [
   "jike"
  ],
  "LANGUAGE": [
-  "kechuadungun"
+  "kechuadungun",
+  "inuwit_dungun",
+  "fransia_dungun"
  ],
  "PLANT": [
   "calfuray"
+ ],
+ "ANIMAL": [
+  "wem\u00fcl"
+ ],
+ "ORG": [
+  "ilo"
+ ],
+ "PUBLIC_FIGURE": [
+  "epu"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],

@@ -1,35 +1,42 @@
 {
- "PRODUCT": [
-  "ma_alob_k_iin"
- ],
- "DISEASE": [
-  "ki",
-  "k_iinam",
-  "wale",
-  "chi",
-  "ta_pool",
-  "le"
- ],
- "GENDER": [
-  "ko_olel"
- ],
- "LANGUAGE": [
-  "akan"
- ],
  "RELIGION_MEMBER": [
   "j_jaajkunaj_j\u00e9eoba"
+ ],
+ "GENDER": [
+  "ko_olel",
+  "xba_al"
  ],
  "LOCATION": [
   "ma_alob_aak_ab"
  ],
+ "DISEASE": [
+  "wale",
+  "le",
+  "siik",
+  "ki",
+  "chi"
+ ],
+ "LANGUAGE": [
+  "akan"
+ ],
  "ORG": [
   "in_k_aaba_e"
  ],
- "FOOD": [
-  "e_el"
- ],
  "PERSON_PRONOUN": [
+  "waye",
+  "tuus",
   "us"
+ ],
+ "FOOD": [
+  "k\u00e1apej",
+  "e_el",
+  "yeh_u'yaal_a'kab_yich_che"
+ ],
+ "ANIMAL": [
+  "ts\u00edimin"
+ ],
+ "PRODUCT": [
+  "ma_alob_k_iin"
  ],
  "OTHER_PRONOUN": [
   "it",

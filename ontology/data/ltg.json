@@ -1,69 +1,143 @@
 {
+ "PUBLIC_FIGURE": [
+  "antoneis",
+  "kryums",
+  "ontons",
+  "n\u016bceja",
+  "i",
+  "a"
+ ],
  "ANIMAL": [
-  "vysta",
+  "lynx_rufus",
+  "rubyns",
+  "ziurejs",
+  "rupucs",
+  "pal\u0101da",
+  "iudrys",
+  "za\u013ckts",
+  "lapsine",
+  "saskys",
+  "vonogs",
+  "\u017eogota",
+  "me\u017ea_koza",
   "luoseica",
   "krauklis",
-  "rubyns",
-  "lapsine",
-  "vuorna",
+  "br\u012bds",
+  "vysta",
+  "zyv\u0101da",
+  "\u010d\u012bviste",
   "kaiva",
+  "me\u017eaka\u010ds",
+  "vuorna",
+  "babr\u012bne",
+  "ka\u010ds",
+  "a\u013c\u0146s",
+  "babrys",
   "brusaks",
+  "vardive",
+  "vuovere",
+  "op\u016bgs",
+  "dadzi\u013cs",
   "strods",
-  "vardive"
- ],
- "JOB": [
-  "zinineica",
-  "vaduojs",
-  "kara\u013cs",
-  "zinin\u012bks",
-  "sorgs",
-  "viergs",
-  "kiene\u0146\u0161",
-  "linejals",
-  "slave",
-  "glausteit",
-  "glaudeit"
- ],
- "PERSON_PRONOUN": [
-  "i"
- ],
- "FOOD": [
-  "reiti\u0161kys"
- ],
- "PUBLIC_FIGURE": [
-  "kryums",
-  "a",
-  "i",
-  "ontons",
-  "antoneis"
- ],
- "SOC_ECO_CLASS": [
-  "drupeit",
-  "krai\u0161kys",
-  "kriejums"
+  "me\u017eavierss",
+  "\u0161yr\u0161yns",
+  "kr\u0113pis"
  ],
  "DISEASE": [
-  "navasals",
-  "plauki",
-  "ciertums",
-  "klikss",
-  "suope",
   "tveikst",
-  "naveseleiba",
-  "kuos\u0113t",
+  "ciertums",
+  "navasals",
+  "r\u016bja",
   "vaideiba",
-  "syltums"
- ],
- "ORG": [
-  "ai",
-  "prounuks",
-  "reit"
+  "bite",
+  "suope",
+  "m\u012bgs",
+  "bods",
+  "naveseleiba",
+  "r\u0101na",
+  "syltums",
+  "k\u016bst"
  ],
  "PLANT": [
-  "tresneica",
   "veituls",
+  "\u0146uotre",
+  "dodzs",
+  "pr\u012bds",
+  "dz\u0113rvine",
+  "tresneica",
+  "v\u012b\u0161ne",
+  "bryukline",
+  "k\u013covs",
   "bese\u0146\u0161",
-  "bryukline"
+  "\u012bva"
+ ],
+ "JOB": [
+  "kara\u013cs",
+  "slave",
+  "rataste",
+  "sorgs",
+  "zinineica",
+  "zinin\u012bks",
+  "\u016btra",
+  "vaduojs",
+  "\u017eurka",
+  "glausteit",
+  "kiene\u0146\u0161",
+  "\u0161kynda",
+  "oruojs",
+  "\u016btrys",
+  "viergs",
+  "glaudeit",
+  "linejals"
+ ],
+ "SOC_ECO_CLASS": [
+  "kriejums",
+  "drupeit",
+  "krai\u0161kys",
+  "kuri_nakuri",
+  "nazcik"
+ ],
+ "PERSON_PRONOUN": [
+  "\u0161ei",
+  "\u0161ys",
+  "myusu",
+  "i"
+ ],
+ "LOCATION": [
+  "asv",
+  "teirums",
+  "amerikys_sa\u0161kiertuos_va\u013csteibys",
+  "lauks"
+ ],
+ "FOOD": [
+  "pu\u0161d\u012bnis",
+  "malnuo_maize",
+  "reiti\u0161kys",
+  "rudzu_maize",
+  "muzlys"
+ ],
+ "GENDER": [
+  "s\u012bv\u012bte",
+  "lads",
+  "meitine"
+ ],
+ "ORG": [
+  "prounuks",
+  "kas_tu",
+  "kas_tu_esi",
+  "ai",
+  "kas_esi",
+  "reit"
+ ],
+ "DATE": [
+  "pylnats"
+ ],
+ "RELIGION_MEMBER": [
+  "bruo\u013cs"
+ ],
+ "LANGUAGE": [
+  "kr\u012bvs",
+  "kr\u012bv\u012bte"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
@@ -76,25 +150,25 @@
  "binary_gender_swap": {
   "unuce": "unuks",
   "\u0161ei": "jis",
-  "jei": "\u0161ys",
+  "jei": "jis",
   "muosa": "bruo\u013cs"
  },
  "other_gender_swap": {
   "jei": "j\u012b",
-  "\u0161\u012b": "jei",
+  "\u0161\u012b": "\u0161ei",
   "juos": "\u0161ei",
   "\u0161uos": "\u0161ei",
   "j\u012b": "\u0161ei",
-  "\u0161ys": "\u0161\u012b",
+  "\u0161ys": "\u0161uos",
   "jis": "juos",
-  "\u0161ei": "juos"
+  "\u0161ei": "j\u012b"
  },
  "en_pronoun2gender": {
   "she": [
-   "sakne",
-   "m\u0101rga",
+   "s\u012bv\u012bte",
    "meitine",
-   "s\u012bv\u012bte"
+   "sakne",
+   "m\u0101rga"
   ]
  },
  "en_pronoun2pronoun": {
@@ -108,16 +182,16 @@
   ],
   "they": [
    "\u0161\u012b",
+   "juos",
    "\u0161uos",
    "j\u012b",
-   "juos",
    "jei"
   ],
   "it": [
-   "\u0161\u012b",
    "itys",
+   "itei",
    "jis",
-   "itei"
+   "\u0161\u012b"
   ]
  },
  "en_pronoun2title": {},

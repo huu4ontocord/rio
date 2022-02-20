@@ -1,22 +1,30 @@
 {
- "GENDER": [
-  "babaye"
- ],
- "DISEASE": [
-  "lap_ok",
-  "hangga",
-  "alikdik"
- ],
  "ANIMAL": [
   "bukaw",
   "karabaw"
  ],
+ "LOCATION": [
+  "mahamungayaon_nga_bag_ong_tuig",
+  "dakbanwa",
+  "maayong_gab_i",
+  "maayong_udto",
+  "balatas"
+ ],
+ "PRODUCT": [
+  "maayong_aga"
+ ],
  "ORG": [
+  "ang_simbahan_ni_jesucristo_sang_mga_santos_sa_ulihing_mga_adlaw",
   "saradhi",
+  "palangga_ta_ka",
+  "eskwela_pribado",
   "sin_o"
  ],
- "LOCATION": [
-  "balatas"
+ "GENDER": [
+  "babaye"
+ ],
+ "JOB": [
+  "arkitekto"
  ],
  "FIRST_NAME_MALE": [],
  "LAST_NAME_MALE": [],
