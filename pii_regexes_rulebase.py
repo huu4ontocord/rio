@@ -22,7 +22,7 @@ regex_rulebase = {
     },
     "URL": {
       "default": [(re.compile('https?:\/\/[^\s\"\']{8,50}|www[^\s\"\']{8,50}', re.IGNORECASE), None, None)],
-      "zh": [(regex.compile('(https?:\/\/.\P{Han}{1,}|www\.\P{Han}{1,})', re.IGNORECASE), None, None)],
+      "zh": [(regex.compile('(https?:\/\/.\P{Han}{1,}|www\.\P{Han}{1,50})', re.IGNORECASE), None, None)],
     },
     "ADDRESS": {
       "en": [
