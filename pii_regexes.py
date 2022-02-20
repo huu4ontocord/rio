@@ -1026,14 +1026,18 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
       # sort by length and position, favoring non-IDs first using the precedence list, 
       # and additionaly giving one extra weight to language specific regex (as opposed to default rules).
       # this doesn't do a perfect overlap match; just an overlap to the prior item.
-      all_ner.sort(key=lambda a: a[1]+(1.0/(1.0+((precedence.get(a[3], len(a[3]))+a[4])+a[2]-a[1]))))
+      all_ner.sort(key=lambda a: a[1]+(1.0/(1.0+(100*((precedence.get(a[3], min(20,len(a[3])))+a[4]))+a[2]-a[1]))))
+      #print (all_ner)
       if not tag_type or 'ID' in tag_type:
         # now do overlaps prefering longer ents, and higher prededence items over embedded IDs or dates, etc.
         all_ner2 = []
         prev_mention = None
         for mention in all_ner:
           if prev_mention:
-            if prev_mention[2] >= mention[1] and prev_mention[2] >= mention[2]: #and prev_mention[3] in ('ID', 'DATE', 'ADDRESS') and 
+            if (prev_mention[1] == mention[1] and prev_mention[3] == mention[3] and prev_mention[4] != mention[4]) or\
+              (prev_mention[2] >= mention[1] and prev_mention[2] >= mention[2]): 
+              #either a shoter lang specific mention takes predence or a subsuming mention takes precedence
+              #and prev_mention[3] in ('ID', 'DATE', 'ADDRESS') and 
               # if there is any complete overlap, then we use the precedence rules
               # an alternate: if there is a complete overlap to an ID in an ADDRESS or a DATE, we ignore this ID
               #               this is because we have more context for the DATE or ADDRESS to determine it is so. 
