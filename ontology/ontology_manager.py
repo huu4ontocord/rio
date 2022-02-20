@@ -71,7 +71,7 @@ class OntologyManager:
 
     default_strip_chars = "-,~`.?!@#$%^&*(){}[]|\\/-_+=<>;'\""
     #stopwords_wn = set(itertools.chain(*[list(s) for s in stopwords.values()]))
-    x_lingual_onto_name = "yago_cn_wn"
+    base_onto_name = "yago_cn_wn"
     default_data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "data"))
 
     default_label2label = {'SOC_ECO_CLASS': 'NORP',
@@ -91,30 +91,35 @@ class OntologyManager:
         'NORP': ['NORP', 'ORG'],
         'AGE': ['AGE'],
         'DISEASE': ['DISEASE'],
-        'STREET_ADDRESS': ['STREET_ADDRESS', 'LOC'],
+        'ADDRESS': ['ADDRESS', 'LOC'],
         'GPE': ['GPE', 'LOC'],
-        'CREDIT_CARD': ['CREDIT_CARD', 'CARDINAL'],
+        'CREDIT_CARD': ['CREDIT_CARD', 'ID', 'CARDINAL'],
         'EMAIL_ADDRESS': ['EMAIL_ADDRESS', 'ELECTRONIC_ADDRESS'],
-        'GOVT_ID': ['GOVT_ID', 'CARDINAL'],
+        'ID': ['ID', 'CARDINAL'],
     }
+
+    base_ontology = None
+    upper_ontology = None
+    mt5_tokenizer = None
 
     def __init__(self, target_lang="", data_dir=None, tmp_dir=None, max_word_len=4, compound_word_step=3,
                  strip_chars=None, \
-                 upper_ontology=None, x_lingual_lexicon_by_prefix_file="lexicon_by_prefix.json.gz",
-                 target_lang_data_file=None, x_lingual2ner_file=None, \
+                 upper_ontology=None, base_ontology_file="ontology.json.gz",
+                 target_lang_data_file=None, base2ner_file=None, \
                  connector="_", label2label=None, min_word_len=5):
-        self.mt5_tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
+        if OntologyManager.mt5_tokenizer  is None:
+           OntologyManager.mt5_tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
         self.target_lang_lexicon = {}
-        self.x_lingual_lexicon_by_prefix = {}
+        OntologyManager.base_ontology = {}
         self.target_lang = target_lang
         self.stopwords = set(stopwords.get(target_lang, []))
         self._max_lexicon = 0
-        if data_dir is None: data_dir = self.default_data_dir
+        if data_dir is None: data_dir = OntologyManager.default_data_dir
         if tmp_dir is None: tmp_dir = "/tmp/ontology/"
         os.system(f"mkdir -p {data_dir}")
         os.system(f"mkdir -p {tmp_dir}")
-        self.tmp_dir = tmp_dir
-        self.data_dir = data_dir
+        OntologyManager.tmp_dir = tmp_dir
+        OntologyManager.data_dir = data_dir
         if strip_chars is None:
             strip_chars = self.default_strip_chars
         self.strip_chars_set = set(strip_chars)
@@ -124,86 +129,91 @@ class OntologyManager:
         self.min_word_len = min_word_len
         self.compound_word_step = compound_word_step
         if label2label is None:
-            label2label = self.default_label2label
+            label2label = OntologyManager.default_label2label
         self.label2label = label2label
         if upper_ontology is None:
-            upper_ontology = self.default_upper_ontology
+            upper_ontology = OntologyManager.default_upper_ontology
+        if OntologyManager.base_ontology is None:
+          OntologyManager.base_ontology = {}
+        
         self.ontology = OrderedDict()
-        self.load_upper_ontology(upper_ontology)
-        self.load_x_lingual_lexicon_from_prefix_file(x_lingual_lexicon_by_prefix_file)
-        if x_lingual2ner_file is not None:
-            self.load_x_lingual_lexicon_from_x_lingual2ner_file(x_lingual2ner_file)
+        if OntologyManager.upper_ontology is None:
+          OntologyManager.load_upper_ontology(upper_ontology)
+        self.load_base_ontology_file(base_ontology_file)
+        if base2ner_file is not None:
+            self.load_base_ontology2ner_file(base2ner_file)
         if target_lang_data_file is None and target_lang:
             target_lang_data_file = f"{data_dir}/{target_lang}.json"
         if target_lang_data_file is not None:
             self.load_target_lang_data(target_lang_data_file, target_lang=target_lang)
         # used for cjk processing
 
-    def load_upper_ontology(self, upper_ontology):
+    @staticmethod
+    def load_upper_ontology(upper_ontology):
         # TODO: load and save from json file
         if upper_ontology is None: upper_ontology = {}
 
-        self.upper_ontology = {}
+        OntologyManager.upper_ontology = {}
 
         for key, val in upper_ontology.items():
             key = key.upper()
-            if key not in self.upper_ontology:
-                self.upper_ontology[key] = [val, len(self.upper_ontology)]
+            if key not in OntologyManager.upper_ontology:
+                OntologyManager.upper_ontology[key] = [val, len(OntologyManager.upper_ontology)]
             else:
-                self.upper_ontology[key] = [val, self.upper_ontology[key][1]]
+                OntologyManager.upper_ontology[key] = [val, OntologyManager.upper_ontology[key][1]]
 
-    def load_x_lingual_lexicon_from_x_lingual2ner_file(self, x_lingual2ner_file):
-        data_dir = self.data_dir
-        tmp_dir = self.tmp_dir
-        if x_lingual2ner_file is None: return
-        if os.path.exists(x_lingual2ner_file):
-            word2ner = json.load(open(x_lingual2ner_file, "rb"))
+    def load_base_ontology2ner_file(self, base2ner_file):
+        data_dir = OntologyManager.data_dir
+        tmp_dir = OntologyManager.tmp_dir
+        if base2ner_file is None: return
+        if os.path.exists(base2ner_file):
+            word2ner = json.load(open(base2ner_file, "rb"))
             self.add_to_ontology(word2ner, onto_name="yago_cn_wn")
-        elif os.path.exists(os.path.join(data_dir, x_lingual2ner_file)):
-            word2ner = json.load(open(os.path.join(data_dir, x_lingual2ner_file), "rb"))
-            self.add_to_ontology(word2ner, onto_name=self.x_lingual_onto_name)
+        elif os.path.exists(os.path.join(data_dir, base2ner_file)):
+            word2ner = json.load(open(os.path.join(data_dir, base2ner_file), "rb"))
+            self.add_to_ontology(word2ner, onto_name=self.base_onto_name)
         else:
-            print("warning: could not find x_lingual2ner_file")
+            print("warning: could not find base2ner_file")
 
-    def load_x_lingual_lexicon_from_prefix_file(self, x_lingual_lexicon_by_prefix_file="lexicon_by_prefix.json.gz"):
-        data_dir = self.data_dir
-        tmp_dir = self.tmp_dir
-        if x_lingual_lexicon_by_prefix_file is not None:
-            if not os.path.exists(x_lingual_lexicon_by_prefix_file):
-                x_lingual_lexicon_by_prefix_file = f"{data_dir}/{x_lingual_lexicon_by_prefix_file}"
-            if not os.path.exists(x_lingual_lexicon_by_prefix_file):
-                self.x_lingual_lexicon_by_prefix = {}
-                self.ontology[self.x_lingual_onto_name] = self.x_lingual_lexicon_by_prefix
-                return
-            if x_lingual_lexicon_by_prefix_file.endswith(".gz"):
-                with gzip.open(x_lingual_lexicon_by_prefix_file, 'r') as fin:
-                    json_bytes = fin.read()
-                    json_str = json_bytes.decode('utf-8')
-                    self.x_lingual_lexicon_by_prefix = json.loads(json_str)
-            else:
-                self.x_lingual_lexicon_by_prefix = json.load(open(x_lingual_lexicon_by_prefix_file, "rb"))
-            for lexicon in self.x_lingual_lexicon_by_prefix.values():
-                for val in lexicon[-1].values():
-                    label = val[0][0]
-                    if label in self.upper_ontology:
-                        val[0] = self.upper_ontology[label][0]
-                    self._max_lexicon = max(self._max_lexicon, val[1])
-        else:
-            self.x_lingual_lexicon_by_prefix = {}
-        self.ontology[self.x_lingual_onto_name] = self.x_lingual_lexicon_by_prefix
+    def load_base_ontology_file(self, base_ontology_file="ontology.json.gz", tmp_dir=None, data_dir=None):
+        if data_dir is None: data_dir = OntologyManager.data_dir
+        if tmp_dir is None: tmp_dir = OntologyManager.tmp_dir
+        if OntologyManager.base_ontology is None:
+          if base_ontology_file is not None:
+            if OntologyManager.base_ontology  is None:
+              if not os.path.exists(base_ontology_file):
+                  base_ontology_file = f"{data_dir}/{base_ontology_file}"
+              if not os.path.exists(base_ontology_file):
+                  OntologyManager.base_ontology = {}
+              if base_ontology_file.endswith(".gz"):
+                  with gzip.open(base_ontology_file, 'r') as fin:
+                      json_bytes = fin.read()
+                      json_str = json_bytes.decode('utf-8')
+                      OntologyManager.base_ontology = json.loads(json_str)
+              else:
+                  OntologyManager.base_ontology = json.load(open(base_ontology_file, "rb"))
+              for lexicon in OntologyManager.base_ontology.values():
+                  for val in lexicon[-1].values():
+                      label = val[0][0]
+                      if label in OntologyManager.upper_ontology:
+                          val[0] = OntologyManager.upper_ontology[label][0]
+                      OntologyManager._max_lexicon = max(OntologyManager._max_lexicon, val[1])
+          else:
+              OntologyManager.base_ontology = {}
+        self.ontology[OntologyManager.base_onto_name] = OntologyManager.base_ontology
 
-    def save_x_lingual_lexicon_prefix_file(self, x_lingual_lexicon_by_prefix_file="lexicon_by_prefix.json.gz"):
+    def save_base_lexicon_prefix_file(self, base_ontology_file="ontology.json.gz"):
         """ saves the base cross lingual leixcon """
         data_dir = self.data_dir
         tmp_dir = self.tmp_dir
-        # print (data_dir, x_lingual_lexicon_by_prefix_file)
-        x_lingual_lexicon_by_prefix_file = x_lingual_lexicon_by_prefix_file.replace(".gz", "")
-        if not x_lingual_lexicon_by_prefix_file.startswith(data_dir):
-            x_lingual_lexicon_by_prefix_file = f"{data_dir}/{x_lingual_lexicon_by_prefix_file}"
-        json.dump(self.x_lingual_lexicon_by_prefix, open(x_lingual_lexicon_by_prefix_file, "w", encoding="utf8"),
+        # print (data_dir, base_ontology_file)
+        base_ontology_file = base_ontology_file.replace(".gz", "")
+        if not base_ontology_file.startswith(data_dir):
+            base_ontology_file = f"{data_dir}/{base_ontology_file}"
+        json.dump(OntologyManager.base_ontology, open(base_ontology_file, "w", encoding="utf8"),
                   indent=1)
-        os.system(f"gzip -f {x_lingual_lexicon_by_prefix_file}")
-        os.system(f"rm {x_lingual_lexicon_by_prefix_file}")
+        os.system(f"gzip -f {base_ontology_file}")
+        os.system(f"rm {base_ontology_file}")
 
     def load_target_lang_data(self, target_lang_data_file=None, target_lang=None):
         data_dir = self.data_dir
@@ -327,10 +337,10 @@ class OntologyManager:
     labels are lower cased.  
     """
         if onto_name is None:
-            onto_name = self.x_lingual_onto_name
-        if onto_name == self.x_lingual_onto_name:
-            self.x_lingual_lexicon_by_prefix = ontology = self.ontology[onto_name] = self.ontology.get(onto_name,
-                                                                                                       self.x_lingual_lexicon_by_prefix)
+            onto_name = self.base_onto_name
+        if onto_name == self.base_onto_name:
+            OntologyManager.base_ontology = ontology = self.ontology[onto_name] = self.ontology.get(onto_name,
+                                                                                                       OntologyManager.base_ontology)
         else:
             ontology = self.ontology[onto_name] = self.ontology.get(onto_name, {})
         if max_word_len is None: max_word_len = self.max_word_len
