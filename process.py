@@ -2707,6 +2707,7 @@ class TextAugment:
       logger.info("neuralcoref not loaded!")
       pass
     arr2 = []
+    AutoTokenizer.from_pretrained("google/mt5-small")
     for arr in TextAugment.hf_ner_model_map.values():
       for model_name, _, _ in arr:
         arr2.append(model_name)
