@@ -147,6 +147,7 @@ optional arguments:
 - For systems where there is limited access to the Internet, such as the JZ supercomptuers, you will want to preload the models.
 - The below command will load the various models needed to run the code for the specific language. 
 - The huggingface models will be stored in ~/.cache/huggingface and ~/.cache/transformers.
+- The neuralcoref cache is stored in ~/.neuralcoref
 - NOTE: the nlkt_data and en_core_web_sm are not stored in ~/.cache directory and will vary based on your system. See the documentation for spacy and nltk for their location.
 ```
 cd muliwai
