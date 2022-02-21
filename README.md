@@ -28,7 +28,7 @@ If you don't need gender detection and coref detection, install the below which 
 ```
 git clone https://github.com/ontocord/muliwai
 pip install https://github.com/kpu/kenlm/archive/master.zip
-pip install spacy==3.1.0 dateparse python-stdnum protobuf neuralcoref cdifflib transformers datasets langid faker sentencepiece fsspec tqdm sentence-transformers nltk
+pip install spacy==3.1.0 dateparse python-stdnum protobuf neuralcoref cdifflib transformers datasets langid faker sentencepiece fsspec tqdm sentence-transformers nltk tokenizers==0.11.3
 python -m nltk.downloader punkt wordnet
 python -m spacy download en_core_web_sm
 python -m spacy download fr_core_news_sm
