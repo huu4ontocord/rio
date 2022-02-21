@@ -208,7 +208,7 @@ class TextAugmentDeviceModel:
         model_name = marian_mt.get(pair)
         seen[pair] = 1
         if model_name is not None and model_name not in TextAugment.translation_pipelines:
-          tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_len=512)
+          tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512)
           if self.device == "cpu":
             model = MarianMTModel.from_pretrained(model_name).eval()
             model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
@@ -225,12 +225,13 @@ class TextAugmentDeviceModel:
           if model_name not in self.ner_model_name2pipelines:
             try:
               model = model_cls.from_pretrained(model_name).half().eval().to(self.device)
-              tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_len=512)
+              tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
               ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=self.device_id)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
               logger.info("problems loading model and tokenizer for pipeline. attempting to load without passing in model")
             except:
-              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=self.device_id)
+              tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
+              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(tokenizer, {"use_fast": True},), device=self.device_id)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
 
 
@@ -844,7 +845,7 @@ class TextAugment:
     if not do_marian_mt:
       m2m_model_name = self.m2m100_lang.get((src_lang, target_lang), self.m2m100_lang[('*', '*')])
       if m2m_model_name != self.m2m_model_name or self.m2m_tokenizer is None:
-        self.m2m_tokenizer = M2M100Tokenizer.from_pretrained(m2m_model_name, model_max_len=512)
+        self.m2m_tokenizer = M2M100Tokenizer.from_pretrained(m2m_model_name, model_max_length=512)
       try:
         self.m2m_tokenizer.src_lang = src_lang
         target_lang_bos_token = self.m2m_tokenizer.get_lang_id(target_lang)
@@ -882,7 +883,7 @@ class TextAugment:
     model_name = marian_mt.get((src_lang, target_lang))
     mt_pipeline = None
     if model_name is not None and model_name not in TextAugment.translation_pipelines:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_len=512)
+        tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
         if self.device == "cpu":
           model = MarianMTModel.from_pretrained(model_name).eval()
           model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
@@ -1832,18 +1833,19 @@ class TextAugment:
                 model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
             else:
                 model = model_cls.from_pretrained(model_name).half().eval().to(self.device)
-            tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_len=512)
+            tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
             if self.device == 'cpu':
               ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer)
             else:
               ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=self.device_id)
             self.ner_model_name2pipelines[model_name] = ner_pipeline
           except:
+            tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
             logger.info("problems loading hf pipeline model and tokenizer. trying without passing in model and tokenizer")
             if self.device == 'cpu':
-              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},))
+              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(tokenizer, {"use_fast": True},))
             else:
-              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(model_name, {"use_fast": True},), device=self.device_id)
+              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(tokenizer, {"use_fast": True},), device=self.device_id)
             self.ner_model_name2pipelines[model_name] = ner_pipeline
         ner_pipelines.append((model_name, self.ner_model_name2pipelines[model_name], hf_ner_weight2))
     target_is_cjk = target_lang in ('zh', 'ko', 'ja')
@@ -2707,22 +2709,22 @@ class TextAugment:
       logger.info("neuralcoref not loaded!")
       pass
     arr2 = []
-    AutoTokenizer.from_pretrained("google/mt5-small")
+    AutoTokenizer.from_pretrained("google/mt5-small", model_max_length=512,truncation=True)
     for arr in TextAugment.hf_ner_model_map.values():
       for model_name, _, _ in arr:
         arr2.append(model_name)
     for model_name in list(set(arr2)):
         AutoModel.from_pretrained(model_name)
-        AutoTokenizer.from_pretrained(model_name, model_max_len=512)
+        AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
         AutoConfig.from_pretrained(model_name)
     for model_name in TextAugment.m2m100_lang.values():
-        AutoModel.from_pretrained(model_name, model_max_len=512)
-        AutoTokenizer.from_pretrained(model_name)
+        AutoModel.from_pretrained(model_name)
+        AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
         AutoConfig.from_pretrained(model_name)
     for aHash in qg_pipeline.SUPPORTED_TASKS.values():
       for model_name in aHash["default"].values():
-        AutoModel.from_pretrained(model_name, model_max_len=512)
-        AutoTokenizer.from_pretrained(model_name)
+        AutoModel.from_pretrained(model_name)
+        AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
         AutoConfig.from_pretrained(model_name)
     seen = {}
     for src_lang, target_lang in zip(src_langs, target_langs):
@@ -2731,14 +2733,14 @@ class TextAugment:
           seen[(src_lang, target_lang)] = 1
           if model_name is not None:
             AutoModel.from_pretrained(model_name)
-            AutoTokenizer.from_pretrained(model_name, model_max_len=512)
+            AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
             AutoConfig.from_pretrained(model_name)
         if (target_lang, src_lang) not in seen: 
           model_name = marian_mt.get((target_lang, src_lang))
           seen[(target_lang, src_lang)] = 1
           if model_name is not None:
             AutoModel.from_pretrained(model_name)
-            AutoTokenizer.from_pretrained(model_name, model_max_len=512)
+            AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
             AutoConfig.from_pretrained(model_name)                
     TextAugment.load_kenlm_model(store_model=False)
                
