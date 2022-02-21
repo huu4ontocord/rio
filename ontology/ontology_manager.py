@@ -83,6 +83,7 @@ class OntologyManager:
                  connector="_", label2label=None, min_word_len=5, tag_type={'PERSON', 'PUBLIC_FIGURE', 'ORG', 'NORP', 'DISEASE', 'GPE'}):
         if OntologyManager.mt5_tokenizer  is None:
            OntologyManager.mt5_tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
+        self.tag_type = tag_type
         self.target_lang_lexicon = {}
         self.target_lang = target_lang
         self.stopwords = set(stopwords.get(target_lang, []))
@@ -475,7 +476,7 @@ class OntologyManager:
                     # let's return only labels that are in the upper_ontology
                     #print ('found', label)
                     if label is not None:
-                     if (label[0] in self.upper_ontology or self.label2label.get(label[0]) in self.upper_ontology):
+                     if (label[0] in self.tag_type) and (label[0] in self.upper_ontology or self.label2label.get(label[0]) in self.upper_ontology):
                         if check_person_org_gpe_caps and (
                                 "PUBLIC_FIGURE" in label or "PERSON" in label or "ORG" in label or "GPE" in label):
                             # ideally we would keep patterns like AaA as part of the shingle to match. This is a hack.
@@ -485,7 +486,8 @@ class OntologyManager:
                         label = label[0]
                         label = self.label2label.get(label, label)
                         return word, label
-                     else: #we are ignoring this from the ontology
+                     else: #this is a known tagged label, but we are ignoring this because it's not in scope for this ontology
+                        return orig_word, None
 
         return orig_word, None
 
