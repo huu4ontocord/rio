@@ -54,13 +54,11 @@ from transformers import AutoTokenizer
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              os.path.pardir)))
-
+from default_onto_tags import *
 from stopwords import stopwords
 
 mt5_underscore = "▁"
 trannum = str.maketrans("0123456789", "1111111111")
-
-
 class OntologyManager:
     """
   Basic ontology manager. Stores the upper ontology and lexicon that
@@ -74,43 +72,18 @@ class OntologyManager:
     base_onto_name = "yago_cn_wn"
     default_data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "data"))
 
-    default_label2label = {'SOC_ECO_CLASS': 'NORP',
-                           'RACE': 'NORP',
-                           'POLITICAL_PARTY': 'NORP',
-                           'UNION': 'NORP',
-                           'RELIGION': 'NORP',
-                           'RELIGION_MEMBER': 'NORP',
-                           'POLITICAL_PARTY_MEMBER': 'NORP',
-                           'UNION_MEMBER': 'NORP'
-                           }
-
-    default_upper_ontology = {
-        'PERSON': ['PERSON'],
-        'PUBLIC_FIGURE': ['PUBLIC_FIGURE', 'PERSON'],
-        'ORG': ['ORG'],
-        'NORP': ['NORP', 'ORG'],
-        'AGE': ['AGE'],
-        'DISEASE': ['DISEASE'],
-        'ADDRESS': ['ADDRESS', 'LOC'],
-        'GPE': ['GPE', 'LOC'],
-        'CREDIT_CARD': ['CREDIT_CARD', 'ID', 'CARDINAL'],
-        'EMAIL_ADDRESS': ['EMAIL_ADDRESS', 'ELECTRONIC_ADDRESS'],
-        'ID': ['ID', 'CARDINAL'],
-    }
-
     base_ontology = None
     upper_ontology = None
     mt5_tokenizer = None
 
     def __init__(self, target_lang="", data_dir=None, tmp_dir=None, max_word_len=4, compound_word_step=3,
                  strip_chars=None, \
-                 upper_ontology=None, base_ontology_file="ontology.json.gz",
+                 upper_ontology=None, base_ontology_file="lexicon_by_prefix.json.gz",
                  target_lang_data_file=None, base2ner_file=None, \
-                 connector="_", label2label=None, min_word_len=5):
+                 connector="_", label2label=None, min_word_len=5, tag_type={'PERSON', 'PUBLIC_FIGURE', 'ORG', 'NORP', 'DISEASE', 'GPE'}):
         if OntologyManager.mt5_tokenizer  is None:
            OntologyManager.mt5_tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
         self.target_lang_lexicon = {}
-        OntologyManager.base_ontology = {}
         self.target_lang = target_lang
         self.stopwords = set(stopwords.get(target_lang, []))
         self._max_lexicon = 0
@@ -129,22 +102,23 @@ class OntologyManager:
         self.min_word_len = min_word_len
         self.compound_word_step = compound_word_step
         if label2label is None:
-            label2label = OntologyManager.default_label2label
+            label2label = default_label2label
         self.label2label = label2label
         if upper_ontology is None:
-            upper_ontology = OntologyManager.default_upper_ontology
-        if OntologyManager.base_ontology is None:
-          OntologyManager.base_ontology = {}
-        
+            upper_ontology = default_upper_ontology
+
         self.ontology = OrderedDict()
         if OntologyManager.upper_ontology is None:
           OntologyManager.load_upper_ontology(upper_ontology)
         self.load_base_ontology_file(base_ontology_file)
         if base2ner_file is not None:
             self.load_base_ontology2ner_file(base2ner_file)
+        if OntologyManager.base_ontology is None:
+          OntologyManager.base_ontology = {}
         if target_lang_data_file is None and target_lang:
             target_lang_data_file = f"{data_dir}/{target_lang}.json"
         if target_lang_data_file is not None:
+            print ("load", target_lang_data_file)
             self.load_target_lang_data(target_lang_data_file, target_lang=target_lang)
         # used for cjk processing
 
@@ -165,6 +139,7 @@ class OntologyManager:
     def load_base_ontology2ner_file(self, base2ner_file):
         data_dir = OntologyManager.data_dir
         tmp_dir = OntologyManager.tmp_dir
+        print ('got here')
         if base2ner_file is None: return
         if os.path.exists(base2ner_file):
             word2ner = json.load(open(base2ner_file, "rb"))
@@ -175,7 +150,7 @@ class OntologyManager:
         else:
             print("warning: could not find base2ner_file")
 
-    def load_base_ontology_file(self, base_ontology_file="ontology.json.gz", tmp_dir=None, data_dir=None):
+    def load_base_ontology_file(self, base_ontology_file="lexicon_by_prefix.json.gz", tmp_dir=None, data_dir=None):
         if data_dir is None: data_dir = OntologyManager.data_dir
         if tmp_dir is None: tmp_dir = OntologyManager.tmp_dir
         if OntologyManager.base_ontology is None:
@@ -197,7 +172,7 @@ class OntologyManager:
                       label = val[0][0]
                       if label in OntologyManager.upper_ontology:
                           val[0] = OntologyManager.upper_ontology[label][0]
-                      OntologyManager._max_lexicon = max(OntologyManager._max_lexicon, val[1])
+                      self._max_lexicon = max(self._max_lexicon, val[1])
           else:
               OntologyManager.base_ontology = {}
         self.ontology[OntologyManager.base_onto_name] = OntologyManager.base_ontology
@@ -352,7 +327,11 @@ class OntologyManager:
         _max_lexicon = self._max_lexicon
         for _idx, word_label in enumerate(word2ner):
             _idx += _max_lexicon
-            word, label = word_label
+            if len(word_label) == 3:
+              word, label, weight = word_label
+            else:
+              word, label = word_label
+              weight = 1
             # if word.startswith('geor'): print (word, label)
             label = label.upper()
             is_cjk = self.cjk_detect(word)
@@ -374,9 +353,13 @@ class OntologyManager:
             if not wordArr:
                 continue
             word = connector.join(wordArr)
+            san_fran = False
+            if "san_francisco" == word:
+              print (word)
+              san_fran=True
             # we don't have an actual count of the word in the corpus, so we create a weight based
             # on the length, assuming shorter words with less compound parts are more frequent
-            weight = 1 / (1.0 + math.sqrt(orig_lens))
+            weight = weight + 1 / (1.0 + math.sqrt(orig_lens))
             lenWordArr = len(wordArr)
             if lenWordArr == 0:
                 continue
@@ -384,6 +367,7 @@ class OntologyManager:
             for wordArr in self._get_all_word_shingles(wordArr, max_word_len=max_word_len,
                                                        create_suffix_end=_idx % 5 == 0):
                 if not wordArr: continue
+                if san_fran: print (wordArr)
                 word = connector.join(wordArr)
                 key = (word, lenWordArr // (compound_word_step + 1))
                 # print (word0, word, weight)
@@ -429,9 +413,9 @@ class OntologyManager:
         """ tokenize using mt5. meant for cjk languages"""
         if connector is None:
             connector = self.connector
-        if self.mt5_tokenizer is None:
-            self.mt5_tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
-        words = self.mt5_tokenizer.tokenize(text.replace("_", " ").strip())
+        if OntologyManager.mt5_tokenizer is None:
+            OntologyManager.mt5_tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
+        words = OntologyManager.mt5_tokenizer.tokenize(text.replace("_", " ").strip())
         words2 = []
         for word in words:
             if not words2:
@@ -489,16 +473,20 @@ class OntologyManager:
                         shingle = shingleArr[0]
                     label, _ = lexicon2.get(shingle, (None, None))
                     # let's return only labels that are in the upper_ontology
-                    if label is not None and (
-                            label[0] in self.upper_ontology or self.label2label.get(label[0]) in self.upper_ontology):
+                    #print ('found', label)
+                    if label is not None:
+                     if (label[0] in self.upper_ontology or self.label2label.get(label[0]) in self.upper_ontology):
                         if check_person_org_gpe_caps and (
                                 "PUBLIC_FIGURE" in label or "PERSON" in label or "ORG" in label or "GPE" in label):
                             # ideally we would keep patterns like AaA as part of the shingle to match. This is a hack.
                             if wordArr[0][0] != wordArr[0][0].upper() or wordArr[-1][0] != wordArr[-1][
                                 0].upper(): continue
+                          
                         label = label[0]
                         label = self.label2label.get(label, label)
                         return word, label
+                     else: #we are ignoring this from the ontology
+
         return orig_word, None
 
     def _get_ngram_start_end(self, start_word):
