@@ -41,12 +41,12 @@ python -m spacy download zh_core_web_sm
 If no filenames are passed, the sample data from turkunlp_data/{src_lang}.jsonl.gz will be loaded. The below runs on a sample of 30 documents only.
 ```
 cd muliwai
-python processor.py -src_lang zh -cutoff 30
+python process.py -src_lang zh -cutoff 30
 ```
 If you have more than one GPU
 ```
 cd muliwai
-python processor.py -src_lang zh -num_workers=2 -cutoff 30
+python process.py -src_lang zh -num_workers=2 -cutoff 30
 ```
 # CLI
 ```
