@@ -41,12 +41,12 @@ python -m spacy download zh_core_web_sm
 If no filenames are passed, the sample data from turkunlp_data/{src_lang}.jsonl.gz will be loaded. The below runs on a sample of 30 documents only.
 ```
 cd muliwai
-python processor.py -src_lang zh -cutoff 30
+python process.py -src_lang zh -cutoff 30
 ```
 If you have more than one GPU
 ```
 cd muliwai
-python processor.py -src_lang zh -num_workers=2 -cutoff 30
+python process.py -src_lang zh -num_workers=2 -cutoff 30
 ```
 # CLI
 ```
@@ -147,6 +147,7 @@ optional arguments:
 - For systems where there is limited access to the Internet, such as the JZ supercomptuers, you will want to preload the models.
 - The below command will load the various models needed to run the code for the specific language. 
 - The huggingface models will be stored in ~/.cache/huggingface and ~/.cache/transformers.
+- The neuralcoref cache is stored in ~/.neuralcoref
 - NOTE: the nlkt_data and en_core_web_sm are not stored in ~/.cache directory and will vary based on your system. See the documentation for spacy and nltk for their location.
 ```
 cd muliwai
