@@ -593,7 +593,7 @@ class TextAugment:
       """
       Load a new one. Consider if we want to use an LRU.
       """
-      src_lang = src_lang if src_lang in public_figure_kenlm_cutoff_map else "en"
+      src_lang = src_lang if src_lang in TextAugment.public_figure_kenlm_cutoff_map else "en"
       if TextAugment.kenlm_models and src_lang in TextAugment.kenlm_models: 
         return 
       if TextAugment.cache_dir == None:
