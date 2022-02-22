@@ -2052,7 +2052,7 @@ class TextAugment:
           ent2 = ent
           if not target_is_cjk and ent == ent.upper():
             ent2 = " ".join([a[0].upper()+a[1:] if len(a) > 1 else a.upper() for a in ent.lower().split()])
-          kenlm_score = TextAugment.kenlm_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2)
+          kenlm_score = TextAugment.kenlm_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2))
           #logger.info((ent, kenlm_score))
           if kenlm_score <= public_figure_kenlm_cutoff:
             logger.info(("found public figure ", ent2, kenlm_score))
