@@ -556,6 +556,9 @@ class TextAugment:
 
   @staticmethod
   def get_lang_groups(src_lang):
+    """ we use langid because it's pretty fast but it has difficulties in low resource languages
+    langid can sometimes mistake languages that are in the same group. that is ok for our purpose as 
+    we mainly use the langid check to confirm the labels from other models. """
     lang_groups=[src_lang]
     if src_lang in ('ig', 'sn', 'ny', 'st', 'zu', 'xh', 'rw', 'sw', 'yo'):
       lang_groups = ['ig', 'sn', 'ny', 'st', 'zu', 'xh', 'rw', 'sw', 'yo']  
@@ -596,25 +599,29 @@ class TextAugment:
     return set(lang_groups)
 
   @staticmethod
-  def load_kenlm_model(store_model=True):
+  def load_kenlm_model(store_model=True, src_lang="en"):
+      """
+      Swap out the previous kenlm model with a new one. TBD whether we want to make a global cache or make this object variable.
+      """
+      if TextAugment.kenlm_model is not None and TextAugment.kenlm_model.language == src_lang: return 
       if TextAugment.cache_dir == None:
         cache_dir = os.path.expanduser ('~')+"/.cache"
       else:
         cache_dir = TextAugment.cache_dir
       os.system(f"mkdir -p {cache_dir}/wikipedia")
       if not os.path.exists(f"{cache_dir}/wikipedia/en.arpa.bin"): 
-        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.arpa.bin")
+        file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.arpa.bin")
         file = cached_download(file_url)
         os.system(f"ln -s {file} {cache_dir}/wikipedia/en.arpa.bin")
       if not os.path.exists(f"{cache_dir}/wikipedia/en.sp.model"): 
-        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.model")
+        file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.sp.model")
         file = cached_download(file_url)
         os.system(f"ln -s {file} {cache_dir}/wikipedia/en.sp.model")
       if not os.path.exists(f"{cache_dir}/wikipedia/en.sp.vocab"):
-        file_url= hf_hub_url(repo_id="edugp/kenlm", filename="wikipedia/en.sp.vocab")
+        file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.sp.vocab")
         file = cached_download(file_url)
         os.system(f"ln -s {file} {cache_dir}/wikipedia/en.sp.vocab")
-      if store_model: TextAugment.kenlm_model = KenlmModel(f"{cache_dir}/wikipedia", "en")
+      if store_model: TextAugment.kenlm_model = KenlmModel(f"{cache_dir}/wikipedia", "src_lang)
   
   @staticmethod
   def check_good_sentence(s, src_lang, stopwords, show_err=False, lang_groups=[], ret_score=False, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
