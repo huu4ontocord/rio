@@ -45,3 +45,17 @@ default_upper_ontology = {
         'MISC': ['MISC'],
         'OTHER': ['OTHER'],
     }
+
+label_weight_factors = {'PUBLIC_FIGURE': 20, 'ANIMAL': 0.005, 'PLANT': 0.25, \
+                            'BIO_CHEM_ENTITY': 0.01, 'LANGUAGE': 10, 'RACE': 20, \
+                            'RELIGION': 15, 'RACE': 15,
+                            'RELIGION_MEMBER': 25,
+                            'GENDER': 15,
+                            'SOC_ECO_CLASS': 15,
+                            'POLITICAL_PARTY': 15,
+                            'MEDICAL_THERAPY': 100,                        
+                            'MEDICAL_SYMPTOM': 300,
+                            'UNION': 30,
+                            'POLITICAL_PARTY_MEMBER': 15,
+}
+
