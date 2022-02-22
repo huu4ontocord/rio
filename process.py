@@ -1,3 +1,68 @@
+"""
+Copyright, 2021-2022 Ontocord, LLC, All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+import re
+import fsspec
+import copy
+from collections import Counter
+from  datasets import load_dataset
+from transformers import AutoConfig, AutoModel, AutoTokenizer, RobertaForTokenClassification, M2M100ForConditionalGeneration, M2M100Tokenizer, pipelines
+import spacy
+from tqdm import tqdm
+import difflib
+from transformers import pipeline, MarianMTModel, XLMRobertaForTokenClassification, BertForTokenClassification, ElectraForTokenClassification
+import random
+from sentence_transformers import SentenceTransformer
+from torch.nn.functional import cosine_similarity
+import langid
+import json
+import os
+import time
+import gzip
+from functools import partial
+import argparse
+import re, regex
+import itertools
+import torch
+from torch import multiprocessing
+import sys
+from huggingface_hub import hf_hub_url, cached_download
+import argparse
+from torch import multiprocessing
+import time
+from functools import partial
+from faker import Faker
+from faker.providers import person, company, geo, address, ssn, internet
+
+import logging
+
+from transformers.utils.dummy_tf_objects import TFRagSequenceForGeneration
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(
+    format='%(asctime)s : %(processName)s : %(levelname)s : %(message)s',
+    level=logging.INFO)
+
+try:
+  import neuralcoref
+except:
+  neuralcoref = None
+  pass
+import sys
+try:
+    sys.path.append(os.path.abspath(os.path.dirname(__file__)))         
+except:
+    pass
+ 
 from text_augment import *
 
 if __name__ == "__main__":
