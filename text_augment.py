@@ -1805,7 +1805,7 @@ class TextAugment:
     if target_lang != src_lang:
         if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
         if TextAugment.labse is None: 
-            TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache").eval()
+            TextAugment.labse =  SentenceTransformer(os.path.join(os.path.expanduser ('~')+"/.cache","sentence-transformers/LaBSE")).eval()
             if self.device == "cpu":
               TextAugment.labse  = torch.quantization.quantize_dynamic(TextAugment.labse , {torch.nn.Linear}, dtype=torch.qint8)
             else:
@@ -2704,7 +2704,7 @@ class TextAugment:
   @staticmethod
   def preload_cache(src_langs=["en"], target_langs=["en"], domain=None):
     #print ("preload_cache")
-    SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache")
+    SentenceTransformer(os.path.join(os.path.expanduser ('~')+"/.cache","sentence-transformers/LaBSE"))
     en_spacy_nlp = spacy.load('en_core_web_sm')
     try:
       coref = neuralcoref.NeuralCoref(en_spacy_nlp.vocab)
@@ -2746,6 +2746,8 @@ class TextAugment:
             AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
             AutoConfig.from_pretrained(model_name)                
     TextAugment.load_kenlm_model(src_lang, store_model=False)
+    TextAugment.load_kenlm_model(target_lang, store_model=False) 
+    #TextAugment.load_kenlm_model(src_lang, store_model=False)
                
   @staticmethod
   def multiprocess_ner(docs,
