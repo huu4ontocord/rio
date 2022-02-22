@@ -58,7 +58,10 @@ except:
   neuralcoref = None
   pass
 import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))         
+try:
+    sys.path.append(os.path.abspath(os.path.dirname(__file__)))         
+except:
+    pass
 from marian_mt import marian_mt
 from edugp_kenlm_model import *
 from fake_names import *
