@@ -246,7 +246,7 @@ class TextAugment:
   m2m_tokenizer = None
   en_spacy_nlp = None
   faker_en_list  = None
-  kenlm_model = None
+  kenlm_models = {}
   
   # see https://www.researchgate.net/publication/259179064_Comparing_Methods_for_Detecting_Child_Exploitation_Content_Online for common CSAM words
   # http://antipaedo.lip6.fr/T12/keywords_cnrs.pdf - for top 20 from table 7 and 8 of the paper, plus other similar words , ignoring stopwords like "tuesday"
@@ -352,8 +352,8 @@ class TextAugment:
 
   strip_chars = " ,،、{}[]|()\"'“”《》«»!:;?。…．"
   punc_char = ".!:;?。…．"
-  special_char = " ,{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø•�」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'"
-  junk = set(",{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø•�」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'")
+  special_char = " ,{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø• 」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'"
+  junk = set(",{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø• 」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'")
   #don't add a space for junk chars
   ontology_manager = None
   max_stoword_len_zh = max([0]+[len(a) for a in stopwords.get('zh', [])])
@@ -362,7 +362,7 @@ class TextAugment:
   stopwords_en = set(stopwords.get('en',[]))
   cache_dir = None
 
-  def __init__(self, device=None, single_process=1, available_device_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir=None):
+  def __init__(self, device=None, single_process=1, available_device_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, cache_dir=None):
     if cache_dir is None: 
         cache_dir = os.path.expanduser ('~')+"/.cache"
     if TextAugment.cache_dir is None: 
@@ -382,9 +382,9 @@ class TextAugment:
         TextAugment.device = "cpu"  
     logger.info (('running on ', TextAugment.device))
     if single_process:
-      self.initializer(available_device_model=available_device_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, kenlm_model=kenlm_model, cache_dir=cache_dir)
+      self.initializer(available_device_model=available_device_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, cache_dir=cache_dir)
     
-  def initializer(self, device_id_by_proess_id=True, all_available_device_model=None, available_device_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, kenlm_model=None, cache_dir=None):
+  def initializer(self, device_id_by_proess_id=True, all_available_device_model=None, available_device_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, cache_dir=None):
     if all_available_device_model is not None:
       TextAugmentDeviceModel.available_device_models   = all_available_device_model
       TextAugmentDeviceModel.available_devices = [d.device_id for d in all_available_device_model]
@@ -452,7 +452,6 @@ class TextAugment:
     if ontology_manager is not None: TextAugment.ontology_manager = ontology_manager
     if en_spacy_nlp is not None: TextAugment.en_spacy_nlp = en_spacy_nlp
     if faker_en_list is not None: TextAugment.faker_en_list = faker_en_list
-    if kenlm_model is not None: TextAugment.kenlm_model = kenlm_model
     if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
     try:
         coref = neuralcoref.NeuralCoref(TextAugment.en_spacy_nlp.vocab)
@@ -464,8 +463,6 @@ class TextAugment:
 
     if TextAugment.ontology_manager is None: TextAugment.ontology_manager = OntologyManager('en') #src_lang=src_lang
     #speed up loading if we don't use kenlm models
-    #if TextAugment.kenlm_model is None: 
-    #  TextAugment.load_kenlm_model()
     if TextAugment.faker_en_list is None:
       TextAugment.faker_en_list  = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
       for faker_en in faker_en_list:
@@ -479,7 +476,6 @@ class TextAugment:
     #TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
 
 
-  #TODO: we also need a deserialize
   @staticmethod
   def serialize_ner_items(docs, ner_keys=None, outfile=""):
         #print ("serialize_ner_items")
@@ -599,29 +595,30 @@ class TextAugment:
     return set(lang_groups)
 
   @staticmethod
-  def load_kenlm_model(store_model=True, src_lang="en"):
+  def load_kenlm_model(src_lang="en", store_model=True):
       """
-      Swap out the previous kenlm model with a new one. TBD whether we want to make a global cache or make this object variable.
+      Load a new one. Consider if we want to use an LRU.
       """
-      if TextAugment.kenlm_model is not None and TextAugment.kenlm_model.language == src_lang: return 
+      if TextAugment.kenlm_models and src_lang in TextAugment.kenlm_models: 
+        return 
       if TextAugment.cache_dir == None:
         cache_dir = os.path.expanduser ('~')+"/.cache"
       else:
         cache_dir = TextAugment.cache_dir
       os.system(f"mkdir -p {cache_dir}/wikipedia")
-      if not os.path.exists(f"{cache_dir}/wikipedia/en.arpa.bin"): 
+      if not os.path.exists(f"{cache_dir}/wikipedia/{src_lang}.arpa.bin"): 
         file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.arpa.bin")
         file = cached_download(file_url)
-        os.system(f"ln -s {file} {cache_dir}/wikipedia/en.arpa.bin")
-      if not os.path.exists(f"{cache_dir}/wikipedia/en.sp.model"): 
+        os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.arpa.bin")
+      if not os.path.exists(f"{cache_dir}/wikipedia/{src_lang}.sp.model"): 
         file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.sp.model")
         file = cached_download(file_url)
-        os.system(f"ln -s {file} {cache_dir}/wikipedia/en.sp.model")
-      if not os.path.exists(f"{cache_dir}/wikipedia/en.sp.vocab"):
+        os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.sp.model")
+      if not os.path.exists(f"{cache_dir}/wikipedia/{src_lang}.sp.vocab"):
         file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.sp.vocab")
         file = cached_download(file_url)
-        os.system(f"ln -s {file} {cache_dir}/wikipedia/en.sp.vocab")
-      if store_model: TextAugment.kenlm_model = KenlmModel(f"{cache_dir}/wikipedia", "src_lang)
+        os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.sp.vocab")
+      if store_model: TextAugment.kenlm_models[src_lang] = KenlmModel(f"{cache_dir}/wikipedia", "src_lang)
   
   @staticmethod
   def check_good_sentence(s, src_lang, stopwords, show_err=False, lang_groups=[], ret_score=False, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
@@ -1804,8 +1801,8 @@ class TextAugment:
     
     # init the kenlm pipeline
     if do_kenlm:
-        if TextAugment.kenlm_model is None:
-            TextAugment.load_kenlm_model()
+        if target_lang not in TextAugment.kenlm_models:
+            TextAugment.load_kenlm_model(target_lang)
             
     if target_lang != src_lang:
         if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
@@ -1977,16 +1974,16 @@ class TextAugment:
               pass
             trans_text = before + " " + ent + " " + after
           trans_text = chunk[target_text_key] = trans_text.replace("  ", " ").strip()
-          if do_kenlm and target_lang == 'en':
-              chunk[f'{target_lang}_kenlm'] = self.kenlm_model.get_perplexity(chunk[target_text_key])
+          if do_kenlm and target_lang == 'en' and target_lang in TextAugment.kenlm_models:
+              chunk[f'{target_lang}_kenlm'] = TextAugment.kenlm_models[target_lang].get_perplexity(chunk[target_text_key])
           if doc.get(target_text_key, ""):
             chunk[target_offset_key] = len(doc.get(target_text_key, "")) + 1
           else:
             chunk[target_offset_key] = 0
           doc[target_text_key] = (doc.get(target_text_key, "") + " " + trans_text).strip()
-    if do_kenlm and target_lang == 'en':
+    if do_kenlm and target_lang == 'en' and target_lang in TextAugment.kenlm_models:
       for doc in docs.values():
-        doc[f'{target_lang}_kenlm'] = self.kenlm_model.get_perplexity(doc[target_text_key].replace(" .", " "))
+        doc[f'{target_lang}_kenlm'] = TextAugment.kenlm_models[target_lang].get_perplexity(doc[target_text_key].replace(" .", " "))
 
     if do_regex:
       docs = self.apply_regex_ner(target_lang, docs=docs, weight=regex_weight, text_key=target_text_key, ner_key=target_ner_key)
@@ -2029,7 +2026,7 @@ class TextAugment:
     if do_docs_trim_for_person:
       docs, chunks = self.trim_to_prefer_person(docs, chunks)
 
-    if do_kenlm and self.kenlm_model is not None:
+    if do_kenlm and target_lang in TextAugment.kenlm_model:
       for doc in docs.values():
         ner = doc[target_ner_key]
         prev_public_figures = []
@@ -2059,7 +2056,7 @@ class TextAugment:
           ent2 = ent
           if not target_is_cjk and ent == ent.upper():
             ent2 = " ".join([a[0].upper()+a[1:] if len(a) > 1 else a.upper() for a in ent.lower().split()])
-          kenlm_score = self.kenlm_model.get_perplexity(f"{ent2} (born")
+          kenlm_score = TextAugment.kenlm_models[target_lang].get_perplexity(f"{ent2} (born")
           #logger.info((ent, kenlm_score))
           if kenlm_score <= public_figure_kenlm_cutoff:
             logger.info(("found public figure ", ent2, kenlm_score))
@@ -2749,7 +2746,7 @@ class TextAugment:
             AutoModel.from_pretrained(model_name)
             AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
             AutoConfig.from_pretrained(model_name)                
-    TextAugment.load_kenlm_model(store_model=False)
+    TextAugment.load_kenlm_model(src_lang, store_model=False)
                
   @staticmethod
   def multiprocess_ner(docs,
