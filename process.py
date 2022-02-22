@@ -317,30 +317,24 @@ class TextAugment:
       'is': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
       }
 
-  #wikipedia kenlm model based on prompt "f{s} (born"
-  #TODO figure out actual numbers. Also, add languge specific kenlm models
-  public_figure_kenlm_cutoff_map = {'en': 500,
-                                    'yo': 500,
-                                    'zu': 500,
-                                    'sn': 500,
-                                    'st': 500,
-                                    'ny': 500,
-                                    'xh': 500,
-                                    'sw': 500,
-                                    'ig': 500,
-                                    'ar': 500,
-                                    'en': 500,
-                                    'es': 500,
-                                    'eu': 500,
-                                    'ca': 500,
-                                    'pt': 500,
-                                    'fr': 500,
-                                    'zh': 500,
-                                    'vi': 500,
-                                    'hi': 500,
-                                    'ur': 500,
-                                    'id': 500,
-                                    'bn': 500,
+  #wikipedia kenlm model based on prompt "f{s} (born" as an added signal
+  #TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of gender, so we would have two patterns.
+  public_figure_kenlm_cutoff_map = {'en': {'cutoff': 500, 'pattern': "{} (born"},
+                                    'yo': {'cutoff': 500, 'pattern': "{} ni a bi lori"},
+                                    'zu': {'cutoff': 500, 'pattern': "{} wazalwa ngo"},
+                                    'sn': {'cutoff': 500, 'pattern': "{} akazvarwa"},
+                                    'st': {'cutoff': 500, 'pattern': "{} o hlahile ka"},
+                                    'ny': {'cutoff': 500, 'pattern': "{} anabadwa pa"},
+                                    'xh': {'cutoff': 500, 'pattern': "{} wazalwa ngo"},
+                                    'sw': {'cutoff': 500, 'pattern': "{} alizaliwa tarehe"},
+                                    'ig': {'cutoff': 500, 'pattern': "{} amụrụ"},
+                                    'ar': {'cutoff': 500, 'pattern': "ولد {} من"},
+                                    'zh': {'cutoff': 500, 'pattern': "{}生於"},
+                                    'vi': {'cutoff': 500, 'pattern': "{} sinh ra"},
+                                    'hi': {'cutoff': 500, 'pattern': "{} का जन्म ए"},
+                                    'ur': {'cutoff': 500, 'pattern': "{} پیدا ہوا"},
+                                    'id': {'cutoff': 500, 'pattern': "{} lahir"},
+                                    'bn': {'cutoff': 500, 'pattern': "{} জন্ম"},
                                     }
   m2m100_lang = {
     ('en', 'yo'): "Davlan/m2m100_418M-eng-yor-mt",
@@ -352,8 +346,8 @@ class TextAugment:
 
   strip_chars = " ,،、{}[]|()\"'“”《》«»!:;?。…．"
   punc_char = ".!:;?。…．"
-  special_char = " ,{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø• 」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'"
-  junk = set(",{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø• 」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'")
+  special_char = " ,{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø•」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'"
+  junk = set(",{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø•」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'")
   #don't add a space for junk chars
   ontology_manager = None
   max_stoword_len_zh = max([0]+[len(a) for a in stopwords.get('zh', [])])
@@ -599,6 +593,7 @@ class TextAugment:
       """
       Load a new one. Consider if we want to use an LRU.
       """
+      src_lang = src_lang if src_lang in public_figure_kenlm_cutoff_map else "en"
       if TextAugment.kenlm_models and src_lang in TextAugment.kenlm_models: 
         return 
       if TextAugment.cache_dir == None:
@@ -618,7 +613,7 @@ class TextAugment:
         file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.sp.vocab")
         file = cached_download(file_url)
         os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.sp.vocab")
-      if store_model: TextAugment.kenlm_models[src_lang] = KenlmModel(f"{cache_dir}/wikipedia", "src_lang)
+      if store_model: TextAugment.kenlm_models[src_lang] = KenlmModel(f"{cache_dir}/wikipedia", src_lang)
   
   @staticmethod
   def check_good_sentence(s, src_lang, stopwords, show_err=False, lang_groups=[], ret_score=False, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
@@ -1870,8 +1865,9 @@ class TextAugment:
       target_offset_key = f'{target_lang}_offset'
       target_src_sim_key = f'{src_lang}_2_{target_lang}_sim'
 
-    public_figure_kenlm_cutoff = self.public_figure_kenlm_cutoff_map.get(target_lang, 450)
-
+    public_figure_kenlm_data = self.public_figure_kenlm_cutoff_map.get(target_lang, {'cutoff': 500, 'pattern': "{} (born"})
+    public_figure_kenlm_cutoff = public_figure_kenlm_data['cutoff']
+    public_figure_kenlm_pattern = public_figure_kenlm_data['pattern']
     docs = self.collapse_ner(docs, ner_key = f'{src_lang}_signal_ner', collapse_ner_key = f'{src_lang}_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1)
 
     # do operations in the target_lang space
@@ -2026,7 +2022,7 @@ class TextAugment:
     if do_docs_trim_for_person:
       docs, chunks = self.trim_to_prefer_person(docs, chunks)
 
-    if do_kenlm and target_lang in TextAugment.kenlm_model:
+    if do_kenlm and target_lang in TextAugment.kenlm_models:
       for doc in docs.values():
         ner = doc[target_ner_key]
         prev_public_figures = []
@@ -2056,7 +2052,7 @@ class TextAugment:
           ent2 = ent
           if not target_is_cjk and ent == ent.upper():
             ent2 = " ".join([a[0].upper()+a[1:] if len(a) > 1 else a.upper() for a in ent.lower().split()])
-          kenlm_score = TextAugment.kenlm_models[target_lang].get_perplexity(f"{ent2} (born")
+          kenlm_score = TextAugment.kenlm_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2)
           #logger.info((ent, kenlm_score))
           if kenlm_score <= public_figure_kenlm_cutoff:
             logger.info(("found public figure ", ent2, kenlm_score))
@@ -2869,7 +2865,7 @@ if __name__ == "__main__":
     parser.add_argument('-do_anonymization', dest='do_anonymization', type=int, help='Wether or not to anonymize the src_lang', default = 0)
     parser.add_argument('-do_regex', dest='do_regex', type=int, help='Wether or not to apply regex models', default = 1)
     parser.add_argument('-do_cleanup', dest='do_cleanup', type=int, help='Wether or not to cleanup NERs that are just stopwords or small number', default = 1)
-    parser.add_argument('-do_marian_mt', dest='do_marian_mt', type=int, help='Wether or not to use marianMT for translation instead of M2M100', default = 1)
+    parser.add_argument('-do_marian_mt', dest='do_marian_mt', type=int, help='Wether or not to use marianMT for translation instead of M2M100', default = 0)
     parser.add_argument('-do_docs_trim_for_person', dest='do_docs_trim_for_person', type=int, help='Wether or not to filter out documents with no mentions of persons', default = 0)
     parser.add_argument('-do_docs_filter', dest='do_docs_filter', type=int, help='Wether or not to filter out documents with high ratios of junk, or CSAM', default = 0)
     parser.add_argument('-do_kenlm', dest='do_kenlm', type=int, help='Wether or not to apply a KenLM model to decide if a name is a common person name', default = 1)
