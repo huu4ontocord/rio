@@ -485,18 +485,18 @@ class TextAugment:
           serialize_docs = list(docs.values())
         else:
           serialize_docs = docs
-
+        serialize_docs = copy.deepcopy(serialize_docs)
         serialize_docs.sort(key=lambda a: int(a.get('id', -1)))
-        serialize_docs = copy.copy(serialize_docs)
         for doc in serialize_docs:
-            for ner_key in ner_keys + ([] if ner_keys else [key for key in doc if key.endswith('_ner')]):
+            for ner_key in ner_keys + ([] if ner_keys else [key for key in doc if '_ner' in key]):
                 ner_items = doc[ner_key]
                 serialize_items = []
-                for (text, start, end), ner_value in ner_items.items():
-                    ner_value = list(ner_value.items())
-                    ner_dict = [text, start, end, ner_value]
-                    serialize_items.append(ner_dict)
-                doc[ner_key] = serialize_items
+                if type(ner_items) is dict:
+                  for (text, start, end), ner_value in ner_items.items():
+                      ner_value = list(ner_value.items())
+                      ner_dict = [text, start, end, ner_value]
+                      serialize_items.append(ner_dict)
+                  doc[ner_key] = serialize_items
         if outfile:       
           with open(outfile, 'w', encoding='utf-8') as file:
             for doc in serialize_docs:
