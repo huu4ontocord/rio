@@ -21,6 +21,7 @@ default_upper_ontology = {
         'AGE': ['AGE'],
         'DISEASE': ['DISEASE'],
         'ADDRESS': ['ADDRESS', 'LOC'],
+        'LOC': ['LOC'],
         'USER': ['USER'],
         'URL': ['URL'],
         'ID': ['ID'],
