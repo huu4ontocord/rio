@@ -1,4 +1,5 @@
-#from https://huggingface.co/edugp/kenlm/blob/main/model.py
+#from https://huggingface.co/edugp/kenlm/blob/main/model.py which is under the Apache 2 License
+#thank you edugp!!
 import os
 import re
 import unicodedata
@@ -83,6 +84,7 @@ class KenlmModel:
         self.case = lower_case
         self.numbers = normalize_numbers
         self.punct = punctuation
+        self.language = language
 
     @classmethod
     def from_pretrained(
