@@ -1007,10 +1007,17 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                                 found_context = True
                               if block:
                                 for c in block:
+                                  new_tag = None
+                                  if type(c) tuple:
+                                    c, new_tag = c
                                   c = c.lower()
                                   if c in left or c in right:
-                                      found_context = False
-                                      break
+                                      if new_tag is not None:
+                                        tag = new_tag #switching the tag to a subsumed tag. DATE=>AGE
+                                        break
+                                      else:
+                                        found_context = False
+                                        break
                               if not found_context:
                                 delta += j
                                 sentence2 = sentence2[i+len(ent):]
