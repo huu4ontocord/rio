@@ -331,7 +331,7 @@ class TextAugment:
                                     'xh': {'cutoff': 500, 'pattern': "{} wazalwa ngo"},
                                     'sw': {'cutoff': 500, 'pattern': "{} alizaliwa tarehe"},
                                     'ig': {'cutoff': 500, 'pattern': "{} amụrụ"},
-                                    'ar': {'cutoff': 500, 'pattern': "ولد {} من"},
+                                    'ar': {'cutoff': 600, 'pattern': "ولد {} من"},
                                     'zh': {'cutoff': 500, 'pattern': "{}生於"},
                                     'vi': {'cutoff': 500, 'pattern': "{} sinh ra"},
                                     'hi': {'cutoff': 500, 'pattern': "{} का जन्म ए"},
