@@ -598,7 +598,7 @@ class TextAugment:
       """
       src_lang = src_lang if src_lang in TextAugment.public_figure_kenlm_cutoff_map else "en"
       if TextAugment.kenlm_models and src_lang in TextAugment.kenlm_models: 
-        return 
+        return TextAugment.kenlm_models[src_lang]
       if TextAugment.cache_dir == None:
         cache_dir = os.path.expanduser ('~')+"/.cache"
       else:
