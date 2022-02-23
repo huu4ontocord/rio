@@ -13,7 +13,7 @@ regex_rulebase = {
        "zh": [(regex.compile(r"([一二三四五六七八九十百\d]{1,3}歲|[一二三四五六七八九十百\d]{1,3}岁)"), None, None)],
     },
     "DATE": {
-       "default": [(re.compile('\d{4}'), None, [('born', 'AGE'), ("ni a bi lori",'AGE'), ("wazalwa ngo",'AGE'), ("wazalwa ngo",'AGE'), ("o hlahile ka",'AGE'), ("anabadwa pa",'AGE'), ("wazalwa ngo",'AGE'), ("alizaliwa tarehe",'AGE'), ("amụrụ",'AGE'), ("ولد",'AGE'), ("生於",'AGE'), ("sinh ra",'AGE'), ("का जन्म ए",'AGE'), ("پیدا ہوا",'AGE'), ('lahir', 'AGE'), ('জন্ম' 'AGE')])],
+       "default": [(re.compile('\d{4}'), None, [('born', 'AGE'), ("ni a bi lori",'AGE'), ("wazalwa ngo",'AGE'), ("wazalwa ngo",'AGE'), ("o hlahile ka",'AGE'), ("anabadwa pa",'AGE'), ("wazalwa ngo",'AGE'), ("alizaliwa tarehe",'AGE'), ("amụrụ",'AGE'), ("ولد",'AGE'), ("生於",'AGE'), ("sinh ra",'AGE'), ("का जन्म ए",'AGE'), ("پیدا ہوا",'AGE'), ('lahir', 'AGE'), ('জন্ম', 'AGE')])],
 
     },
     #https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
