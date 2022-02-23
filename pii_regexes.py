@@ -1008,7 +1008,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                               if block:
                                 for c in block:
                                   new_tag = None
-                                  if type(c) tuple:
+                                  if type(c) is tuple:
                                     c, new_tag = c
                                   c = c.lower()
                                   if c in left or c in right:
