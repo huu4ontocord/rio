@@ -890,7 +890,14 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
       if tag_type is not None and 'DATE' in tag_type and 'ID' not in tag_type:
          no_id = True
          tag_type = set(list(tag_type)+['ID'])
+
+      # if we are doing 'AGE' we would still want to do DATE because they intersect.
+      no_date = False
+      if tag_type is not None and 'AGE' in tag_type and 'DATE' not in tag_type:
+         no_date = True
+         tag_type = set(list(tag_type)+['DATE'])
         
+
       is_cjk = src_lang in ("zh", "ko", "ja")
       if is_cjk:
           sentence_set = set(sentence.lower())
@@ -1059,5 +1066,6 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
          all_ner = [a for a in all_ner if a[3] != 'ADDRESS']
       if no_id:
          all_ner = [a for a in all_ner if a[3] != 'ID']   
-        
+      if no_date:
+         all_ner = [a for a in all_ner if a[3] != 'DATE']           
       return all_ner
