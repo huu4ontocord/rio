@@ -110,7 +110,7 @@ regex_rulebase = {
               #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
               (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None, None),
               # generic id with dashes - this sometimes catches a ". or a - or a / at the beginning of a number which might not be what we want.
-              (re.compile('[A-Z#]{0,3}(?:[-\.\/ ]*\d){6,13}'), None, ('pp ', 'pp. ', )), #adding cap chars at end, see Indonesian # ? ...[A-Z]{0,2}
+              (re.compile('[A-Z#]{0,3}(?:[-\/ ]*\d){6,13}'), None, ('pp', 'pp.', )), #adding cap chars at end, see Tw # ? ...[A-Z]{0,2}
               # IBAN
               (re.compile('[A-Z]{2}\d+\d+[A-Z]{0,4}(?:[- ]*\d){10,32}[A-Z]{0,3}'), None, None),
       ],
