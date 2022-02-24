@@ -29,7 +29,7 @@ regex_rulebase = {
     #from https://github.com/Aggregate-Intellect/bigscience_aisc_pii_detection/blob/main/language/zh/rules.py which is under Apache 2
     #from https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
     "ADDRESS": {
-        "default": [(re.compile(r'\d/{1,3}\?\d{0,4}\s[^d]{5,20}\d{5,8}(?:[-\s]\d{0,5})', re.IGNORECASE|re.UNICODE), ['نهج', 'شارع', 'طريق', 'جادة', 'حارة','路','街道', 'मार्ग', 'बाजार', 'नगर', 'ngõ','njia', 'đường','ọna', 'indlela', 'umgwaqo', 'arc', 'aut', 'avn', 'avs', 'pas', 'zum', 'aut', 'avd', 'cll', 'bda', 'bvd', 'blv', 'ave', 'rd', 'st', 'sq', 'avd', 'cra', 'cró', 'cro', 'eix', 'pça', 'pca', 'plç', 'plc', 'umgwaqo', 'umgwaqo omkhulu',], None)],
+        "default": [(re.compile(r'\d/{1,3}\?\d{0,4}\s[^d]{5,20}\d{5,8}(?:[-\s]\d{0,5})', re.IGNORECASE|re.UNICODE), ['نهج', 'شارع', 'طريق', 'جادة', 'حارة','路','道','街','段','弄', 'मार्ग', 'बाजार', 'नगर', 'ngõ','njia', 'đường','ọna', 'indlela', 'umgwaqo', 'arc', 'aut', 'avn', 'avs', 'pas', 'zum', 'aut', 'avd', 'cll', 'bda', 'bvd', 'blv', 'ave', 'rd', 'st', 'sq', 'avd', 'cra', 'cró', 'cro', 'eix', 'pça', 'pca', 'plç', 'plc', 'umgwaqo', 'umgwaqo omkhulu',], None)],
         "ar": [(re.compile(r'\d/{1,3}\?\d{0,4}\s[^d]{5,20}\d{5,8}(?:[-\s]\d{0,5})', re.IGNORECASE|re.UNICODE), ['نهج', 'شارع', 'طريق', 'جادة', 'حارة', 'ساحة', 'ميدان', 'الطريق', 'السيار', 'الشارع', 'الطريق الدائري'], None)],
         "ca": [(re.compile(r'\d/{1,3}\?\d{0,4}\s[^d]{5,20}\d{5,8}(?:[-\s]\d{0,5})', re.IGNORECASE|re.UNICODE), ['avd', 'cra', 'cró', 'cro', 'eix', 'pça', 'pca', 'plç', 'plc', 'rda', 'trv', 'via', 'auto', 'avda', 'camí', 'cami', 'carr', 'carr', 'ctra', 'cint', 'diag', 'drec', 'entr', 'pdís', 'pdis', 'ptge', 'ptal', 'rbla', 'rtda', 'sort', 'trav', 'trav', 'autop', 'autov', 'avgda', 'carra', 'carro', 'plaça', 'placa', 'ronda', 'trval', 'carrer', 'portal', 'rambla', 'trvsal', 'autovia', 'carrera', 'carreró', 'carrero', 'cinturó', 'cinturo', 'drecera', 'entrada', 'passeig', 'rotonda', 'sortida', 'avinguda', 'diagonal', 'gran vía', 'gran via', 'passadís', 'passadis', 'passatge', 'autopista', 'carretera', 'travessia', 'travessera', 'transversal', 'eix diagonal'], None)],
         "en": [(re.compile(r"P\.? ?O\.? Box \d+", re.IGNORECASE), None, None),
@@ -50,7 +50,7 @@ regex_rulebase = {
          #TODO - finish out the rest of the African languages and indic languages
          "zh": [(regex.Regex('((\\p{Han}{1,3}(自治区|省))?\\p{Han}{1,4}((?<!集)市|县|州)\\p{Han}{1,10}[路|街|道|巷](\\d{1,3}[弄|街|巷])?\\d{1,4}号)'), None, None),
                 (regex.Regex('(?<zipcode>(^\\d{5}|^\\d{3})?)(?<city>\\D+[縣市])(?<district>\\D+?(市區|鎮區|鎮市|[鄉鎮市區]))(?<others>.+)', flags=regex.V0), None, None),
-            (re.compile(r'\d/{1,3}\?\d{0,4}[^d]{5,20}\d{5,8}(?:[-\s]\d{0,5})', re.IGNORECASE|re.UNICODE), ['路','街道', '高速公路','大道'], None)
+            (re.compile(r'\d/{1,3}\?\d{0,4}[^d]{5,20}\d{5,8}(?:[-\s]\d{0,5})', re.IGNORECASE|re.UNICODE), ['路','街道', '高速公路','大道', '道','街','段','弄', '大街', '巷', '村道','縣道','县道','省道','鄉道','乡道','大院','國道','国道','胡同'], None)
             ],
     },
     "PHONE": {
