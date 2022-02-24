@@ -22,7 +22,49 @@ vietnamese_firstnames_male = ["Huy", "Khang", "Bảo", "Minh", "Phúc", "Anh", "
 vietnamese_surnames = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Phan", "Vũ", "Võ", "Đặng", "Bùi", "Đỗ", "Hồ", "Ngô", "Dương", "Lý"]
 
 #use english firstnames for now
-bengali_surnames  = ["Banerjee", "Bagchi", "Bhaduri", "Bhattacharjee", "Chakraborty", "Chatterjee", "Ganguly", "Goswami", "Ghoshal", "Lahiri", "Maitra", "Mukherjee", "Sanyal", "Chakraborty", "Bhattacharya", "Baidya", "Sengupta", "Dasgupta", "Duttagupta", "Gupta", "Sen-Sharma", "Basu", "Bose", "Dutta", "Ghosh", "Choudhury", "Guha", "Gain", "Mitra", "Singh", "Sinha", "Sen", "Pal", "De", "Dey", "Deb", "Dev", "Jana", "Palit", "Chanda", "Chandra", "Das", "Dam", "Kar", "Nandi", "Sarkar", "Nag", "Som", 'ব্যানার্জি', 'বাগচি', 'ভাদুড়ি', 'ভট্টাচার্য', 'চক্রবর্তী', 'চ্যাটার্জি', 'গাঙ্গুলি', 'গোস্বামী', 'ঘোষাল', 'লাহিড়ী', 'মৈত্র', 'মুখার্জী', 'সান্যাল', 'চক্রবর্তী', 'ভট্টাচার্য', 'বৈদ্য', 'সেনগুপ্ত', 'দাশগুপ্ত', 'দত্তগুপ্ত', 'গুপ্ত', 'সেন-শর্মা', "বসু", "বোস", "দত্ত", "ঘোষ", "চৌধুরী", "গুহ", "লাভ", "মিত্র", "সিং", "সিনহা", "সেন", "পাল", "দে", "দেব", "জানা", "পালিত", "চন্দা", "চন্দ্র", "দাস", "বাঁধ", "কর", "নন্দী", "সরকার", "নাগ", "সোম"]
+bengali_surnames  = ['Bagchi', 'Baidya', 'Banerjee', 'Basu', 'Bhaduri', 
+	'Bhattacharjee', 'Bhattacharya', 'Bose', 'Chakraborty', 'Chakraborty', 
+	'Chanda', 'Chandra', 'Chatterjee', 'Choudhury', 'Dam', 'Das', 'Das-Sharma', 
+	'Dasgupta', 'De', 'Deb', 'Dev', 'Dey', 'Dutta', 'Duttagupta', 'Gain', 
+	'Ganguly', 'Ghosh', 'Ghoshal', 'Goswami', 'Guha', 'Gupta', 'Jana', 
+	'Kanjilal', 'Kar', 'Kumar', 'Kundu', 'Lahiri', 'Maitra', 'Mitra', 
+	'Mukherjee', 'Nag', 'Nandi', 'Pal', 'Palit', 'Ray', 'Roy', 'Saha', 'Sanyal',
+	'Sarkar', 'Sen', 'Sen-Sharma', 'Sengupta', 'Singh', 'Sinha', 'Som', 
+	'কর', 'কানজিলাল', 'কুন্ডু', 'কুমার', 'গাঙ্গুলি', 'গুপ্ত', 'গুহ', 'গোস্বামী', 
+	'ঘোষ', 'ঘোষাল', 'চক্রবর্তী', 'চক্রবর্তী', 'চন্দা', 'চন্দ্র', 'চৌধুরী', 
+	'চ্যাটার্জি', 'জানা', 'দত্ত', 'দত্তগুপ্ত', 'দাশগুপ্ত', 'দাস', 'দাস শর্মা', 'দে',
+	'দেব', 'নন্দী', 'নাগ', 'পাল', 'পালিত', 'বসু', 'বাঁধ', 'বাগচি', 'বৈদ্য', 'বোস', 
+	'ব্যানার্জি', 'ভট্টাচার্য', 'ভট্টাচার্য', 'ভাদুড়ি', 'মিত্র', 'মুখার্জী', 'মৈত্র', 
+	'রায়', 'লাভ', 'লাহিড়ী', 'সরকার', 'সান্যাল', 'সাহা', 'সিং', 'সিনহা', 'সেন', 
+	'সেন-শর্মা', 'সেনগুপ্ত', 'সোম']
+
+bengali_firstnames_female = ['Adrija', 'Ananya', 'Anindita', 'Ankita', 
+	'Anuradha', 'Anushka', 'Anwesha', 'Aparna', 'Arijita', 'Arundhuti', 
+	'Asmita', 'Bipasha', 'Bishakha', 'Chaity', 'Chandrayee', 'Debanjana', 
+	'Debapriya', 'Debarati', 'Debasmita', 'Durba', 'Durga', 'Geeta', 'Indrani', 
+	'Ipshita', 'Ishita', 'Jyoti', 'Kamala', 'Kamalika', 'Lakshmi', 'Madhuparna',
+	'Mohar', 'Moumita', 'Nabanita', 'Naireeta', 'Nayan', 'Nayanika', 'Nikita', 
+	'Nivedita', 'Pallabi', 'Pallavi', 'Paloma', 'Pampa', 'Paromita', 'Payal', 
+	'Piyali', 'Prerona', 'Priya', 'Priyanka', 'Radhika', 'Reema', 'Reshma', 
+	'Rituparna', 'Riya', 'Rohini', 'Roshni', 'Ruma', 'Rumela', 'Rupsa', 
+	'Sanghamitra', 'Sataraupa', 'Sayani', 'Sayantani', 'Shalini', 'Shayoni', 
+	'Shreya', 'Shweta', 'Sreemoyee', 'Subha', 'Sudarshana', 'Sudeshna', 
+	'Sudipta', 'Suparna', 'Sushmita', 'Swagata', 'Tanurina', 'Tanya', 'Tista', 
+	'Uma', 'Upasana', 'Varsha']
+
+bengali_firstnames_male = ['Abhijit', 'Abhishek', 'Aditya', 'Agniva', 'Alok', 
+	'Amit', 'Amitava', 'Ananyo', 'Aniruddha', 'Ankur', 'Arghya', 'Arijit', 
+	'Arindam', 'Aritra', 'Arka', 'Arko', 'Avik', 'Avishek', 'Ayan', 'Bhaskar', 
+	'Bikash', 'Bishwadeep', 'Chandan', 'Debajyoti', 'Deeptiman', 'Dhrubo', 
+	'Dipankar', 'Dipayan', 'Ganesh', 'Gaurab', 'Gaurav', 'Gautam', 'Gopal', 
+	'Himadri', 'Indrajit', 'Indranil', 'Jayanta', 'Jishnu', 'Kuntal', 'Milan', 
+	'Mithun', 'Monoranjan', 'Mukul', 'Niladri', 'Pankaj', 'Prasenjit', 
+	'Praveen', 'Preetam', 'Raghav', 'Rahul', 'Raja', 'Rajat', 'Ranajoy', 
+	'Ratan', 'Ritam', 'Sabyasachi', 'Saikat', 'Samrat', 'Sandeep', 'Sandip', 
+	'Sanjay', 'Sankalpa', 'Saptarshi', 'Sayan', 'Shayok', 'Siddhartha', 'Soham',
+	'Somnath', 'Soumya', 'Souparna', 'Sourabh', 'Sourav', 'Sourojit', 'Souvik', 
+	'Subhashish', 'Subrata', 'Sudipto', 'Sukumar', 'Sumit', 'Sunny', 'Swagato', 
+	'Tapan', 'Tapas', 'Tathagata', 'Tushar', 'Udayan', 'Utsab']
 
 #male and female
 
