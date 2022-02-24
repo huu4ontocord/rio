@@ -16,7 +16,7 @@ import dateparser
 try:
   from postal.parser import parse_address
 except:
-  def parse_address(s): return {}
+  parse_address = None
 import sys, os
 try:
   sys.path.append(os.path.abspath(os.path.dirname(__file__)))    
@@ -890,7 +890,14 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
       if tag_type is not None and 'DATE' in tag_type and 'ID' not in tag_type:
          no_id = True
          tag_type = set(list(tag_type)+['ID'])
+
+      # if we are doing 'AGE' we would still want to do DATE because they intersect.
+      no_date = False
+      if tag_type is not None and 'AGE' in tag_type and 'DATE' not in tag_type:
+         no_date = True
+         tag_type = set(list(tag_type)+['DATE'])
         
+
       is_cjk = src_lang in ("zh", "ko", "ja")
       if is_cjk:
           sentence_set = set(sentence.lower())
@@ -904,7 +911,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
               sentence = sentence.replace(word, " "*len_word)
             else:
               sentence_set.append(word.lower())
-          sentence_set = set(sentence_set)
+          sentence_set = set([s.strip(rstrip_chars) for s in sentence_set])
       all_ner = []
       len_sentence = len(sentence)
         
@@ -927,6 +934,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                       for c1 in context:
                         c1 = c1.lower()
                         for c2 in c1.split():
+                          c2 = c2.strip(rstrip_chars)
                           if c2 in sentence_set:
                               potential_context = True
                               break
@@ -936,7 +944,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
 
                   #now apply regex
                   for ent in list(set(list(regex.findall(sentence)))):
-                      
+                      #print (ent)
                       if not isinstance(ent, str):
                         continue
                       ent = ent.strip()
@@ -983,11 +991,26 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                       if tag == 'DATE' or (tag == 'ID' and not is_stdnum):
                         ent, tag = test_is_date(ent, tag, sentence, len_sentence, is_cjk, sentence.index(ent),  src_lang, sw)
                         if not ent: continue
+                        
+                      #do some confirmation for addresses if libpostal is installed. TODO, test if this works for zh. libpostal appears to test for pinyin.
+                      if tag == 'ADDRESS' and parse_address:
+                        address = parse_address(ent)
+                        #print (address)
+                        if address and not any(ad for ad in address if ad[1] == 'road'):
+                          continue # this isn't an address
+
+                        if address and address[0][1] == 'house':
+                          ent_lower = ent.lower()
+                          ent = ent[ent_lower.index(address[0][0]) + len(address[0][0]):].strip(rstrip_chars)
+                          #print ('**', ent)
+                          if not ent or to_int (ent) is not None:
+                            continue # this isn't an address
+                          #TODO strip stopwords on either end of an ent for addresses
                       
                       #now let's turn all occurances of ent in this sentence into a span mention and also check for context and block words
                       len_ent = len(ent)
                       while True:
-                        if ent not in sentence2:
+                        if not ent or ent not in sentence2:
                           break
                         else:
                           i = sentence2.index(ent)
@@ -997,20 +1020,28 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                               left = sentence2[max(0, i - context_window) : i].lower()
                               right = sentence2[j : min(len_sentence2, j + context_window)].lower()
                               found_context = False
+                              ent_lower = ent.lower()
                               if context:
                                 for c in context:
                                   c = c.lower()
-                                  if c in left or c in right:
+                                  if c in left or c in right or c in ent_lower:
                                       found_context = True
                                       break
                               else:
                                 found_context = True
                               if block:
                                 for c in block:
+                                  new_tag = None
+                                  if type(c) is tuple:
+                                    c, new_tag = c
                                   c = c.lower()
-                                  if c in left or c in right:
-                                      found_context = False
-                                      break
+                                  if c in left or c in right or c in ent_lower:
+                                      if new_tag is not None:
+                                        tag = new_tag #switching the tag to a subsumed tag. DATE=>AGE
+                                        break
+                                      else:
+                                        found_context = False
+                                        break
                               if not found_context:
                                 delta += j
                                 sentence2 = sentence2[i+len(ent):]
@@ -1052,5 +1083,6 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
          all_ner = [a for a in all_ner if a[3] != 'ADDRESS']
       if no_id:
          all_ner = [a for a in all_ner if a[3] != 'ID']   
-        
+      if no_date:
+         all_ner = [a for a in all_ner if a[3] != 'DATE']           
       return all_ner
