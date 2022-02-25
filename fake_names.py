@@ -8,6 +8,26 @@ bantu_surnames = ["Dlamini", "Gumede", "Hadebe", "Ilunga", "Kamau", "Khoza", "Lu
                   "Ncube", "Ndagire", "Ndhlovu", "Ndikumana", "Ndiritu", "Ndlovu", "Ndzinisa", "Ngcobo", "Nkomo",
                   "Nkosi", "Nkurunziza", "Radebe", "Tshabalala", "Tshivhumbe", "Vila"]
 
+catalan_firstnames_male = ['Jordi', 'David', 'Marc', 'Daniel', 'Joan', 'Josep', 'Ramon', 'Albert', 'Xavier', 'Òscar', 'Àngel', 'Àlex',
+                           'Víctor', 'Pau', 'Ivan', 'Jesús', 'Pol', 'Raül', 'Jaume', 'Sergi', 'Gerard', 'Arnau', 'Oriol', 'Eric',
+                           'Francesc', 'Santiago', 'Josep Maria', 'Roger', 'Miquel', 'Adrià', 'Salvador', 'Martí', 'Pere', 'Lluís',
+                           'Joel', 'Carles', 'Aleix', 'Antoni', 'Guillem', 'Jan', 'Enric', 'Ferran', 'Gabriel', 'Biel', 'Nil', 'Eduard',
+                           'Tomàs', 'Hèctor', 'Joaquim', 'Isaac', 'Ismael', 'Nicolàs', 'Francesc Xavier', 'Aitor', 'Lucas', 'Ricard',
+                           'Fèlix', 'Manel', 'Andreu', 'Dídac', 'Bruno', 'Edgar', 'Bernat', 'Abel', 'Alexandre', 'Samuel', 'Marcel',
+                           'Eloi', 'Max', 'Ignasi', 'Cèsar', 'Robert', 'Lluc', 'Roc', 'Genís', 'Axel', 'Agustí', 'Esteve', 'Quim',
+                           'Elías', 'Gael', 'Ernest', 'Narcís', 'Vicenç', 'Kilian', 'Bartolomé', 'Josep Lluís', 'Marçal', 'Artur', 'Teo',
+                           'Llorenç', 'Saül', 'Joan Carles', 'Sebastià', 'Jofre', 'Emili', 'Joan Antoni', 'Alfons', 'Miquel Àngel', 'Rafel']
+
+catalan_firstnames_female = ['Maria', 'Montserrat', 'Marta', 'Núria', 'Laura', 'Cristina', 'Isabel', 'Anna', 'Antònia', 'Sílvia', 'Júlia',
+                             'Rosa', 'Laia', 'Rosa Maria', 'Sara', 'Paula', 'Teresa', 'Alba', 'Mònica', 'Eva', 'Carla', 'Sandra', 'Mireia',
+                             'Sònia', 'Raquel', 'Marina', 'Gemma', 'Esther', 'Clàudia', 'Susanna', 'Andrea', 'Irene', 'Olga', 'Natàlia',
+                             'Margarita', 'Martina', 'Míriam', 'Lídia', 'Ariadna', 'Aina', 'Patrícia', 'Elisabet', 'Alícia', 'Emma', 'Glòria',
+                             'Àngela', 'Clara', 'Carolina', 'Judit', 'Berta', 'Mercè', 'Meritxell', 'Verònica', 'Sofía', 'Roser', 'Victòria',
+                             'Noèlia', 'Carme', 'Anna Maria', 'Vanessa', 'Jana', 'Mariona', 'Ainhoa', 'Daniela', 'Inés', 'Abril', 'Noemí',
+                             'Mar', 'Joana', 'Ona', 'Helena', 'Aurora', 'Neus', 'Dolors', 'Blanca', 'Carlota', 'Cèlia', 'Eulàlia', 'Nora',
+                             'Gisela', 'Georgina', 'Elsa', 'Ivet', 'Arlet', 'Iris', 'Ruth', 'Xènia', 'Lara', 'Amàlia', 'Irina', 'Francesca',
+                             'Elisenda', 'Rebeca', 'Mia', 'Alèxia', 'Queralt', 'Gabriela', 'Lia', 'Estela', 'Gala']
+
 # male and female. Note some popular firstnames can be used for both male and female in Vietnamese
 # vietnamese_firstnames = ["Anh", "Dung", "Hanh", "Hoa", "Hong", "Khanh", "Lan", "Liem", "Nhung", "Duy", "Xuan"]
 
