@@ -606,20 +606,20 @@ class TextAugment:
         cache_dir = TextAugment.cache_dir
       all_models = []
       for kenlm_models, model_type in ((TextAugent.kenlm_wiki_models, "wikipedia"), (TextAugent.kenlm_oscar_models, "oscar")):
-          os.system(f"mkdir -p {cache_dir}/wikipedia")
-          if not os.path.exists(f"{cache_dir}/wikipedia/{src_lang}.arpa.bin"): 
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.arpa.bin")
+          os.system(f"mkdir -p {cache_dir}/{model_type}")
+          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.arpa.bin"): 
+            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.arpa.bin")
             file = cached_download(file_url)
-            os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.arpa.bin")
-          if not os.path.exists(f"{cache_dir}/wikipedia/{src_lang}.sp.model"): 
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.sp.model")
+            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.arpa.bin")
+          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.model"): 
+            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.model")
             file = cached_download(file_url)
-            os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.sp.model")
-          if not os.path.exists(f"{cache_dir}/wikipedia/{src_lang}.sp.vocab"):
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.sp.vocab")
+            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.model")
+          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.vocab"):
+            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.vocab")
             file = cached_download(file_url)
-            os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.sp.vocab")
-          model =  KenlmModel(f"{cache_dir}/wikipedia", src_lang)
+            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.vocab")
+          model =  KenlmModel(f"{cache_dir}/{model_type}", src_lang)
           all_models.append(model)
           if store_model: kenlm_models[src_lang] = model
       return all_model
