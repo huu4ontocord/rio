@@ -1030,7 +1030,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                                           found_context = True
                                           break
                                   else:
-                                      if c+" " in left or " "+c in left or c+" " in right or " "+c in right or c+" " in ent_lower or or " "+c in ent_lower:
+                                      if c+" " in left or " "+c in left or c+" " in right or " "+c in right or c+" " in ent_lower or " "+c in ent_lower:
                                           found_context = True
                                           break
                               else:
@@ -1050,7 +1050,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                                             found_context = False
                                             break
                                   else:
-                                      if c+" " in left or " "+c in left or c+" " in right or " "+c in right or c+" " in ent_lower or or " "+c in ent_lower:
+                                      if c+" " in left or " "+c in left or c+" " in right or " "+c in right or c+" " in ent_lower or " "+c in ent_lower:
                                           if new_tag is not None:
                                             tag = new_tag #switching the tag to a subsumed tag. DATE=>AGE
                                             break
