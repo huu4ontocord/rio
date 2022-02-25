@@ -1025,9 +1025,14 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                               if context:
                                 for c in context:
                                   c = c.lower()
-                                  if c in left or c in right or c in ent_lower:
-                                      found_context = True
-                                      break
+                                  if is_cjk:
+                                      if c in left or c in right or c in ent_lower:
+                                          found_context = True
+                                          break
+                                  else:
+                                      if c+" " in left or " "+c in left or c+" " in right or " "+c in right or c+" " in ent_lower or or " "+c in ent_lower:
+                                          found_context = True
+                                          break
                               else:
                                 found_context = True
                               if block:
@@ -1036,13 +1041,22 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                                   if type(c) is tuple:
                                     c, new_tag = c
                                   c = c.lower()
-                                  if c in left or c in right or c in ent_lower:
-                                      if new_tag is not None:
-                                        tag = new_tag #switching the tag to a subsumed tag. DATE=>AGE
-                                        break
-                                      else:
-                                        found_context = False
-                                        break
+                                  if is_cjk:
+                                      if c in left or c in right or c in ent_lower:
+                                          if new_tag is not None:
+                                            tag = new_tag #switching the tag to a subsumed tag. DATE=>AGE
+                                            break
+                                          else:
+                                            found_context = False
+                                            break
+                                  else:
+                                      if c+" " in left or " "+c in left or c+" " in right or " "+c in right or c+" " in ent_lower or or " "+c in ent_lower:
+                                          if new_tag is not None:
+                                            tag = new_tag #switching the tag to a subsumed tag. DATE=>AGE
+                                            break
+                                          else:
+                                            found_context = False
+                                            break                                    
                               if not found_context:
                                 delta += j
                                 sentence2 = sentence2[i+len(ent):]
