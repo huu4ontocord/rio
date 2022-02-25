@@ -28,6 +28,15 @@ catalan_firstnames_female = ['Maria', 'Montserrat', 'Marta', 'Núria', 'Laura', 
                              'Gisela', 'Georgina', 'Elsa', 'Ivet', 'Arlet', 'Iris', 'Ruth', 'Xènia', 'Lara', 'Amàlia', 'Irina', 'Francesca',
                              'Elisenda', 'Rebeca', 'Mia', 'Alèxia', 'Queralt', 'Gabriela', 'Lia', 'Estela', 'Gala']
 
+catalan_surnames = ['Martinez', 'Lopez', 'Sanchez', 'Rodriguez', 'Fernandez', 'Perez', 'Gonzalez', 'Gomez', 'Ruiz', 'Martin', 'Jimenez', 'Moreno',
+                    'Hernandez', 'Muñoz', 'Diaz', 'Romero', 'Navarro', 'Torres', 'Alvarez', 'Gutierrez', 'Ramirez', 'Molina', 'Serrano', 'Gil',
+                    'Ramos', 'Morales', 'Vila', 'Ortiz', 'Marin', 'Vidal', 'Ortega', 'Gimenez', 'Alonso', 'Serra', 'Dominguez', 'Marti', 'Ferrer',
+                    'Rubio', 'Delgado', 'Castillo', 'Flores', 'Soler', 'Castro', 'Cortes', 'Vazquez', 'Puig', 'Roca', 'Medina', 'Cano', 'Guerrero',
+                    'Cruz', 'Blanco', 'Nuñez', 'Aguilar', 'Sole', 'Lozano', 'Duran', 'Pujol', 'Font', 'Marquez', 'Garrido', 'Pascual', 'Reyes',
+                    'Mendez', 'Costa', 'Casas', 'Carmona', 'Segura', 'Fuentes', 'Herrera', 'Leon', 'Gallego', 'Campos', 'Caballero', 'Sanz',
+                    'Carrasco', 'Rovira', 'Pons', 'Sala', 'Santos', 'Hidalgo', 'Peña', 'Mora', 'Vargas', 'Bosch', 'Rojas', 'Mas', 'Moya', 'Suarez',
+                    'Cabrera', 'Roig', 'Calvo', 'Ibañez', 'Iglesias', 'Riera', 'Sola', 'Gallardo', 'Parra', 'Aguilera', 'Grau']
+
 # male and female. Note some popular firstnames can be used for both male and female in Vietnamese
 # vietnamese_firstnames = ["Anh", "Dung", "Hanh", "Hoa", "Hong", "Khanh", "Lan", "Liem", "Nhung", "Duy", "Xuan"]
 
@@ -95,4 +104,4 @@ bengali_firstnames_male = ['Abhijit', 'Abhishek', 'Aditya', 'Agniva', 'Alok',
 urdu_firstnames = ["Azhar", "Benazir", "Farahnaz", "Maliha", "Minoo", "Romana", "Sania", "Azhar", "Burhan", "Changezi", "Faizan", "Fasih", "Fuad", "Hassim", "Jan", "Shoaib", "ازہر", "بے نظیر", "فرحناز", "ملیحہ", "مینو", "رومانہ", "ثانیہ", "ازہر", "برہان", "تبدیلی", "فیضان", "فسیح", "فود", "حسم", "جان", "شعیب"]
 urdu_surnames = ["Abid", "Ahmad", "Akbar", "Akmal", "Alam", "Ayaz", "Bohra", "Bucha", "Bukhari", "Buksh", "Bux", "Chandpuri", "Changezi", "Emani", "Farrukhabadi", "Farrukhi", "Fazail", "Hassim", "Hilaly", "Hussaini ", "Brahmin", "Lucknawi", "Ludhianvi", "Matloob", "Omar", "Vaishya", "Rahimtoola", "Shafiq", "Shoaib", "Siddiqui", "Siddiqui", "Tikka", "Yasser", "عابد", "احمد", "اکبر", "اکمل", "عالم", "ایاز", "بوہرہ", "بوچا", "بخاری", "بخش", "بک", "چاندپوری", "چینزی", "ایمانی", "فرخ آبادی", "فرخی", "فضل", "حصیم", "ہلالی", "حسینی", "برہمن", "لکنوئی", "لدھیانوی", "متلوب", "عمر", "واشیا", "رحیمتولہ", "شفیق", "شعیب", "صدیقی", "صدیقی", "ٹکا", "یاسر"]
 
-#basque and catalan - use Spanish names for now
+#basque - use Spanish names for now
