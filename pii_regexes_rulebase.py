@@ -27,10 +27,11 @@ regex_rulebase = {
       "default": [(re.compile('https?:\/\/[^\s\"\']{8,50}|www[^\s\"\']{8,50}', re.IGNORECASE), None, None)],
       "zh": [(regex.compile('(https?:\/\/.\P{Han}{1,}|www\.\P{Han}{1,50})', re.IGNORECASE), None, None)],
     },
+    #experimental address stuff
     #from https://github.com/openvenues/libpostal and https://github.com/joke2k/faker/tree/master/faker/providers/address 
     #from https://github.com/Aggregate-Intellect/bigscience_aisc_pii_detection/blob/main/language/zh/rules.py which is under Apache 2
     #from https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py
-    "ADDRESS": {
+    "ADDRESS_EXP": {
         "default": [(re.compile(r'\b[^\d~!@#$%^&="\':;<>?\/]{5,40}\s\d{1,8}(?:[-\s]\d{0,5})|\d/{1,3}\?\d{0,4}\s[^d]{5,20}\d{5,8}(?:[-\s]\d{0,5})', re.IGNORECASE|re.UNICODE), ['نهج', 'شارع', 'طريق', 'جادة', 'حارة','路','道','街','段','弄', 'मार्ग', 'बाजार', 'नगर', 'ngõ','njia', 'đường','ọna', 'indlela', 'umgwaqo', 'arc', 'aut', 'avn', 'avs', 'pas', 'zum', 'aut', 'avd', 'cll', 'bda', 'bvd', 'blv', 'ave', 'rd', 'st', 'sq', 'avd', 'cra', 'cró', 'cro', 'eix', 'pça', 'pca', 'plç', 'plc', 'umgwaqo', 'umgwaqo omkhulu',], None)],
         "ar": [(re.compile(r'\b[^\d~!@#$%^&="\':;<>?\/]{5,40}\s\d{1,8}(?:[-\s]\d{0,5})|\d/{1,3}\?\d{0,4}\s[^d]{5,20}\d{5,8}(?:[-\s]\d{0,5})', re.IGNORECASE|re.UNICODE), ['نهج', 'شارع', 'طريق', 'جادة', 'حارة', 'ساحة', 'ميدان', 'الطريق', 'السيار', 'الشارع', 'الطريق الدائري'], None)],
         "ca": [(re.compile(r'\b[^\d~!@#$%^&="\':;<>?\/]{5,40}\s\d{1,8}(?:[-\s]\d{0,5})|\d/{1,3}\?\d{0,4}\s[^d]{5,20}\d{5,8}(?:[-\s]\d{0,5})', re.IGNORECASE|re.UNICODE), ['avd', 'cra', 'cró', 'cro', 'eix', 'pça', 'pca', 'plç', 'plc', 'rda', 'trv', 'via', 'auto', 'avda', 'camí', 'cami', 'carr', 'carr', 'ctra', 'cint', 'diag', 'drec', 'entr', 'pdís', 'pdis', 'ptge', 'ptal', 'rbla', 'rtda', 'sort', 'trav', 'trav', 'autop', 'autov', 'avgda', 'carra', 'carro', 'plaça', 'placa', 'ronda', 'trval', 'carrer', 'portal', 'rambla', 'trvsal', 'autovia', 'carrera', 'carreró', 'carrero', 'cinturó', 'cinturo', 'drecera', 'entrada', 'passeig', 'rotonda', 'sortida', 'avinguda', 'diagonal', 'gran vía', 'gran via', 'passadís', 'passadis', 'passatge', 'autopista', 'carretera', 'travessia', 'travessera', 'transversal', 'eix diagonal'], None)],
