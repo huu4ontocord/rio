@@ -941,7 +941,6 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                         if potential_context: break
                       if not potential_context:
                           continue
-
                   #now apply regex
                   for ent in list(set(list(regex.findall(sentence)))):
                       #print (ent)
@@ -993,22 +992,28 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                         if not ent: continue
                         
                       #do some confirmation for addresses if libpostal is installed. TODO, test if this works for zh. libpostal appears to test for pinyin.
-                      if tag == 'ADDRESS' and parse_address:
+                      if tag == 'ADDRESS_EXP' and not parse_address: continue
+                      if tag == 'ADDRESS_EXP' and parse_address:
                         address = parse_address(ent)
-                        #print (address)
-                        if address and not any(ad for ad in address if ad[1] == 'road'):
+                        
+                        if address and not any(ad for ad in address if ad[1] != 'house'):
                           continue # this isn't an address
 
                         if address and address[0][1] == 'house':
-                          ent_lower = ent.lower()
-                          if address[0][0].lower() in ent_lower:
-                              ent = ent[ent_lower.index(address[0][0]) + len(address[0][0]):].strip(rstrip_chars)
+                          address = address[1:]
+
+                        ent_lower = ent.lower()
+                        if address[0][0].lower() in ent_lower:
+                              ent = ent[ent_lower.index(address[0][0]):].strip(rstrip_chars)
                               #print ('**', ent)
                               if not ent or to_int (ent) is not None:
                                 continue # this isn't an address
                               #TODO strip stopwords on either end of an ent for addresses - whether or not libpostal is installed
-                      
-                      #now let's turn all occurances of ent in this sentence into a span mention and also check for context and block words
+                        else:
+                          pass
+                          #print ('problem with address', address)
+                        #print ('parse address', ent, '***', address)
+                      #now let's check context, block lists and turn all occurances of ent in this sentence into a span mention and also check for context and block words
                       len_ent = len(ent)
                       while True:
                         if not ent or ent not in sentence2:
@@ -1018,10 +1023,10 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                           j = i + len_ent
                           if potential_context or block:
                               len_sentence2 = len(sentence2)
-                              left = sentence2[max(0, i - context_window) : i].lower()
-                              right = sentence2[j : min(len_sentence2, j + context_window)].lower()
+                              left = " "+ sentence2[max(0, i - context_window) : i].replace(",", " ").lower()+ " "
+                              right = " "+ sentence2[j : min(len_sentence2, j + context_window)].replace(",", " ").lower() + " "
                               found_context = False
-                              ent_lower = ent.lower()
+                              ent_lower = " "+ent.replace(",", " ").lower()+ " "
                               if context:
                                 for c in context:
                                   c = c.lower()
@@ -1030,8 +1035,9 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                                           found_context = True
                                           break
                                   else:
-                                      if c+" " in left or " "+c in left or c+" " in right or " "+c in right or c+" " in ent_lower or " "+c in ent_lower:
+                                      if (" "+c+" " in left or " "+c+" " in right or " "+c+" " in ent_lower):
                                           found_context = True
+                                          #print ('foound context', c)
                                           break
                               else:
                                 found_context = True
@@ -1050,7 +1056,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
                                             found_context = False
                                             break
                                   else:
-                                      if c+" " in left or " "+c in left or c+" " in right or " "+c in right or c+" " in ent_lower or " "+c in ent_lower:
+                                      if (" "+c+" " in left or " "+c+" " in right or " "+c+" " in ent_lower):
                                           if new_tag is not None:
                                             tag = new_tag #switching the tag to a subsumed tag. DATE=>AGE
                                             break
