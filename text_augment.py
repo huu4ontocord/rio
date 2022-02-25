@@ -249,7 +249,8 @@ class TextAugment:
   m2m_tokenizer = None
   en_spacy_nlp = None
   faker_en_list  = None
-  kenlm_models = {}
+  kenlm_wiki_models = {}
+  kenlm_oscar_models = {}
   
   # see https://www.researchgate.net/publication/259179064_Comparing_Methods_for_Detecting_Child_Exploitation_Content_Online for common CSAM words
   # http://antipaedo.lip6.fr/T12/keywords_cnrs.pdf - for top 20 from table 7 and 8 of the paper, plus other similar words , ignoring stopwords like "tuesday"
@@ -282,27 +283,27 @@ class TextAugment:
   }
   # note that we do not have a transformer model for catalan, but  we use transfer learning from Davlan/xlm-roberta-base-ner-hrl. We could also use spacy's catalan model
   hf_ner_model_map = {
-      "sn": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
-      "st": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
-      "ny": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
-      "xh": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
-      "zu": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
+      "sn": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
+      "st": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
+      "ny": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
+      "xh": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
+      "zu": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
       "sw": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
       "yo": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0 ]],
       "ig": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0 ]],
       "ar": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0]],
       "en": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0], ["bioformers/bioformer-cased-v1.0-ncbi-disease", BertForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None ],
       "es": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
-      "eu": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      "ca": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      "eu": [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
+      "ca": [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
       "pt": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
-      "fr": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
-      "zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ]],
-      'vi': [["lhkhiem28/COVID-19-Named-Entity-Recognition-for-Vietnamese", RobertaForTokenClassification, 1.0]],#["jplu/tf-xlm-r-ner-40-lang", None ],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
-      'hi': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
-      'bn': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
-      'ur': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
-      'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0]],
+      "fr": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
+      "zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
+      'vi': [["lhkhiem28/COVID-19-Named-Entity-Recognition-for-Vietnamese", RobertaForTokenClassification, 1.0], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None ],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
+      'hi': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
+      'bn': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
+      'ur': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
+      'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
       
       # NOT PART OF OUR LANGUAGE SET. EXPERIMENTAL
       'he': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]], # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
@@ -320,7 +321,6 @@ class TextAugment:
       'is': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
       }
 
-  #wikipedia kenlm model based on prompt "f{s} (born" as an added signal
   #TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of gender, so we would have two patterns.
   public_figure_kenlm_cutoff_map = {'en': {'cutoff': 500, 'pattern': "{} (born"},
                                     'yo': {'cutoff': 500, 'pattern': "{} ni a bi lori"},
@@ -591,34 +591,38 @@ class TextAugment:
       lang_groups = ['av', 'ru', 'bg', 'ba', 'kk', 'uk', 'be', 'ce', 'cv']  
     return set(lang_groups)
 
+  #TODO - create a weighted average score between the two models
   @staticmethod
   def load_kenlm_model(src_lang="en", store_model=True):
       """
       Load a new one. Consider if we want to use an LRU.
       """
       src_lang = src_lang if src_lang in TextAugment.public_figure_kenlm_cutoff_map else "en"
-      if TextAugment.kenlm_models and src_lang in TextAugment.kenlm_models: 
-        return TextAugment.kenlm_models[src_lang]
+      if TextAugment.kenlm_wiki_models and src_lang in TextAugment.kenlm_wiki_models: 
+        return [TextAugment.kenlm_wiki_models[src_lang], TextAugment.kenlm_oscar_models[src_lang]]
       if TextAugment.cache_dir == None:
         cache_dir = os.path.expanduser ('~')+"/.cache"
       else:
         cache_dir = TextAugment.cache_dir
-      os.system(f"mkdir -p {cache_dir}/wikipedia")
-      if not os.path.exists(f"{cache_dir}/wikipedia/{src_lang}.arpa.bin"): 
-        file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.arpa.bin")
-        file = cached_download(file_url)
-        os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.arpa.bin")
-      if not os.path.exists(f"{cache_dir}/wikipedia/{src_lang}.sp.model"): 
-        file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.sp.model")
-        file = cached_download(file_url)
-        os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.sp.model")
-      if not os.path.exists(f"{cache_dir}/wikipedia/{src_lang}.sp.vocab"):
-        file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.sp.vocab")
-        file = cached_download(file_url)
-        os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.sp.vocab")
-      model =  KenlmModel(f"{cache_dir}/wikipedia", src_lang)
-      if store_model: TextAugment.kenlm_models[src_lang] = model
-      return model
+      all_models = []
+      for kenlm_models, model_type in ((TextAugent.kenlm_wiki_models, "wikipedia"), (TextAugent.kenlm_oscar_models, "oscar")):
+          os.system(f"mkdir -p {cache_dir}/wikipedia")
+          if not os.path.exists(f"{cache_dir}/wikipedia/{src_lang}.arpa.bin"): 
+            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.arpa.bin")
+            file = cached_download(file_url)
+            os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.arpa.bin")
+          if not os.path.exists(f"{cache_dir}/wikipedia/{src_lang}.sp.model"): 
+            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.sp.model")
+            file = cached_download(file_url)
+            os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.sp.model")
+          if not os.path.exists(f"{cache_dir}/wikipedia/{src_lang}.sp.vocab"):
+            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"wikipedia/{src_lang}.sp.vocab")
+            file = cached_download(file_url)
+            os.system(f"ln -s {file} {cache_dir}/wikipedia/{src_lang}.sp.vocab")
+          model =  KenlmModel(f"{cache_dir}/wikipedia", src_lang)
+          all_models.append(model)
+          if store_model: kenlm_models[src_lang] = model
+      return all_model
   
   @staticmethod
   def check_good_sentence(s, src_lang, stopwords, show_err=False, lang_groups=[], ret_score=False, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
@@ -1801,7 +1805,7 @@ class TextAugment:
     
     # init the kenlm pipeline
     if do_kenlm:
-        if target_lang not in TextAugment.kenlm_models:
+        if target_lang not in TextAugment.kenlm_wiki_models:
             TextAugment.load_kenlm_model(target_lang)
             
     if target_lang != src_lang:
@@ -1975,16 +1979,16 @@ class TextAugment:
               pass
             trans_text = before + " " + ent + " " + after
           trans_text = chunk[target_text_key] = trans_text.replace("  ", " ").strip()
-          if do_kenlm and target_lang == 'en' and target_lang in TextAugment.kenlm_models:
-              chunk[f'{target_lang}_kenlm'] = TextAugment.kenlm_models[target_lang].get_perplexity(chunk[target_text_key])
+          if do_kenlm and target_lang == 'en' and target_lang in TextAugment.kenlm_wiki_models:
+              chunk[f'{target_lang}_kenlm'] = TextAugment.kenlm_wiki_models[target_lang].get_perplexity(chunk[target_text_key])
           if doc.get(target_text_key, ""):
             chunk[target_offset_key] = len(doc.get(target_text_key, "")) + 1
           else:
             chunk[target_offset_key] = 0
           doc[target_text_key] = (doc.get(target_text_key, "") + " " + trans_text).strip()
-    if do_kenlm and target_lang == 'en' and target_lang in TextAugment.kenlm_models:
+    if do_kenlm and target_lang == 'en' and target_lang in TextAugment.kenlm_wiki_models:
       for doc in docs.values():
-        doc[f'{target_lang}_kenlm'] = TextAugment.kenlm_models[target_lang].get_perplexity(doc[target_text_key].replace(" .", " "))
+        doc[f'{target_lang}_kenlm'] = TextAugment.kenlm_wiki_models[target_lang].get_perplexity(doc[target_text_key].replace(" .", " "))
 
     if do_regex:
       docs = self.apply_regex_ner(target_lang, docs=docs, weight=regex_weight, text_key=target_text_key, ner_key=target_ner_key)
@@ -2027,7 +2031,7 @@ class TextAugment:
     if do_docs_trim_for_person:
       docs, chunks = self.trim_to_prefer_person(docs, chunks)
 
-    if do_kenlm and target_lang in TextAugment.kenlm_models:
+    if do_kenlm and target_lang in TextAugment.kenlm_wiki_models:
       for doc in docs.values():
         ner = doc[target_ner_key]
         prev_public_figures = []
@@ -2057,7 +2061,7 @@ class TextAugment:
           ent2 = ent
           if not target_is_cjk and ent == ent.upper():
             ent2 = " ".join([a[0].upper()+a[1:] if len(a) > 1 else a.upper() for a in ent.lower().split()])
-          kenlm_score = TextAugment.kenlm_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2))
+          kenlm_score = TextAugment.kenlm_wiki_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2))
           #logger.info((ent, kenlm_score))
           if kenlm_score <= public_figure_kenlm_cutoff:
             logger.info(("found public figure ", ent2, kenlm_score))
