@@ -1001,11 +1001,12 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
 
                         if address and address[0][1] == 'house':
                           ent_lower = ent.lower()
-                          ent = ent[ent_lower.index(address[0][0]) + len(address[0][0]):].strip(rstrip_chars)
-                          #print ('**', ent)
-                          if not ent or to_int (ent) is not None:
-                            continue # this isn't an address
-                          #TODO strip stopwords on either end of an ent for addresses
+                          if address[0][0].lower() in ent_lower:
+                              ent = ent[ent_lower.index(address[0][0]) + len(address[0][0]):].strip(rstrip_chars)
+                              #print ('**', ent)
+                              if not ent or to_int (ent) is not None:
+                                continue # this isn't an address
+                              #TODO strip stopwords on either end of an ent for addresses - whether or not libpostal is installed
                       
                       #now let's turn all occurances of ent in this sentence into a span mention and also check for context and block words
                       len_ent = len(ent)
@@ -1079,6 +1080,7 @@ def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prio
             prev_mention = mention
           all_ner2.append(mention[:4])
         all_ner = all_ner2
+      #TODO - refactor to check the tag_type list instead to do filtering.
       if no_address:
          all_ner = [a for a in all_ner if a[3] != 'ADDRESS']
       if no_id:
