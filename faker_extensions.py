@@ -1,5 +1,5 @@
-from muliwai.fake_names import *
-from muliwai.text_augment import TextAugment
+from fake_names import *
+from text_augment import TextAugment
 import random
 import time
 
@@ -22,12 +22,12 @@ class FakeNameGenerator:
           self.first_name_list = [bengali_firstnames_male, bengali_firstnames_female]
           self.middle_name_list = []
       elif self.lang == "ur":
-          self.surname_list = [bengali_surnames]
+          self.surname_list = [urdu_surnames]
           self.first_name_list = [urdu_firstnames]
           self.middle_name_list = []
 
   def generate(self):
-      """ generate fake name """
+      """ Generate fake name """
       surname = None
       middlename = None
       firstname = None
@@ -62,7 +62,7 @@ class FakeNameGenerator:
       return fake_name
 
   def check_fakename(self, fake_name, verbose=False):
-      """ check fake name close to real name"""
+      """ Check fake name close to real name"""
       for model in self.kenlm_models:
           for pattern in self.patterns:
               test_name = pattern['pattern'].format(fake_name)
@@ -73,13 +73,19 @@ class FakeNameGenerator:
       return False
 
   def create_fakename(self, verbose=False):
+      """ Create fake name and varify by kelnm models """
+      success = False
       for _ in range(self.trials):
           fake_name = self.generate()
           if self.check_fakename(fake_name, verbose):
+              success = True
               return fake_name
+      if not success:
+          print('Could not find any fake name. Try reducing perplexity_cutoff')
 
 if __name__ == "__main__":
+    generator = FakeNameGenerator(lang="vi")
     start_time=time.time()
     for i in range(100):
-        FakeNameGenerator(lang="vi").create_fakename(verbose=True)
+        fake_name = generator.create_fakename(verbose=True)
     print(f"Running time {time.time() - start_time}")
