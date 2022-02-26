@@ -59,7 +59,7 @@ except:
   pass
 import sys
 try:
-    sys.path.append(os.path.abspath(os.path.dirname(__file__)))         
+    sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 except:
     pass
 from marian_mt import marian_mt
@@ -162,7 +162,7 @@ class TextAugmentDeviceModel:
 
   available_devices = [-1] if torch.cuda.device_count() == 0 else [torch.cuda.device(i).idx for i in range(torch.cuda.device_count())]
   available_device_models  = [None] if torch.cuda.device_count() == 0 else [None]* torch.cuda.device_count()
-  
+
   def __init__(self, device_id=None, device=None):
     if device_id is not None:
       self.device_id = int(device_id)
@@ -183,7 +183,7 @@ class TextAugmentDeviceModel:
   def initializer_all(src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
 
     for available_device_model, device_id in zip(TextAugmentDeviceModel.available_device_models, TextAugmentDeviceModel.available_devices):
-        if available_device_model is None:  
+        if available_device_model is None:
           available_device_model = TextAugmentDeviceModel(device_id=device_id)
         available_device_model.initializer(src_langs=src_langs, target_langs=target_langs, aug_langs=aug_langs)
         TextAugmentDeviceModel.available_device_models[max(0,available_device_model.device_id)] = available_device_model
@@ -201,12 +201,12 @@ class TextAugmentDeviceModel:
     if not hasattr(self, 'qg') or self.qg is None: self.qg = qg_pipeline.pipeline("multitask-qa-qg", device=self.device) # TODO make sure it's running in half mode
     if not hasattr(self, 'labse') or self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache").half().eval().to(self.device)
     if not hasattr(self, 'ner_model_name2pipelines') or self.ner_model_name2pipelines is None: self.ner_model_name2pipelines = {}
-    if not hasattr(self, 'translation_pipelines') or self.translation_pipelines is None: 
+    if not hasattr(self, 'translation_pipelines') or self.translation_pipelines is None:
       self.translation_pipelines  = {}
       self.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
     seen = {}
     pairs = list(set([(src_lang, target_lang) in zip(src_langs, target_langs+aug_langs)] + [(target_lang, src_lang) in zip(src_langs, target_langs+aug_langs)]))
-    for pair in pairs: 
+    for pair in pairs:
       if pair not in seen:
         model_name = marian_mt.get(pair)
         seen[pair] = 1
@@ -221,7 +221,7 @@ class TextAugmentDeviceModel:
             mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer)
           else:
             mt_pipeline = pipeline("translation", model=model, tokenizer=tokenizer, device=self.device_id)
-            self.translation_pipelines[model_name] = mt_pipeline                          
+            self.translation_pipelines[model_name] = mt_pipeline
 
     for target_lang in list(set(target_langs + src_langs + aug_langs)):
       for model_name, model_cls, hf_ner_weight2 in TextAugment.hf_ner_model_map.get(target_lang, []):
@@ -251,7 +251,7 @@ class TextAugment:
   faker_en_list  = None
   kenlm_wiki_models = {}
   kenlm_oscar_models = {}
-  
+
   # see https://www.researchgate.net/publication/259179064_Comparing_Methods_for_Detecting_Child_Exploitation_Content_Online for common CSAM words
   # http://antipaedo.lip6.fr/T12/keywords_cnrs.pdf - for top 20 from table 7 and 8 of the paper, plus other similar words , ignoring stopwords like "tuesday"
   # WARNING: Translations are probably not accurate. TODO to fix.
@@ -290,7 +290,7 @@ class TextAugment:
       "zu": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
       "sw": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
       "yo": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0 ]],
-      "ig": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0 ]], 
+      "ig": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0 ]],
       "ar": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0],],
       "en": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0], ["bioformers/bioformer-cased-v1.0-ncbi-disease", BertForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None ],
       "es": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
@@ -304,7 +304,7 @@ class TextAugment:
       'bn': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
       'ur': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
       'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
-      
+
       # NOT PART OF OUR LANGUAGE SET. EXPERIMENTAL
       'he': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]], # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
       'hr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
@@ -360,49 +360,49 @@ class TextAugment:
   cache_dir = None
 
   def __init__(self, device=None, single_process=1, available_device_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, cache_dir=None):
-    if cache_dir is None: 
+    if cache_dir is None:
         cache_dir = os.path.expanduser ('~')+"/.cache"
-    if TextAugment.cache_dir is None: 
+    if TextAugment.cache_dir is None:
         TextAugment.cache_dir = cache_dir
     if device is not None:
       TextAugment.device = device
-      if device == "cpu": 
+      if device == "cpu":
         TextAugment.device_id = -1
       else:
         TextAugment.device_id = int(device.split(":")[-1])
     else:
       if TextAugmentDeviceModel.available_devices:
         TextAugment.device_id = -1 if TextAugmentDeviceModel.available_devices[0] == -1 else random.choice(TextAugmentDeviceModel.available_devices)
-        TextAugment.device = "cpu" if TextAugment.device_id == -1 else "cuda:"+str(TextAugment.device_id) 
+        TextAugment.device = "cpu" if TextAugment.device_id == -1 else "cuda:"+str(TextAugment.device_id)
       else:
         TextAugment.device_id = -1
-        TextAugment.device = "cpu"  
+        TextAugment.device = "cpu"
     logger.info (('running on ', TextAugment.device))
     if single_process:
       self.initializer(available_device_model=available_device_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, cache_dir=cache_dir)
-    
+
   def initializer(self, device_id_by_proess_id=True, all_available_device_model=None, available_device_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, cache_dir=None):
     if all_available_device_model is not None:
       TextAugmentDeviceModel.available_device_models   = all_available_device_model
       TextAugmentDeviceModel.available_devices = [d.device_id for d in all_available_device_model]
-        
-    if cache_dir is None: 
+
+    if cache_dir is None:
         cache_dir = os.path.expanduser ('~')+"/.cache"
-    if TextAugment.cache_dir is None: 
+    if TextAugment.cache_dir is None:
         TextAugment.cache_dir = cache_dir
     if device is not None:
       TextAugment.device = device
-      if device == "cpu": 
+      if device == "cpu":
         TextAugment.device_id = -1
       else:
         TextAugment.device_id = int(device.split(":")[-1])
     else:
       if TextAugmentDeviceModel.available_devices:
         TextAugment.device_id = -1 if TextAugmentDeviceModel.available_devices[0] == -1 else random.choice(TextAugmentDeviceModel.available_devices)
-        TextAugment.device = "cpu" if TextAugment.device_id == -1 else "cuda:"+str(TextAugment.device_id) 
+        TextAugment.device = "cpu" if TextAugment.device_id == -1 else "cuda:"+str(TextAugment.device_id)
       else:
         TextAugment.device_id = -1
-        TextAugment.device = "cpu" 
+        TextAugment.device = "cpu"
 
     device = TextAugment.device
     if available_device_model is not None:
@@ -426,23 +426,23 @@ class TextAugment:
           else:
             device_id = random.choice(TextAugmentDeviceModel.available_devices)
           TextAugment.device_id = device_id
-          device = TextAugment.device = "cuda:"+str(TextAugment.device_id) 
+          device = TextAugment.device = "cuda:"+str(TextAugment.device_id)
         else:
           device_id = TextAugment.device_id = -1
-          device = TextAugment.device = "cpu"  
+          device = TextAugment.device = "cpu"
       else:
         device_id = -1 if device == "cpu" else int(device.split(":")[-1])
       if True:
         #print (device_id)
         available_device_model = TextAugmentDeviceModel.available_device_models[max(0,device_id)]
-        if available_device_model is None: 
+        if available_device_model is None:
           TextAugmentDeviceModel.available_device_models[max(0,device_id)] = available_device_model = TextAugmentDeviceModel(device=TextAugment.device)
         labse = available_device_model.labse
         qg = available_device_model.qg
         translation_pipelines = available_device_model.translation_pipelines
         ner_model_name2pipelines = available_device_model.ner_model_name2pipelines
-    
-    if labse is not None: TextAugment.labse = labse 
+
+    if labse is not None: TextAugment.labse = labse
     if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
     if ner_model_name2pipelines is not None: TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
     if qg is not None: TextAugment.qg = qg
@@ -497,7 +497,7 @@ class TextAugment:
                       ner_dict = [text, start, end, ner_value]
                       serialize_items.append(ner_dict)
                   doc[ner_key] = serialize_items
-        if outfile:       
+        if outfile:
           with open(outfile, 'w', encoding='utf-8') as file:
             for doc in serialize_docs:
               doc = json.dumps(doc)
@@ -518,7 +518,7 @@ class TextAugment:
       #print (s)
       exec("__ret= "+s, ret)
       return ret['__ret']
-      
+
     def deserialize_doc(doc):
       for ner_key in [key for key in doc if key.endswith('_ner')]:
                 ner_items = doc[ner_key]
@@ -550,45 +550,45 @@ class TextAugment:
   @staticmethod
   def get_lang_groups(src_lang):
     """ we use langid because it's pretty fast but it has difficulties in low resource languages
-    langid can sometimes mistake languages that are in the same group. that is ok for our purpose as 
+    langid can sometimes mistake languages that are in the same group. that is ok for our purpose as
     we mainly use the langid check to confirm the labels from other models. """
     lang_groups=[src_lang]
     if src_lang in ('ig', 'sn', 'ny', 'st', 'zu', 'xh', 'rw', 'sw', 'yo'):
-      lang_groups = ['ig', 'sn', 'ny', 'st', 'zu', 'xh', 'rw', 'sw', 'yo']  
+      lang_groups = ['ig', 'sn', 'ny', 'st', 'zu', 'xh', 'rw', 'sw', 'yo']
     elif src_lang in ('mr', 'ne', 'hi', ):
-      lang_groups = ['mr', 'ne', 'hi', ]  
+      lang_groups = ['mr', 'ne', 'hi', ]
     elif src_lang in ('pt', 'gl'):
-      lang_groups = ['pt','gl','la' ]  
+      lang_groups = ['pt','gl','la' ]
     elif src_lang in ('fr', 'br'):
-      lang_groups = ['fr','la', 'br' ]  
+      lang_groups = ['fr','la', 'br' ]
     elif src_lang in ('es', 'oc', 'ca', 'eu', 'an', 'gl' ):
-      lang_groups = ['es', 'oc', 'ca', 'eu', 'an', 'gl', 'la' ]  
+      lang_groups = ['es', 'oc', 'ca', 'eu', 'an', 'gl', 'la' ]
     elif src_lang in ('arz', 'ar', 'fa', 'ur', 'az', 'azb', 'ckb' ):
-      lang_groups = ['arz', 'ar', 'fa', 'ur', 'az', 'azb', 'ckb' ]  
+      lang_groups = ['arz', 'ar', 'fa', 'ur', 'az', 'azb', 'ckb' ]
     elif src_lang in ('id', 'ms', ):
-      lang_groups = ['id', 'ms',]  
+      lang_groups = ['id', 'ms',]
     elif src_lang in ('as', 'bn', 'bpy'):
-      lang_groups = ['as', 'bn', 'bpy']  
+      lang_groups = ['as', 'bn', 'bpy']
     elif src_lang in ('af', 'nl', ):
-      lang_groups = ['af', 'nl',]  
+      lang_groups = ['af', 'nl',]
     elif src_lang in ('bo', 'dz', ):
-      lang_groups = ['bo', 'dz',]  
+      lang_groups = ['bo', 'dz',]
     elif src_lang in ('bs', 'hr', ):
-      lang_groups = ['bs', 'hr',]  
+      lang_groups = ['bs', 'hr',]
     elif src_lang in ('bxr', 'mn', ):
-      lang_groups = ['bxr', 'mn',]  
+      lang_groups = ['bxr', 'mn',]
     elif src_lang in ('ceb', 'tl', ):
-      lang_groups = ['ceb', 'tl',]  
+      lang_groups = ['ceb', 'tl',]
     elif src_lang in ('cs', 'sk', ):
-      lang_groups = ['cs', 'sk',]  
+      lang_groups = ['cs', 'sk',]
     elif src_lang in ('da', 'no', ):
-      lang_groups = ['da', 'no',] 
+      lang_groups = ['da', 'no',]
     elif src_lang in ('eml', 'wa', ):
-      lang_groups = ['eml', 'wa',] 
+      lang_groups = ['eml', 'wa',]
     elif src_lang in ('de', 'lb', 'pl', 'dsb'):
-      lang_groups = ['de', 'lb', 'pl', 'dsb'] 
+      lang_groups = ['de', 'lb', 'pl', 'dsb']
     elif src_lang in ('av', 'ru', 'bg', 'ba', 'kk', 'uk', 'be', 'ce', 'cv'):
-      lang_groups = ['av', 'ru', 'bg', 'ba', 'kk', 'uk', 'be', 'ce', 'cv']  
+      lang_groups = ['av', 'ru', 'bg', 'ba', 'kk', 'uk', 'be', 'ce', 'cv']
     return set(lang_groups)
 
   #TODO - create a weighted average score between the two models
@@ -598,20 +598,20 @@ class TextAugment:
       Load a new one. Consider if we want to use an LRU.
       """
       src_lang = src_lang if src_lang in TextAugment.public_figure_kenlm_cutoff_map else "en"
-      if TextAugment.kenlm_wiki_models and src_lang in TextAugment.kenlm_wiki_models: 
+      if TextAugment.kenlm_wiki_models and src_lang in TextAugment.kenlm_wiki_models:
         return [TextAugment.kenlm_wiki_models[src_lang], TextAugment.kenlm_oscar_models[src_lang]]
       if TextAugment.cache_dir == None:
         cache_dir = os.path.expanduser ('~')+"/.cache"
       else:
         cache_dir = TextAugment.cache_dir
       all_models = []
-      for kenlm_models, model_type in ((TextAugent.kenlm_wiki_models, "wikipedia"), (TextAugent.kenlm_oscar_models, "oscar")):
+      for kenlm_models, model_type in ((TextAugment.kenlm_wiki_models, "wikipedia"), (TextAugment.kenlm_oscar_models, "oscar")):
           os.system(f"mkdir -p {cache_dir}/{model_type}")
-          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.arpa.bin"): 
+          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.arpa.bin"):
             file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.arpa.bin")
             file = cached_download(file_url)
             os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.arpa.bin")
-          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.model"): 
+          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.model"):
             file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.model")
             file = cached_download(file_url)
             os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.model")
@@ -623,7 +623,7 @@ class TextAugment:
           all_models.append(model)
           if store_model: kenlm_models[src_lang] = model
       return all_model
-  
+
   @staticmethod
   def check_good_sentence(s, src_lang, stopwords, show_err=False, lang_groups=[], ret_score=False, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
     #basic dejunk
@@ -632,7 +632,7 @@ class TextAugment:
       bannedwords = TextAugment.banned_words.get(src_lang, TextAugment.banned_words['default'])
     default_bannedwords = TextAugment.banned_words['default']
     s = s.lower().strip()
-    if not s: 
+    if not s:
        return False
     jr = len([s2 for s2 in s if s2 in TextAugment.junk])/len(s)
     if jr >= junk_ratio:
@@ -669,7 +669,7 @@ class TextAugment:
           for bword in default_bannedwords:
             if bword in s:
               return False
-          
+
     #stopword check
     if stopwords:
       #TODO: catch multi word with spaces
@@ -724,7 +724,7 @@ class TextAugment:
       default_answers = list(set([a[0] for a in ner.keys()]+default_answers))
       answers1={}
       #ti = time.time()
-      text = text.replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" , ", ", ") 
+      text = text.replace("\n", " ").replace(",", " , ").replace("  ", " ").strip().replace(" , ", ", ")
       aHash = self.qg(text , default_answers=default_answers)[0]
 
       allqa.append(aHash)
@@ -780,8 +780,8 @@ class TextAugment:
             ent = mention[0].lower()
             if ent in question:
               for mention0 in mentions:
-                rel[question] = rel.get(question, []) + [(mention0, mention)]                               
-    return docs  
+                rel[question] = rel.get(question, []) + [(mention0, mention)]
+    return docs
 
   @staticmethod
   def get_aligned_text(sent1, sent2, src_lang, prefer_split_char="]"):
@@ -1802,15 +1802,15 @@ class TextAugment:
           pass
     model = None
     ner_pipelines = []
-    
+
     # init the kenlm pipeline
     if do_kenlm:
         if target_lang not in TextAugment.kenlm_wiki_models:
             TextAugment.load_kenlm_model(target_lang)
-            
+
     if target_lang != src_lang:
         if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
-        if TextAugment.labse is None: 
+        if TextAugment.labse is None:
             TextAugment.labse =  SentenceTransformer(os.path.join(os.path.expanduser ('~')+"/.cache","sentence-transformers/LaBSE")).eval()
             if self.device == "cpu":
               TextAugment.labse  = torch.quantization.quantize_dynamic(TextAugment.labse , {torch.nn.Linear}, dtype=torch.qint8)
@@ -1825,9 +1825,9 @@ class TextAugment:
         if TextAugment.device_id >= 0:
             available_device_model = TextAugmentDeviceModel.available_device_models [TextAugment.device_id]
             if available_device_model is not None:
-                if TextAugment.labse  is not None and available_device_model.labse is None: available_device_model.labse = TextAugment.labse 
+                if TextAugment.labse  is not None and available_device_model.labse is None: available_device_model.labse = TextAugment.labse
                 if TextAugment.qg is not None and available_device_model.qg  is None: available_device_model.qg = TextAugment.qg
-                if TextAugment.translation_pipelines  is not None and not available_device_model.translation_pipelines : available_device_model.translation_pipelines = TextAugment.translation_pipelines 
+                if TextAugment.translation_pipelines  is not None and not available_device_model.translation_pipelines : available_device_model.translation_pipelines = TextAugment.translation_pipelines
                 if TextAugment.ner_model_name2pipelines is not None and not available_device_model.ner_model_name2pipelines: available_device_model.ner_model_name2pipelines = TextAugment.ner_model_name2pipelines
 
     # init hf ner pipelines
@@ -2043,7 +2043,7 @@ class TextAugment:
               if len(ent_arr[-1]) == 1: continue
               if len(ent_arr) == 2 and len(ent_arr[0].strip(".")) == 1: continue
             prev_public_figures.append(ent)
-        
+
         persons = []
         for ent, aHash in ner.items():
           if any(key[0] in ('PUBLIC_FIGURE', 'PERSON') for key in aHash.keys()):
@@ -2071,8 +2071,8 @@ class TextAugment:
               logger.info(("**not public figure ", ent2, kenlm_score))
             else:
               logger.info(("not public figure ", ent2, kenlm_score))
-            pass 
-            
+            pass
+
         public_figures = set(public_figures)
         for ent, aHash in ner.items():
           if ent[0].strip(".") in public_figures:
@@ -2273,7 +2273,7 @@ class TextAugment:
                         logger.info( ('cant find in orig_text ', ner_word, '**', orig_text[pos:], '**', orig_text))
                       else:
                         i = orig_text[pos:].index(ner_word)
-                        start = pos + i 
+                        start = pos + i
                         len_nerword = len(ner_word)
                         pos = start + len_nerword
                         ner_word = src_text[offset + start:offset + start + len_nerword]
@@ -2409,7 +2409,7 @@ class TextAugment:
       else:
         sep = " "
       if type(docs) is dict:
-        docs = list(docs.values())      
+        docs = list(docs.values())
       #for testing only
       if cutoff is not None and cutoff > 0 and len(docs) > cutoff:
         docs = docs[:cutoff*3]
@@ -2443,7 +2443,7 @@ class TextAugment:
       if cutoff is not None and cutoff > 0 and len(docs) > cutoff:
         docs = docs[:cutoff*3]
       len_docs = len(docs)
-      
+
       counter = {}
       chunks = []
       for doc in docs:
@@ -2454,7 +2454,7 @@ class TextAugment:
         doc['lang'] = doc.get('lang', src_lang)
         doc['domain'] = doc['domain'] if doc.get('domain') is not None else domain
         doc['chunks'] = doc.get('chunks', [])
-        
+
         #simple multi-lingual tokenizer and sentence splitter
         offset = 0
         if src_is_cjk:
@@ -2464,7 +2464,7 @@ class TextAugment:
           text = []
           for t in textarr:
             len_t = len(t)
-            if len_t == 1: 
+            if len_t == 1:
               text.append(t)
               continue
             punc_found = [punc for punc in t if punc in self.punc_char]
@@ -2493,7 +2493,7 @@ class TextAugment:
         src_text = ""
         while len_text > num_words_per_chunk:
             for j in range(num_words_per_chunk-1, len_text):
-              if j > num_words_per_chunk * 2: break 
+              if j > num_words_per_chunk * 2: break
               if (src_is_cjk and text[j] in self.punc_char+' ') or \
                   (not src_is_cjk and text[j][-1] in self.punc_char):
                 break
@@ -2507,7 +2507,7 @@ class TextAugment:
             text_str = sep.join(text)
             chunks.append({f'{src_lang}_text': text_str, 'id': doc['id'], f'{src_lang}_offset': offset})
             doc['chunks'].append(chunks[-1])
-      
+
       # store as a dictionary for easy lookup
       docs = dict([(doc['id'], doc) for doc in docs])
       if do_docs_trim_for_person:
@@ -2630,7 +2630,7 @@ class TextAugment:
           if suggested_chunk_size <= 1:
               suggested_chunk_size = cutoff
         return min(max_chunk_size, suggested_chunk_size)
-      
+
       def load_py_from_str(s, default=None):
         if not s.strip(): return default
         ret = {'__ret': None}
@@ -2638,7 +2638,7 @@ class TextAugment:
         return ret['__ret']
 
       if hfdataset:
-          d = load_dataset(*hfdataset.split(",")) 
+          d = load_dataset(*hfdataset.split(","))
           len_docs = len(d)
           chunk_size = get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size)
           curr_recs = 0
@@ -2651,7 +2651,7 @@ class TextAugment:
               if cutoff > 0 and curr_recs >= cutoff: break
       elif not docs and src_langs is not None:
         if type(src_langs) is str: src_langs = [src_langs]
-        
+
         # we will load the data from turkunlp_data
         for src_lang in src_langs:
           use_load_py_from_str=False
@@ -2664,7 +2664,7 @@ class TextAugment:
                   for t in f:
                     t = t.decode()
                     dat = None
-                    if not use_load_py_from_str: 
+                    if not use_load_py_from_str:
                       try:
                         dat = json.loads(t)
                       except:
@@ -2704,7 +2704,7 @@ class TextAugment:
                 yield [{'text': t} for t in docs[i:j]]
       elif not docs:
         yield []
-      else:  
+      else:
         yield docs
 
   @staticmethod
@@ -2737,24 +2737,24 @@ class TextAugment:
         AutoConfig.from_pretrained(model_name)
     seen = {}
     for src_lang, target_lang in zip(src_langs, target_langs):
-        if (src_lang, target_lang) not in seen: 
+        if (src_lang, target_lang) not in seen:
           model_name = marian_mt.get((src_lang, target_lang))
           seen[(src_lang, target_lang)] = 1
           if model_name is not None:
             AutoModel.from_pretrained(model_name)
             AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
             AutoConfig.from_pretrained(model_name)
-        if (target_lang, src_lang) not in seen: 
+        if (target_lang, src_lang) not in seen:
           model_name = marian_mt.get((target_lang, src_lang))
           seen[(target_lang, src_lang)] = 1
           if model_name is not None:
             AutoModel.from_pretrained(model_name)
             AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
-            AutoConfig.from_pretrained(model_name)                
+            AutoConfig.from_pretrained(model_name)
     TextAugment.load_kenlm_model(src_lang, store_model=False)
-    TextAugment.load_kenlm_model(target_lang, store_model=False) 
+    TextAugment.load_kenlm_model(target_lang, store_model=False)
     #TextAugment.load_kenlm_model(src_lang, store_model=False)
-               
+
   @staticmethod
   def multiprocess_ner(docs,
                     outfile,
@@ -2798,7 +2798,7 @@ class TextAugment:
     processor = TextAugment(single_process=False)
     # processor.initializer()
     logger.info(("creating multiprocessing pool for num_workers ", num_workers, TextAugmentDeviceModel.available_device_models))
-    pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_device_model=TextAugmentDeviceModel.available_device_models  ))      
+    pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_device_model=TextAugmentDeviceModel.available_device_models  ))
     if outfile is not None:
       _file =  open(outfile, 'w', encoding='utf-8')
     else:
