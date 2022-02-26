@@ -622,7 +622,7 @@ class TextAugment:
           model =  KenlmModel(f"{cache_dir}/{model_type}", src_lang)
           all_models.append(model)
           if store_model: kenlm_models[src_lang] = model
-      return all_model
+      return all_models
 
   @staticmethod
   def check_good_sentence(s, src_lang, stopwords, show_err=False, lang_groups=[], ret_score=False, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
