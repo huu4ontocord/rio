@@ -2059,19 +2059,17 @@ class TextAugment:
         public_figures = []
         for ent in list(set(persons)):
           ent2 = ent
-          if not target_is_cjk and ent == ent.upper():
-            ent2 = " ".join([a[0].upper()+a[1:] if len(a) > 1 else a.upper() for a in ent.lower().split()])
-          kenlm_score = TextAugment.kenlm_wiki_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2))
-          #logger.info((ent, kenlm_score))
-          if kenlm_score <= public_figure_kenlm_cutoff:
-            logger.info(("found public figure ", ent2, kenlm_score))
-            public_figures.append(ent)
-          else:
-            if ent2 in prev_public_figures:
-              logger.info(("**not public figure ", ent2, kenlm_score))
-            else:
-              logger.info(("not public figure ", ent2, kenlm_score))
-            pass
+          if not target_is_cjk and (ent == ent.upper() or ent == ent.lower()):
+            ent2 = " ".join([(a[0].upper())+(a[1:].lower()) if len(a) > 1 else a for a in ent.split()])
+          for public_figure_kenlm_data in public_figure_kenlm_data_list:
+            public_figure_kenlm_cutoff = public_figure_kenlm_data['cutoff']
+            public_figure_kenlm_pattern = public_figure_kenlm_data['pattern']
+            kenlm_score = TextAugment.kenlm_wiki_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2))
+            #logger.info((ent, kenlm_score))
+            if kenlm_score <= public_figure_kenlm_cutoff:
+              logger.info(("found public figure ", ent2, kenlm_score))
+              public_figures.append(ent)
+              break
 
         public_figures = set(public_figures)
         for ent, aHash in ner.items():
