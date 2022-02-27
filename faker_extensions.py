@@ -80,6 +80,8 @@ class FakeNameGenerator:
       self.lang = lang
       self.trials = trials
       self.num_genders = 1
+      self.kenlm_models = load_kenlm_model(lang)
+      self.patterns = public_figure_kenlm_cutoff_map.get(lang, [{'cutoff': 500, 'pattern': "{} (born"}])
       if self.lang == "vi":
           self.num_genders = 2
           surname_list_of_lists: List[List[str]] = [vietnamese_surnames]
