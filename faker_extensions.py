@@ -1,8 +1,75 @@
+from faker import Faker
+from faker.providers import person, company, geo, address, ssn, internet
 from fake_names import *
-from text_augment import TextAugment
+from kenlm_model_extensions import *
 from typing import List
 import random
 import time
+
+faker_list = [
+    'ar_AA',
+    'ar_PS',
+    'ar_SA',
+    'bg_BG',
+    'cs_CZ',
+    'de_AT',
+    'de_CH',
+    'de_DE',
+    'dk_DK',
+    'el_GR',
+    'en_GB',
+    'en_IE',
+    'en_IN',
+    'en_NZ',
+    'en_TH',
+    'en_US',
+    'es_CA',
+    'es_ES',
+    'es_MX',
+    'et_EE',
+    'fa_IR',
+    'fi_FI',
+    'fr_CA',
+    'fr_CH',
+    'fr_FR',
+    'fr_QC',
+    'ga_IE',
+    'he_IL',
+    'hi_IN',
+    'hr_HR',
+    'hu_HU',
+    'hy_AM',
+    'id_ID',
+    'it_IT',
+    'ja_JP',
+    'ka_GE',
+    'ko_KR',
+    'lt_LT',
+    'lv_LV',
+    'ne_NP',
+    'nl_NL',
+    'no_NO',
+    'or_IN',
+    'pl_PL',
+    'pt_BR',
+    'pt_PT',
+    'ro_RO',
+    'ru_RU',
+    'sl_SI',
+    'sv_SE',
+    'ta_IN',
+    'th_TH',
+    'tr_TR',
+    'tw_GH',
+    'uk_UA',
+    'zh_CN',
+    'zh_TW']
+
+faker_map = {}
+
+for faker_lang in faker_list:
+  lang, _ = faker_lang.split("_")
+  faker_map[lang] = faker_map.get(lang, []) + [faker_lang]
 
 class FakeNameGenerator:
   def __init__(
@@ -12,8 +79,6 @@ class FakeNameGenerator:
   ):
       self.lang = lang
       self.trials = trials
-      self.kenlm_models = TextAugment.load_kenlm_model(lang)
-      self.patterns = TextAugment.public_figure_kenlm_cutoff_map.get(lang, [{'cutoff': 500, 'pattern': "{} (born"}])
       self.num_genders = 1
       if self.lang == "vi":
           self.num_genders = 2
@@ -31,15 +96,18 @@ class FakeNameGenerator:
           self.name_lists_probabilities = [1.0, 1.0]
           assert len(self.name_lists) == len(self.name_lists_probabilities)
       elif self.lang == "ur":
-        surname_list_of_lists: List[List[str]] = [urdu_surnames]
-        first_name_list_of_lists: List[List[str]] = [bengali_firstnames_male, bengali_firstnames_female]
-        self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
-        self.name_lists_probabilities = [1.0, 1.0]
-        assert len(self.name_lists) == len(self.name_lists_probabilities)
+          surname_list_of_lists: List[List[str]] = [urdu_surnames]
+          first_name_list_of_lists: List[List[str]] = [bengali_firstnames_male, bengali_firstnames_female]
+          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+          self.name_lists_probabilities = [1.0, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
 
-  def generate(self):
+  def generate(self, gender: int = None):
       """ Generate fake name """
-      gender = random.choice(range(self.num_genders))
+      if gender is None:
+          gender = random.choice(range(self.num_genders))
+      elif gender < 0 or gender >= self.num_genders:
+          raise Exception(f"Unknown gender type {gender}")
       output_name = []
       for i, name_list_of_lists in enumerate(self.name_lists):
           # Sometimes, we might have a single list for all genders,

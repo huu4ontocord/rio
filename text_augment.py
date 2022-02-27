@@ -44,8 +44,6 @@ from faker import Faker
 from faker.providers import person, company, geo, address, ssn, internet
 
 import logging
-
-from transformers.utils.dummy_tf_objects import TFRagSequenceForGeneration
 logger = logging.getLogger(__name__)
 
 logging.basicConfig(
@@ -63,8 +61,12 @@ try:
 except:
     pass
 from marian_mt import marian_mt
-from edugp_kenlm_model import *
+from kenlm_model_extensions import *
 from fake_names import *
+from faker_extensions import *
+from hf_models import *
+from banned_words import *
+from char_manager import *
 from pii_regexes import detect_ner_with_regex_and_context
 from ontology.ontology_manager import OntologyManager
 try:
@@ -90,71 +92,6 @@ def try_decode(text):
      return text.decode().strip()
    except:
      return None
-
-faker_list = [
-    'ar_AA',
-    'ar_PS',
-    'ar_SA',
-    'bg_BG',
-    'cs_CZ',
-    'de_AT',
-    'de_CH',
-    'de_DE',
-    'dk_DK',
-    'el_GR',
-    'en_GB',
-    'en_IE',
-    'en_IN',
-    'en_NZ',
-    'en_TH',
-    'en_US',
-    'es_CA',
-    'es_ES',
-    'es_MX',
-    'et_EE',
-    'fa_IR',
-    'fi_FI',
-    'fr_CA',
-    'fr_CH',
-    'fr_FR',
-    'fr_QC',
-    'ga_IE',
-    'he_IL',
-    'hi_IN',
-    'hr_HR',
-    'hu_HU',
-    'hy_AM',
-    'id_ID',
-    'it_IT',
-    'ja_JP',
-    'ka_GE',
-    'ko_KR',
-    'lt_LT',
-    'lv_LV',
-    'ne_NP',
-    'nl_NL',
-    'no_NO',
-    'or_IN',
-    'pl_PL',
-    'pt_BR',
-    'pt_PT',
-    'ro_RO',
-    'ru_RU',
-    'sl_SI',
-    'sv_SE',
-    'ta_IN',
-    'th_TH',
-    'tr_TR',
-    'tw_GH',
-    'uk_UA',
-    'zh_CN',
-    'zh_TW']
-
-faker_map = {}
-
-for faker_lang in faker_list:
-  lang, _ = faker_lang.split("_")
-  faker_map[lang] = faker_map.get(lang, []) + [faker_lang]
 
 trannum = str.maketrans("0123456789", "1111111111")
 
@@ -224,7 +161,7 @@ class TextAugmentDeviceModel:
             self.translation_pipelines[model_name] = mt_pipeline
 
     for target_lang in list(set(target_langs + src_langs + aug_langs)):
-      for model_name, model_cls, hf_ner_weight2 in TextAugment.hf_ner_model_map.get(target_lang, []):
+      for model_name, model_cls, hf_ner_weight2 in hf_ner_model_map.get(target_lang, []):
           if model_name not in self.ner_model_name2pipelines:
             try:
               model = model_cls.from_pretrained(model_name).half().eval().to(self.device)
@@ -249,109 +186,6 @@ class TextAugment:
   m2m_tokenizer = None
   en_spacy_nlp = None
   faker_en_list  = None
-  kenlm_wiki_models = {}
-  kenlm_oscar_models = {}
-
-  # see https://www.researchgate.net/publication/259179064_Comparing_Methods_for_Detecting_Child_Exploitation_Content_Online for common CSAM words
-  # http://antipaedo.lip6.fr/T12/keywords_cnrs.pdf - for top 20 from table 7 and 8 of the paper, plus other similar words , ignoring stopwords like "tuesday"
-  # WARNING: Translations are probably not accurate. TODO to fix.
-  # we are only doing our current covered langauges. TODO, do for all languages.
-  banned_words = {
-      'ar': {"فتاة صغيرة" , "فتاة صغيرة" , "فتى صغير", "مراهق" , "لولي" , "لولا" , "لوليتا" , "لولي" , "لولي" , "لوليتاغوي" , "فتاة" , "صبي" ,"طفل" , "حمام" },
-      'ur': {'نوجوان لڑکی', 'چھوٹی لڑکی', 'چھوٹا لڑکا', 'نوجوان لڑکا','نوعمر','لولی','لولا','لولیتا','لولی','لولی','لولیتاگو','لڑکی','لڑکا','بچہ','بچہ','غسل', 'غسل', 'غسل'},
-      'bn': {'ছোট মেয়ে', 'ছোট মেয়ে', 'ছোট ছেলে', 'কিশোর', 'ললি', 'লোলা', 'ললিতা', 'ললি', 'লোলি', 'ললিটাগুই', 'মেয়ে', 'ছেলে' , 'শিশু', 'স্নান',},
-      'hi': {'युवा लड़की', 'छोटी लड़की', 'छोटा लड़का', 'किशोर', 'लॉली', 'लोला', 'लोलिता', 'लल्ली', 'लोली', 'लोलितागुय', 'लड़की', 'लड़का' , 'बच्चा', 'स्नान',},
-      'eu': {'neska gaztea', 'neska txikia', 'mutil txikia', 'nerabea', 'neska', 'mutil' , 'haurra', 'bainua',},
-      'ca': {'noia', 'nena', 'nen petit', 'nen' , 'nen', 'banyer',},
-      'vi': {'thiếu niên', 'cậu nhỏ', 'cậu bé', 'cô gái trẻ', 'cô bé', 'cậu bé', 'trẻ em', 'tắm', },
-      'zh': {'儿童','女孩','孩子', '小女孩', '小姑娘','小男孩', '年輕女孩','年轻女孩','年轻的女孩','洗澡','洛丽塔','洛麗塔','浴','男孩','萝拉','萝莉','萝莉塔吉','蘿拉','蘿莉','蘿莉塔','青少年'},
-      'fr': {'jeune fille','petite fille','petit garçon','ado',  'fille', 'garçon' , 'enfant', 'bain',},
-      'id': {'gadis muda','gadis kecil','anak laki-laki kecil','remaja',  'perempuan', 'laki-laki' , 'anak', 'mandi',},
-      'fa': {'دختر جوان',  'دختر کوچولو',  'پسر کوچولو',  'نوجوان',  'لولی',  'لولا',  'لولیتا',  'لولی',  'لولی',  'لولیتاگو',  'دختر',  'پسر' ,'کودک',  'حمام', },
-      'es': {'niña',  'niño', 'adolescente', 'baño',},
-      'pt': {'menina', 'menino', 'adolescente', 'pirulito',  'criança', 'banho',},
-      'ig': {'nwa agbọghọ', 'nwa agbọghọ', 'nwa agbọghọ',' iri na ụma', 'nwa agbọghọ', 'nwoke' , 'nwa', },
-      'sw': {'msichana mdogo','msichana mdogo','kijana mdogo', 'mtoto', 'kuoga',},
-      'yo': {'kekere', 'omobinrin', 'omokunrin', 'ọmọ', 'wẹwẹ',},
-      'xh': {'intombazana encinci', 'intsha', 'umntwana', 'hlamba', 'inkwenkwe', },
-      'zu': {'intombazane', 'intsha', 'intombazane encane',  'umfana omncane','geza', 'ingane', 'yomfana'},
-      'default': {'young girl', 'little girl','little boy', 'young boy', 'teen', 'lolli', 'lola', 'lolita', 'lolly', 'loli', 'lolitaguy', 'girl', 'boy', 'child', 'kid',  \
-                  'bath', 'baths', 'bathing', "pedo", 'nymphet', 'nimphet', 'babyj', 'voglia', 'eurololita', '349', 'hussyfan', 'kidzilla', 'raygold', 'ygold', 'qwerty', 'qqaazz', 'ptsc', \
-                  'pthc', 'nn', 'tanta', 'mylola', 'arina', 'newstar', 'playtoy', 'imouto', 'lourinha', 'amateurz', 'kacy', 'vicky', 'lsm', 'sandra', \
-                  'babyshivid', 'shiori', 'tvg', 'chiharu','kidzilla', 'izzy', 'rika', 'kdquality', 'cbaby', 'nablot', 'lso',  'kinderficker', \
-                  'yo',  'yr',  }
-  }
-  # note that we do not have a transformer model for catalan, but  we use transfer learning from Davlan/xlm-roberta-base-ner-hrl. We could also use spacy's catalan model
-  hf_ner_model_map = {
-      "sn": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
-      "st": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
-      "ny": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
-      "xh": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
-      "zu": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
-      "sw": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], # consider using one of the smaller models
-      "yo": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0 ]],
-      "ig": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0 ]],
-      "ar": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0],],
-      "en": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0], ["bioformers/bioformer-cased-v1.0-ncbi-disease", BertForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None ],
-      "es": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
-      "eu": [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
-      "ca": [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
-      "pt": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
-      "fr": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
-      "zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
-      'vi': [["lhkhiem28/COVID-19-Named-Entity-Recognition-for-Vietnamese", RobertaForTokenClassification, 1.0], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None ],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
-      'hi': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
-      'bn': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
-      'ur': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]],  # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
-      'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0], ["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
-
-      # NOT PART OF OUR LANGUAGE SET. EXPERIMENTAL
-      'he': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]], #["jplu/tf-xlm-r-ner-40-lang", None, 1.0 ]], # jplu/tf-xlm-r-ner-40-lang is breaking CPU mode
-      'hr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
-      'bs': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
-      'sr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
-      'cnr': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
-      'hbs': [["classla/bcms-bertic-ner", ElectraForTokenClassification, 1.0]],
-      'da': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
-      'no': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
-      'nb': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
-      'nn': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
-      'sv': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
-      'fo': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
-      'is': [["saattrupdan/nbailab-base-ner-scandi", BertForTokenClassification, 1.0]],
-      }
-
-  #TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of gender, so we would have two patterns.
-  public_figure_kenlm_cutoff_map = {'en': [{'cutoff': 500, 'pattern': "{} (born"}],
-                                    'yo': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
-                                    'zu': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
-                                    'sn': [{'cutoff': 500, 'pattern': "{} akazvarwa"}],
-                                    'st': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}],
-                                    'ny': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}],
-                                    'xh': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
-                                    'sw': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}],
-                                    'ig': [{'cutoff': 500, 'pattern': "{} amụrụ"}],
-                                    'ar': [{'cutoff': 600, 'pattern': "ولد {} من"}],
-                                    'zh': [{'cutoff': 500, 'pattern': "{}生於"}],
-                                    'vi': [{'cutoff': 500, 'pattern': "{} sinh ra"}, {'cutoff': 800, 'pattern': "{} sáng lập"}],
-                                    'hi': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}],
-                                    'ur': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}],
-                                    'id': [{'cutoff': 500, 'pattern': "{} lahir"}],
-                                    'bn': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
-                                    }
-  m2m100_lang = {
-    ('en', 'yo'): "Davlan/m2m100_418M-eng-yor-mt",
-    ('yo', 'en'): "Davlan/m2m100_418M-yor-eng-mt",
-    ('en', 'zu'): "masakhane/m2m100_418M-en-zu-mt",
-    ('zu', 'en'): "masakhane/m2m100_418M-zu-en-mt",
-    ('*', '*') : "facebook/m2m100_418M"
-    }
-
-  strip_chars = " ,،、{}[]|()\"'“”《》«»!:;?。…．"
-  punc_char = ".!:;?。…．"
-  special_char = " ,{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø•」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'"
-  junk = set(",{}[]()|\\\"'“”《》«»~!@#$%^&*{}[]()_+=-0987654321`<>,、،./?':;“”\"\t\n\\πه☆●¦″．۩۱（☛₨➩°・■↑☻、๑º‹€σ٪’Ø·−♥ıॽ،٥《‘©。¨﴿！★×✱´٬→±x：¹？£―▷ф¡Г♫∟™ª₪®▬「—¯；¼❖․ø•」٣，٢◦‑←§١ー٤）˚›٩▼٠«¢¸٨³½˜٭ˈ¿¬ι۞⌐¥►†ƒ∙²»¤…﴾⠀》′ا✓→¶'")
-  #don't add a space for junk chars
   ontology_manager = None
   max_stoword_len_zh = max([0]+[len(a) for a in stopwords.get('zh', [])])
   max_stoword_len_ko = max([0]+[len(a) for a in stopwords.get('ko', [])])
@@ -591,56 +425,23 @@ class TextAugment:
       lang_groups = ['av', 'ru', 'bg', 'ba', 'kk', 'uk', 'be', 'ce', 'cv']
     return set(lang_groups)
 
-  #TODO - create a weighted average score between the two models
-  @staticmethod
-  def load_kenlm_model(src_lang="en", store_model=True):
-      """
-      Load a new one. Consider if we want to use an LRU.
-      """
-      src_lang = src_lang if src_lang in TextAugment.public_figure_kenlm_cutoff_map else "en"
-      if TextAugment.kenlm_wiki_models and src_lang in TextAugment.kenlm_wiki_models:
-        return [TextAugment.kenlm_wiki_models[src_lang], TextAugment.kenlm_oscar_models[src_lang]]
-      if TextAugment.cache_dir == None:
-        cache_dir = os.path.expanduser ('~')+"/.cache"
-      else:
-        cache_dir = TextAugment.cache_dir
-      all_models = []
-      for kenlm_models, model_type in ((TextAugment.kenlm_wiki_models, "wikipedia"), (TextAugment.kenlm_oscar_models, "oscar")):
-          os.system(f"mkdir -p {cache_dir}/{model_type}")
-          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.arpa.bin"):
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.arpa.bin")
-            file = cached_download(file_url)
-            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.arpa.bin")
-          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.model"):
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.model")
-            file = cached_download(file_url)
-            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.model")
-          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.vocab"):
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.vocab")
-            file = cached_download(file_url)
-            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.vocab")
-          model =  KenlmModel(f"{cache_dir}/{model_type}", src_lang)
-          all_models.append(model)
-          if store_model: kenlm_models[src_lang] = model
-      return all_models
-
   @staticmethod
   def check_good_sentence(s, src_lang, stopwords, show_err=False, lang_groups=[], ret_score=False, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
     #basic dejunk
     # for flagged_words, only filter out if the ratio is exceeded AND there exists one banned word
     if bannedwords is None:
-      bannedwords = TextAugment.banned_words.get(src_lang, TextAugment.banned_words['default'])
-    default_bannedwords = TextAugment.banned_words['default']
+      bannedwords = banned_words.get(src_lang, banned_words['default'])
+    default_bannedwords = banned_words['default']
     s = s.lower().strip()
     if not s:
        return False
-    jr = len([s2 for s2 in s if s2 in TextAugment.junk])/len(s)
+    jr = len([s2 for s2 in s if s2 in junk])/len(s)
     if jr >= junk_ratio:
       return False
     if src_lang in ("ja", "ko", "zh"):
       sArr = s
     else:
-      sArr = [s2.strip(TextAugment.special_char) for s2 in s.lower().split() if s2.strip(TextAugment.special_char)]
+      sArr = [s2.strip(special_char) for s2 in s.lower().split() if s2.strip(special_char)]
     if len(sArr) == 0:
       return False
     bad_score = 0.0
@@ -851,7 +652,7 @@ class TextAugment:
     #print ("do_translations")
     #print ([len(t.split()) for t in texts])
     if not do_marian_mt:
-      m2m_model_name = self.m2m100_lang.get((src_lang, target_lang), self.m2m100_lang[('*', '*')])
+      m2m_model_name = m2m100_lang.get((src_lang, target_lang), m2m100_lang[('*', '*')])
       if m2m_model_name != self.m2m_model_name or self.m2m_tokenizer is None:
         self.m2m_tokenizer = M2M100Tokenizer.from_pretrained(m2m_model_name, model_max_length=512)
       try:
@@ -1002,9 +803,9 @@ class TextAugment:
         start = ner_result['start']
         if start >= len_text: continue
         if not self.cjk_detect(text[ner_result['start']:ner_result['end']]):
-              if text[start] not in self.strip_chars:
+              if text[start] not in strip_chars:
                 for j in range(1, start):
-                  if start - j == -1 or text[start-j] in self.strip_chars:
+                  if start - j == -1 or text[start-j] in strip_chars:
                     start = max(start -j, 0)
                     break
               end = ner_result['end']
@@ -1013,11 +814,11 @@ class TextAugment:
         else:
               start = ner_result['start']
               end = ner_result['end']
-        while text[start] in self.strip_chars and start < len_text:
+        while text[start] in strip_chars and start < len_text:
           start += 1
           if start >= end: break
         if start < len_text and start < end:
-            end = start + len(text[start:end].strip(self.strip_chars))
+            end = start + len(text[start:end].strip(strip_chars))
             ner_result['word'] = text[start:end]
             ner_result['start'] = start+offset
             ner_result['end'] = end+offset
@@ -1075,7 +876,7 @@ class TextAugment:
                   ner_word = text[prev_word[0]:prev_word[1]]
                   #if ner_word != prev_word2:
                   #  print (ner_word, '**', prev_word2)
-                  #ner_word.strip(self.strip_chars)
+                  #ner_word.strip(strip_chars)
                   mention = (ner_word, prev_word[0], prev_word[1])
                   if ner_word and ner_word.lower() not in stopwords:
                     aHash = ner.get(mention, {})
@@ -1338,7 +1139,7 @@ class TextAugment:
                 if ner_word not in text: continue
                 i += text[i:].index(ner_word)
                 ner_word = text[i:].split(" ", 1)[0]
-              ner_word = ner_word.rstrip(self.strip_chars)
+              ner_word = ner_word.rstrip(strip_chars)
               if ner_word.lower() not in stopwords:
                 mention2 = (ner_word, i, i+len(ner_word))
                 aHash = ner.get(mention2, {})
@@ -1383,13 +1184,13 @@ class TextAugment:
           i = 0
           for ner_word, label in ents:
             if label in ('GPE', 'FAC'): label = 'LOC'
-            ner_word = ner_word.strip(self.strip_chars)
+            ner_word = ner_word.strip(strip_chars)
             if ner_word and ner_word.lower() not in stopwords:
               if not self.cjk_detect(ner_word):
                 if ner_word not in text: continue
                 i += text[i:].index(ner_word)
                 ner_word = text[i:].split(" ", 1)[0]
-              ner_word = ner_word.strip(self.strip_chars)
+              ner_word = ner_word.strip(strip_chars)
               if ner_word.lower() not in stopwords:
                 mention = (ner_word, i, i+len(ner_word))
                 aHash = ner.get(mention, {})
@@ -1492,7 +1293,7 @@ class TextAugment:
 
       ner = {}
       for ent, start, end, labelsHash in chunks2:
-        ent = ent.strip(self.strip_chars)
+        ent = ent.strip(strip_chars)
         if ent:
           mention = (ent, start, start + len(ent))
           labelsHash2 = {}
@@ -1805,8 +1606,8 @@ class TextAugment:
 
     # init the kenlm pipeline
     if do_kenlm:
-        if target_lang not in TextAugment.kenlm_wiki_models:
-            TextAugment.load_kenlm_model(target_lang)
+        if target_lang not in kenlm_wiki_models:
+            load_kenlm_model(target_lang, cache_dir=self.cache_dir)
 
     if target_lang != src_lang:
         if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
@@ -1832,7 +1633,7 @@ class TextAugment:
 
     # init hf ner pipelines
     if do_hf_ner:
-      for model_name, model_cls, hf_ner_weight2 in self.hf_ner_model_map.get(target_lang, []):
+      for model_name, model_cls, hf_ner_weight2 in hf_ner_model_map.get(target_lang, []):
         if model_name not in self.ner_model_name2pipelines:
           #print ("setting")
           try:
@@ -1874,7 +1675,7 @@ class TextAugment:
       target_offset_key = f'{target_lang}_offset'
       target_src_sim_key = f'{src_lang}_2_{target_lang}_sim'
 
-    public_figure_kenlm_data = self.public_figure_kenlm_cutoff_map.get(target_lang, {'cutoff': 500, 'pattern': "{} (born"})
+    public_figure_kenlm_data = public_figure_kenlm_cutoff_map.get(target_lang, {'cutoff': 500, 'pattern': "{} (born"})
     public_figure_kenlm_cutoff = public_figure_kenlm_data['cutoff']
     public_figure_kenlm_pattern = public_figure_kenlm_data['pattern']
     docs = self.collapse_ner(docs, ner_key = f'{src_lang}_signal_ner', collapse_ner_key = f'{src_lang}_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1)
@@ -1973,7 +1774,7 @@ class TextAugment:
                       aHash[key2] /= 2.0
                 else:
                   #vals = list(doc[f'{src_lang}_signal_ner'][mention].keys())
-                  ent = ent.strip(self.strip_chars)
+                  ent = ent.strip(strip_chars)
                   doc[f'{target_lang}_2_{src_lang}_tmp'][ent] = idx
             else: # except:
               pass
@@ -2002,7 +1803,7 @@ class TextAugment:
             onto_items = []
             for c, label in chunk2ner.items():
               if label not in ("PERSON", "PUBLIC_FIGURE"): continue # hard coded to only do people for now
-              ner_word  = c[0].replace(" ", "").replace("_", "").replace("_", "") if self.cjk_detect(c[0]) else c[0].replace("_", " ").replace("_", " ").rstrip(self.strip_chars)
+              ner_word  = c[0].replace(" ", "").replace("_", "").replace("_", "") if self.cjk_detect(c[0]) else c[0].replace("_", " ").replace("_", " ").rstrip(strip_chars)
               if ner_word.lower() not in stopwords2:
                 if not self.cjk_detect(ner_word) and label in ('PERSON', 'PUBLIC_FIGURE', 'ORG') and " " not in ner_word: continue
                 onto_items.append(((ner_word, c[1], c[1] + len(ner_word)), label))
@@ -2241,8 +2042,8 @@ class TextAugment:
                 key = items[idx]
                 mention = tuple(key[:-1])
                 if True:
-                  ner_word = ner_word.strip(self.strip_chars)
-                  ent2 = ent2.strip(self.strip_chars)
+                  ner_word = ner_word.strip(strip_chars)
+                  ent2 = ent2.strip(strip_chars)
                   if ent2 in ner_word:
                       ner_word = ent2
                   else:
@@ -2265,7 +2066,7 @@ class TextAugment:
                             new_word = sep.join(ner_wordarr[-len_ent2arr:])
                   #TODO, add ent2 if ent2 in orig_text
                   if ner_word and ner_word.lower() not in stopwords1:
-                      ner_word = ner_word.strip(self.strip_chars+".。")
+                      ner_word = ner_word.strip(strip_chars+".。")
                       #print (ner_word, ner_word in orig_text, orig_text)
                       if ner_word not in orig_text[pos:]:
                         logger.info( ('cant find in orig_text ', ner_word, '**', orig_text[pos:], '**', orig_text))
@@ -2465,17 +2266,17 @@ class TextAugment:
             if len_t == 1:
               text.append(t)
               continue
-            punc_found = [punc for punc in t if punc in self.punc_char]
+            punc_found = [punc for punc in t if punc in punc_char]
             word1, word2 = "", ""
             if punc_found:
               tarr = t.split(punc_found[0])
               word1 = tarr[-2]
               word2 = tarr[-1]
-            if punc_found and t[-1] not in self.punc_char and \
+            if punc_found and t[-1] not in punc_char and \
                               ((punc_found[0] not in ".。") or \
                                (t[0] not in "0123456789" and t[0] == t[0].lower()) or \
-                               (word1 and word1[-1] in self.strip_chars) or \
-                               (word2 and word2[0] in self.strip_chars)):
+                               (word1 and word1[-1] in strip_chars) or \
+                               (word2 and word2[0] in strip_chars)):
               w = t[t.index(punc_found[0])+1]
               if w == w.upper():
                 t, t1 = t.split(punc_found[0],1)
@@ -2492,8 +2293,8 @@ class TextAugment:
         while len_text > num_words_per_chunk:
             for j in range(num_words_per_chunk-1, len_text):
               if j > num_words_per_chunk * 2: break
-              if (src_is_cjk and text[j] in self.punc_char+' ') or \
-                  (not src_is_cjk and text[j][-1] in self.punc_char):
+              if (src_is_cjk and text[j] in punc_char+' ') or \
+                  (not src_is_cjk and text[j][-1] in punc_char):
                 break
             text_str = sep.join(text[:j+1])
             chunks.append({f'{src_lang}_text': text_str, 'id': doc['id'], f'{src_lang}_offset': offset})
@@ -2717,14 +2518,14 @@ class TextAugment:
       pass
     arr2 = []
     AutoTokenizer.from_pretrained("google/mt5-small", model_max_length=512,truncation=True)
-    for arr in TextAugment.hf_ner_model_map.values():
+    for arr in hf_ner_model_map.values():
       for model_name, _, _ in arr:
         arr2.append(model_name)
     for model_name in list(set(arr2)):
         AutoModel.from_pretrained(model_name)
         AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
         AutoConfig.from_pretrained(model_name)
-    for model_name in TextAugment.m2m100_lang.values():
+    for model_name in m2m100_lang.values():
         AutoModel.from_pretrained(model_name)
         AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
         AutoConfig.from_pretrained(model_name)
@@ -2749,9 +2550,9 @@ class TextAugment:
             AutoModel.from_pretrained(model_name)
             AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
             AutoConfig.from_pretrained(model_name)
-    TextAugment.load_kenlm_model(src_lang, store_model=False)
-    TextAugment.load_kenlm_model(target_lang, store_model=False)
-    #TextAugment.load_kenlm_model(src_lang, store_model=False)
+    load_kenlm_model(src_lang, store_model=False, cache_dir=self.cache_dir)
+    load_kenlm_model(target_lang, store_model=False, cache_dir=self.cache_dir)
+    #load_kenlm_model(src_lang, store_model=False, cache_dir=self.cache_dir)
 
   @staticmethod
   def multiprocess_ner(docs,
