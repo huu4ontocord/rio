@@ -15,7 +15,7 @@ We also use spacy and regex as added signals for NER tags.
 The translation techniques used are very compute heavy, and not intended to perform fast detection or anonymization of a dataset. Instead, it is intended to be used to create augmented training data to train a relatively fast model (e.g., spacy or transformer model) for languages where there is little or no NER data.
 
 # Installing
-If you want to be able to do gender detection and coref detection, you will need to load neuralcoref below. However, you will only be able to use space english if you load neural coref. You can also load a larger spacy model for more accuracy but more memory.
+If you want to be able to do gender detection and coref detection, you will need to load neuralcoref below. However, you will only be able to use spacy english if you load neural coref. You can also load a larger spacy model for more accuracy but more memory.
 ```
 git clone https://github.com/ontocord/muliwai
 pip install https://github.com/kpu/kenlm/archive/master.zip
