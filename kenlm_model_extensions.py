@@ -10,6 +10,38 @@ import sentencepiece
 from huggingface_hub import cached_download, hf_hub_url
 ## additional code to support kenlm entity querying
 
+kenlm_wiki_models = {}
+kenlm_oscar_models = {}
+
+#TODO - create a weighted average score between the two models
+def load_kenlm_model(src_lang="en", store_model=True, cache_dir=None):
+      """
+      Load a new one. Consider if we want to use an LRU.
+      """
+      src_lang = src_lang if src_lang in public_figure_kenlm_cutoff_map else "en"
+      if kenlm_wiki_models and src_lang in kenlm_wiki_models:
+        return [kenlm_wiki_models[src_lang], kenlm_oscar_models[src_lang]]
+      if cache_dir == None:
+        cache_dir = os.path.expanduser ('~')+"/.cache"
+      all_models = []
+      for kenlm_models, model_type in ((kenlm_wiki_models, "wikipedia"), (kenlm_oscar_models, "oscar")):
+          os.system(f"mkdir -p {cache_dir}/{model_type}")
+          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.arpa.bin"):
+            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.arpa.bin")
+            file = cached_download(file_url)
+            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.arpa.bin")
+          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.model"):
+            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.model")
+            file = cached_download(file_url)
+            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.model")
+          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.vocab"):
+            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.vocab")
+            file = cached_download(file_url)
+            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.vocab")
+          model =  KenlmModel(f"{cache_dir}/{model_type}", src_lang)
+          all_models.append(model)
+          if store_model: kenlm_models[src_lang] = model
+      return all_models
 
 #TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of gender, so we would have two patterns.
 public_figure_kenlm_cutoff_map = {'en': [{'cutoff': 500, 'pattern': "{} (born"}],
