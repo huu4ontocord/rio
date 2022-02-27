@@ -65,6 +65,7 @@ except:
 from marian_mt import marian_mt
 from edugp_kenlm_model import *
 from fake_names import *
+from faker_extensions import *
 from pii_regexes import detect_ner_with_regex_and_context
 from ontology.ontology_manager import OntologyManager
 try:
@@ -90,71 +91,6 @@ def try_decode(text):
      return text.decode().strip()
    except:
      return None
-
-faker_list = [
-    'ar_AA',
-    'ar_PS',
-    'ar_SA',
-    'bg_BG',
-    'cs_CZ',
-    'de_AT',
-    'de_CH',
-    'de_DE',
-    'dk_DK',
-    'el_GR',
-    'en_GB',
-    'en_IE',
-    'en_IN',
-    'en_NZ',
-    'en_TH',
-    'en_US',
-    'es_CA',
-    'es_ES',
-    'es_MX',
-    'et_EE',
-    'fa_IR',
-    'fi_FI',
-    'fr_CA',
-    'fr_CH',
-    'fr_FR',
-    'fr_QC',
-    'ga_IE',
-    'he_IL',
-    'hi_IN',
-    'hr_HR',
-    'hu_HU',
-    'hy_AM',
-    'id_ID',
-    'it_IT',
-    'ja_JP',
-    'ka_GE',
-    'ko_KR',
-    'lt_LT',
-    'lv_LV',
-    'ne_NP',
-    'nl_NL',
-    'no_NO',
-    'or_IN',
-    'pl_PL',
-    'pt_BR',
-    'pt_PT',
-    'ro_RO',
-    'ru_RU',
-    'sl_SI',
-    'sv_SE',
-    'ta_IN',
-    'th_TH',
-    'tr_TR',
-    'tw_GH',
-    'uk_UA',
-    'zh_CN',
-    'zh_TW']
-
-faker_map = {}
-
-for faker_lang in faker_list:
-  lang, _ = faker_lang.split("_")
-  faker_map[lang] = faker_map.get(lang, []) + [faker_lang]
 
 trannum = str.maketrans("0123456789", "1111111111")
 
