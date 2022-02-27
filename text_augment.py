@@ -44,8 +44,6 @@ from faker import Faker
 from faker.providers import person, company, geo, address, ssn, internet
 
 import logging
-
-from transformers.utils.dummy_tf_objects import TFRagSequenceForGeneration
 logger = logging.getLogger(__name__)
 
 logging.basicConfig(
@@ -188,8 +186,6 @@ class TextAugment:
   m2m_tokenizer = None
   en_spacy_nlp = None
   faker_en_list  = None
-  kenlm_wiki_models = {}
-  kenlm_oscar_models = {}
   ontology_manager = None
   max_stoword_len_zh = max([0]+[len(a) for a in stopwords.get('zh', [])])
   max_stoword_len_ko = max([0]+[len(a) for a in stopwords.get('ko', [])])
@@ -428,39 +424,6 @@ class TextAugment:
     elif src_lang in ('av', 'ru', 'bg', 'ba', 'kk', 'uk', 'be', 'ce', 'cv'):
       lang_groups = ['av', 'ru', 'bg', 'ba', 'kk', 'uk', 'be', 'ce', 'cv']
     return set(lang_groups)
-
-  #TODO - create a weighted average score between the two models
-  @staticmethod
-  def load_kenlm_model(src_lang="en", store_model=True):
-      """
-      Load a new one. Consider if we want to use an LRU.
-      """
-      src_lang = src_lang if src_lang in public_figure_kenlm_cutoff_map else "en"
-      if TextAugment.kenlm_wiki_models and src_lang in TextAugment.kenlm_wiki_models:
-        return [TextAugment.kenlm_wiki_models[src_lang], TextAugment.kenlm_oscar_models[src_lang]]
-      if TextAugment.cache_dir == None:
-        cache_dir = os.path.expanduser ('~')+"/.cache"
-      else:
-        cache_dir = TextAugment.cache_dir
-      all_models = []
-      for kenlm_models, model_type in ((TextAugment.kenlm_wiki_models, "wikipedia"), (TextAugment.kenlm_oscar_models, "oscar")):
-          os.system(f"mkdir -p {cache_dir}/{model_type}")
-          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.arpa.bin"):
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.arpa.bin")
-            file = cached_download(file_url)
-            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.arpa.bin")
-          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.model"):
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.model")
-            file = cached_download(file_url)
-            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.model")
-          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.vocab"):
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.vocab")
-            file = cached_download(file_url)
-            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.vocab")
-          model =  KenlmModel(f"{cache_dir}/{model_type}", src_lang)
-          all_models.append(model)
-          if store_model: kenlm_models[src_lang] = model
-      return all_models
 
   @staticmethod
   def check_good_sentence(s, src_lang, stopwords, show_err=False, lang_groups=[], ret_score=False, stopword_ratio_cutoff=0.06, bannedwords=None, flagged_words=None, badword_ratio_cutoff=0.15,  junk_ratio=0.16, max_badword_len=5):
@@ -1643,8 +1606,8 @@ class TextAugment:
 
     # init the kenlm pipeline
     if do_kenlm:
-        if target_lang not in TextAugment.kenlm_wiki_models:
-            TextAugment.load_kenlm_model(target_lang)
+        if target_lang not in kenlm_wiki_models:
+            load_kenlm_model(target_lang, cache_dir=self.cache_dir)
 
     if target_lang != src_lang:
         if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
@@ -2587,9 +2550,9 @@ class TextAugment:
             AutoModel.from_pretrained(model_name)
             AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
             AutoConfig.from_pretrained(model_name)
-    TextAugment.load_kenlm_model(src_lang, store_model=False)
-    TextAugment.load_kenlm_model(target_lang, store_model=False)
-    #TextAugment.load_kenlm_model(src_lang, store_model=False)
+    load_kenlm_model(src_lang, store_model=False, cache_dir=self.cache_dir)
+    load_kenlm_model(target_lang, store_model=False, cache_dir=self.cache_dir)
+    #load_kenlm_model(src_lang, store_model=False, cache_dir=self.cache_dir)
 
   @staticmethod
   def multiprocess_ner(docs,
