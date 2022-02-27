@@ -1,5 +1,5 @@
 from fake_names import *
-from text_augment import TextAugment
+from kenlm_model_extensions import *
 import random
 import time
 
@@ -76,8 +76,8 @@ class FakeNameGenerator:
   ):
       self.lang = lang
       self.trials = trials
-      self.kenlm_models = TextAugment.load_kenlm_model(lang)
-      self.patterns = TextAugment.public_figure_kenlm_cutoff_map.get(lang, [{'cutoff': 500, 'pattern': "{} (born"}])
+      self.kenlm_models = load_kenlm_model(lang)
+      self.patterns = public_figure_kenlm_cutoff_map.get(lang, [{'cutoff': 500, 'pattern': "{} (born"}])
       if self.lang == "vi":
           self.surname_list = [vietnamese_surnames]
           self.first_name_list = [vietnamese_firstnames_male, vietnamese_firstnames_female]
