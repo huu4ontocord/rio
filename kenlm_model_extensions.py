@@ -8,7 +8,29 @@ from typing import Dict
 import kenlm
 import sentencepiece
 from huggingface_hub import cached_download, hf_hub_url
+## additional code to support kenlm entity querying
 
+
+#TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of gender, so we would have two patterns.
+public_figure_kenlm_cutoff_map = {'en': [{'cutoff': 500, 'pattern': "{} (born"}],
+                                    'yo': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
+                                    'zu': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
+                                    'sn': [{'cutoff': 500, 'pattern': "{} akazvarwa"}],
+                                    'st': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}],
+                                    'ny': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}],
+                                    'xh': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
+                                    'sw': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}],
+                                    'ig': [{'cutoff': 500, 'pattern': "{} amụrụ"}],
+                                    'ar': [{'cutoff': 600, 'pattern': "ولد {} من"}],
+                                    'zh': [{'cutoff': 500, 'pattern': "{}生於"}],
+                                    'vi': [{'cutoff': 500, 'pattern': "{} sinh ra"}, {'cutoff': 800, 'pattern': "{} sáng lập"}],
+                                    'hi': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}],
+                                    'ur': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}],
+                                    'id': [{'cutoff': 500, 'pattern': "{} lahir"}],
+                                    'bn': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
+                                    }
+
+### Edugp code
 
 class SentencePiece:
     def __init__(
