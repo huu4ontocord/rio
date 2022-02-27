@@ -1,3 +1,5 @@
+from faker import Faker
+from faker.providers import person, company, geo, address, ssn, internet
 from fake_names import *
 from kenlm_model_extensions import *
 import random
