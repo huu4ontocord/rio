@@ -50,7 +50,7 @@ default_upper_ontology = {
         'OTHER': ['OTHER'],
     }
 
-label_weight_factors = {'PUBLIC_FIGURE': 20, 'ANIMAL': 0.005, 'PLANT': 0.25, \
+label_weight_factors = {'PUBLIC_FIGURE': 5, 'ANIMAL': 0.005, 'PLANT': 0.25, \
                             'BIO_CHEM_ENTITY': 0.01, 'LANGUAGE': 10, 'RACE': 20, \
                             'RELIGION': 15, 'RACE': 15,
                             'RELIGION_MEMBER': 25,
