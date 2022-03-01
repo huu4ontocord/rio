@@ -26,7 +26,7 @@ git clone https://github.com/ontocord/muliwai.git
 5 Set up python stuffs:
  ```
 module load pytorch-gpu/py3/1.7.0 
-
+cd muliwai
 pip install -r requirements_pierre_spacy.txt
  ```
  
