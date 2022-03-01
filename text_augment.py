@@ -2505,7 +2505,7 @@ class TextAugment:
         yield []
       else:
         yield docs
-
+  @staticmethod
   def preload_cache(src_langs=["en"], target_langs=["en"], domain=None):
     #print ("preload_cache")
     SentenceTransformer(os.path.join(os.path.expanduser ('~')+"/.cache","sentence-transformers/LaBSE"))
