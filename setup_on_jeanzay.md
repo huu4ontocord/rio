@@ -31,3 +31,10 @@ python process.py -src_lang zh -cutoff 30
  ```
 
 
+7. Check if everything works on the prod node without internet
+ ```
+srun --pty --partition=prepost --account=six@gpu --nodes=1 --ntasks=1 --cpus-per-task=10 --gres=gpu:0 --hint=nomultithread --time=1:00:00 bash
+
+export HF_DATASETS_OFFLINE=1 # ugly but Dataset and Transformers are bugged
+export TRANSFORMERS_OFFLINE=1
+ ```
