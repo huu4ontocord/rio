@@ -98,7 +98,7 @@ class OntologyManager:
                  upper_ontology=None, ontology_file="ontology.json.gz",
                  target_lang_data_file=None, word2ner_file=None, \
                  connector="_", label2label=None,  \
-                tag_type={'PERSON', 'PUBLIC_FIGURE', 'ORG', 'NORP', 'DISEASE', 'LOC'}, ontology=None):
+                tag_type={'PERSON', 'PUBLIC_FIGURE', }, ontology=None):
         """
          OntologyManager manages an ontology or dictionary of words, and tags and tokenizes a sentences based on the dictionary.
         """
@@ -177,8 +177,7 @@ class OntologyManager:
         """ Load the prefix based json file representing the base ontology (lexicon) """
         if data_dir is None: data_dir = OntologyManager.data_dir
         if tmp_dir is None: tmp_dir = OntologyManager.tmp_dir
-        if OntologyManager.ontology is None:
-          if ontology_file is not None:
+        if ontology_file is not None:
             if not OntologyManager.ontology:
               if not os.path.exists(ontology_file):
                   ontology_file = f"{data_dir}/{ontology_file}"
@@ -199,16 +198,21 @@ class OntologyManager:
               if len(OntologyManager.ontology) > 20: 
                 #for backwards compatability
                 #this is probably a dictionary of ontologies and not a lexicon itself
-                OntologyManager.ontology = OrderedDict({OntologyManager.base_onto_name:OntologyManager.ontology })
+                OntologyManager.ontology = OrderedDict({OntologyManager.base_onto_name+"0":OntologyManager.ontology })
               #print (len(OntologyManager.ontology))
               for ontology in OntologyManager.ontology.values():
-                 for lexicon in ontology.values():
-                   for val in lexicon[-1].values():
-                      label = val[0][0]
-                      if label in OntologyManager.upper_ontology:
-                          val[0] = OntologyManager.upper_ontology[label][0] # shrink the memory down by reusing the same string
-                      OntologyManager._max_lexicon = max(OntologyManager._max_lexicon, val[1])
-          else:
+                 for lexicons in ontology.values():
+                   #print (lexicon)
+                   for lex in lexicons[2:].values():
+                     for val in lex:
+                        label = val[0][0]
+                        if label in OntologyManager.upper_ontology:
+                            val[0] = OntologyManager.upper_ontology[label][0] # shrink the memory down by reusing the same string
+                        if len(val) > 1:
+                          OntologyManager._max_lexicon = max(OntologyManager._max_lexicon, max(val[1]))
+                        else:
+                          OntologyManager._max_lexicon += 1
+        else:
               if not OntologyManager.ontology: 
                 OntologyManager.ontology = OrderedDict()
 
@@ -240,57 +244,7 @@ class OntologyManager:
             self.target_lang_data = json.load(open(target_lang_data_file, "rb"))
         else:
             self.target_lang_data = {}
-        if False:
-          ner_regexes = []
-          if 'ner_regexes' in self.target_lang_data:
-              # for now we are going to ignore the PERSON rules, becaues the rules don't work yet
-              # change this for Module 2 of the Hackathon.
-              ner_regexes = [regex for regex in self.target_lang_data['ner_regexes'] if
-                            regex[0] != "PERSON" and regex[0] in self.upper_ontology]
-              for regex in ner_regexes:
-                  if regex[1]:
-                      regex[1] = re.compile(regex[1], re.IGNORECASE)
-                  else:
-                      regex[1] = re.compile(regex[1])
-          self.ner_regexes = ner_regexes
 
-        # pronouns used for basic coref
-        self.other_pronouns = set(self.target_lang_data.get('OTHER_PRONOUNS', []))
-        self.person_pronouns = set(self.target_lang_data.get('PERSON_PRONOUNS', []))
-        self.pronouns = set(list(self.other_pronouns) + list(self.person_pronouns))
-
-        # these are used for aonymizing and de-biasing swapping.
-        # TODO: consider whether we want to create shorter/stemmed versions of these.
-        self.binary_gender_swap = self.target_lang_data.get('binary_gender_swap', {})
-        self.other_gender_swap = self.target_lang_data.get('other_gender_swap', {})
-        self.en_pronoun2gender = self.target_lang_data.get('en_pronoun2gender', {})
-        self.en_pronoun2pronoun = self.target_lang_data.get('en_pronoun2pronoun', {})
-        self.en_pronoun2title = self.target_lang_data.get('en_pronoun2title', {})
-        self.person2religion = self.target_lang_data.get('person2religion', {})
-        self.gender2en_pronoun = dict(
-            itertools.chain(*[[(b, a) for b in lst] for a, lst in self.en_pronoun2gender.items()]))
-        self.pronoun2en_pronoun = dict(
-            itertools.chain(*[[(b, a) for b in lst] for a, lst in self.en_pronoun2pronoun.items()]))
-        self.title2en_pronoun = dict(
-            itertools.chain(*[[(b, a) for b in lst] for a, lst in self.en_pronoun2title.items()]))
-        self.religion2person = dict(
-            itertools.chain(*[[(b, a) for b in lst] for a, lst in self.person2religion.items()]))
-        self.coref_window = self.target_lang_data.get('coref_window', [-1, -2, 1,
-                                                                       2])  # maybe this should be a parameter and not in the ontology
-        # now specialize the ontology for target_langs
-        target_lang_lexicon = self.target_lang_lexicon = {}
-        for label, words in self.target_lang_data if type(
-                self.target_lang_data) is list else self.target_lang_data.items():
-            if label in self.upper_ontology:
-                for word in words:
-                    is_cjk = self.cjk_detect(word)
-                    if word not in self.stopwords and (not is_cjk or len(word) > 1):
-                        if self.in_ontology(word)[1] != label:
-                            if is_cjk:
-                                word = self.cjk_tokenize_word(word, connector)
-                            word = word.translate(trannum).strip(self.strip_chars + connector).replace(" ", connector)
-                            target_lang_lexicon[word] = label
-        
     def save_target_lang_data(self, target_lang_data_file):
         if target_lang_data_file is None: return
         data_dir = self.data_dir
