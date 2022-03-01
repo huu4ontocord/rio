@@ -203,8 +203,8 @@ class OntologyManager:
               for ontology in OntologyManager.ontology.values():
                  for lexicons in ontology.values():
                    #print (lexicon)
-                   for lex in lexicons[2:].values():
-                     for val in lex:
+                   for lex in lexicons[2:]:
+                     for val in lex.values():
                         label = val[0][0]
                         if label in OntologyManager.upper_ontology:
                             val[0] = OntologyManager.upper_ontology[label][0] # shrink the memory down by reusing the same string
