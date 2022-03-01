@@ -551,7 +551,7 @@ class OntologyManager:
                                                     [(name_ner[0].translate(trannum), [0, 0, {'*': [[name_ner[1]],]}]) for name_ner in  wrong + wrong_none])
 
         
-    def in_ontology(self, word, connector=None, supress_cjk_tokenize=False, check_person_org_gpe_caps=False):
+    def in_ontology(self, word, connector=None, supress_cjk_tokenize=False, check_person_org_gpe_caps=True):
         """ find whether a word is in the ontology. 
         First we see if the word is in the target_lang_lexicon. 
         If not then we test by each of the base ontology lexicon.
@@ -666,7 +666,7 @@ class OntologyManager:
             ngram_start, ngram_end = max(ngram_start, rec[0]), min(ngram_end, rec[1])
         return ngram_start, ngram_end
 
-    def tokenize(self, text, connector=None, supress_cjk_tokenize=False, return_dict=True, row_id=0, doc_id=0):
+    def tokenize(self, text, connector=None, supress_cjk_tokenize=False, return_dict=True, check_person_org_gpe_caps=True):
         """
         Parse text for words in the ontology.  For compound words,
         transform into single word sequence, with a word potentially
@@ -705,7 +705,7 @@ class OntologyManager:
                         if not self._has_nonstopword(wordArr): break
                         # we don't match sequences that start and end with stopwords
                         if wordArr[-1].lower() in self.stopwords: continue
-                        _, label = self.in_ontology(new_word, connector=connector, supress_cjk_tokenize=True)  
+                        _, label = self.in_ontology(new_word, connector=connector, supress_cjk_tokenize=True, check_person_org_gpe_caps=check_person_org_gpe_caps)  
 
                         if label is not None:
                           #print ('in_onto', label)
@@ -717,7 +717,7 @@ class OntologyManager:
                             if new_word not in self.stopwords:
                                 #print ('found word', new_word)
                                 sent[i] = new_word
-                                labels.append(((new_word, pos, pos + len(new_word), row_id, doc_id), label))
+                                labels.append(((new_word, pos, pos + len(new_word)), label))
                                 for k in range(i + 1, i + j + 1):
                                     sent[k] = None
                                 #print (sent)
