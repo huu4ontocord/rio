@@ -1,13 +1,33 @@
-## Change projet 
+## Set up the projet 
 
-Check current project:
-
+1. Check current project:
+ ```
 idrproj
-
-Set the HF project:
-
+ ```
+2. Set the HF project:
+ ```
 eval $(idrenv -d six)
+ ```
+3. Go in $six_ALL_CCFRWORK/PII
+ ```
+cd $six_ALL_CCFRWORK/PII 
+ ```
+4. Get the repo
+ ```
+git clone https://github.com/ontocord/muliwai.git
+ ```
 
-Go in $WORK
+5 Set up python stuffs:
+ ```
+module load pytorch-gpu/py3/1.7.0 
+ ```
+pip install -r requirements_pierre_spacy.txt
 
-cd $WORK 
+
+6. Check if everything works on the dev node with a single GPU
+ ```
+srun --pty --partition=prepost --account=six@gpu --nodes=1 --ntasks=1 --cpus-per-task=10 --gres=gpu:0 --hint=nomultithread --time=1:00:00 bash
+python process.py -src_lang zh -cutoff 30
+ ```
+
+
