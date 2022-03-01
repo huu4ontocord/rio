@@ -1,4 +1,4 @@
-## Set up the projet 
+## Set up the projet on Djeanzaï
 
 0. Prepare symlicks:
 
