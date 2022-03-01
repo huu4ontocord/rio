@@ -231,8 +231,7 @@ class OntologyManager:
         os.system(f"rm {ontology_file}")
 
     def load_target_lang_data(self, target_lang_data_file=None, target_lang=None):
-        """ loads a langauage specific json file in the format of LABEL : {'val', 'val' }
-        with some special felds that are not in the ontology not being loaded, and handled specially."""
+        """ loads a langauage specific json file.  """
 
         data_dir = self.data_dir
         tmp_dir = self.tmp_dir
@@ -334,7 +333,7 @@ class OntologyManager:
       return OntologyManager.word_shingle_cutoff * (1+level**2)
 
     def canonical_word(self, word, connector=None, supress_cjk_tokenize=False, do_lower=False, do_trannum=False):
-      """ Does not do trannum """
+      """ Does not do trannum or lower case automatically. """
       if connector is None:
         connector = self.connector
       if self.is_cjk < 0:
