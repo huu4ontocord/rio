@@ -1,5 +1,11 @@
 ## Set up the projet 
 
+0. Prepare symlicks:
+
+ ```
+Todo
+ ```
+
 1. Check current project:
  ```
 idrproj
