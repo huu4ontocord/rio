@@ -1675,9 +1675,7 @@ class TextAugment:
       target_offset_key = f'{target_lang}_offset'
       target_src_sim_key = f'{src_lang}_2_{target_lang}_sim'
 
-    public_figure_kenlm_data = public_figure_kenlm_cutoff_map.get(target_lang, {'cutoff': 500, 'pattern': "{} (born"})
-    public_figure_kenlm_cutoff = public_figure_kenlm_data['cutoff']
-    public_figure_kenlm_pattern = public_figure_kenlm_data['pattern']
+    public_figure_kenlm_data_list = public_figure_kenlm_cutoff_map.get(target_lang, {'cutoff': 500, 'pattern': "{} (born"})
     docs = self.collapse_ner(docs, ner_key = f'{src_lang}_signal_ner', collapse_ner_key = f'{src_lang}_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1)
 
     # do operations in the target_lang space
