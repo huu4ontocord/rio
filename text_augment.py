@@ -2549,8 +2549,8 @@ class TextAugment:
             AutoModel.from_pretrained(model_name)
             AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
             AutoConfig.from_pretrained(model_name)
-    load_kenlm_model(src_lang, store_model=True, cache_dir=self.cache_dir)
-    load_kenlm_model(target_lang, store_model=True, cache_dir=self.cache_dir)
+    load_kenlm_model(src_lang, store_model=True)
+    load_kenlm_model(target_lang, store_model=True)
     #load_kenlm_model(src_lang, store_model=False, cache_dir=self.cache_dir)
 
   @staticmethod
