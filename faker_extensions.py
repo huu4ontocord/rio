@@ -68,54 +68,54 @@ faker_list = [
 faker_map = {}
 
 for faker_lang in faker_list:
-  lang, _ = faker_lang.split("_")
-  faker_map[lang] = faker_map.get(lang, []) + [faker_lang]
+    lang, _ = faker_lang.split("_")
+    faker_map[lang] = faker_map.get(lang, []) + [faker_lang]
 
 class FakeNameGenerator:
-  def __init__(
-      self,
-      lang: str = "vi",
-      trials: int = 1000
-  ):
-      self.lang = lang
-      self.trials = trials
-      self.num_genders = 1
-      if self.lang == "vi":
-          self.num_genders = 2
-          surname_list_of_lists: List[List[str]] = [vietnamese_surnames]
-          first_middle_name_list_of_lists: List[List[str]] = [vietnamese_first_middlenames_male, vietnamese_first_middlenames_female]
-          second_middle_name_list_of_lists: List[List[str]] = [vietnamese_second_middlenames_male, vietnamese_second_middlenames_female]
-          first_name_list_of_lists: List[List[str]] = [vietnamese_firstnames_male, vietnamese_firstnames_female]
-          self.name_lists: List[List[List[str]]] = [surname_list_of_lists, first_middle_name_list_of_lists, second_middle_name_list_of_lists, first_name_list_of_lists]
-          self.name_lists_probabilities = [1.0, 0.5, 0.5, 1.0]
-          assert len(self.name_lists) == len(self.name_lists_probabilities)
-      elif self.lang == "bn":
-          surname_list_of_lists: List[List[str]] = [bengali_surnames]
-          first_name_list_of_lists: List[List[str]] = [bengali_firstnames_male, bengali_firstnames_female]
-          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
-          self.name_lists_probabilities = [1.0, 1.0]
-          assert len(self.name_lists) == len(self.name_lists_probabilities)
-      elif self.lang == "ur":
-          surname_list_of_lists: List[List[str]] = [urdu_surnames]
-          first_name_list_of_lists: List[List[str]] = [bengali_firstnames_male, bengali_firstnames_female]
-          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
-          self.name_lists_probabilities = [1.0, 1.0]
-          assert len(self.name_lists) == len(self.name_lists_probabilities)
+    def __init__(
+        self,
+        lang: str = "vi",
+        trials: int = 1000
+    ):
+        self.lang = lang
+        self.trials = trials
+        self.num_genders = 1
+        if self.lang == "vi":
+            self.num_genders = 2
+            surname_list_of_lists: List[List[str]] = [vietnamese_surnames]
+            first_middle_name_list_of_lists: List[List[str]] = [vietnamese_first_middlenames_male, vietnamese_first_middlenames_female]
+            second_middle_name_list_of_lists: List[List[str]] = [vietnamese_second_middlenames_male, vietnamese_second_middlenames_female]
+            first_name_list_of_lists: List[List[str]] = [vietnamese_firstnames_male, vietnamese_firstnames_female]
+            self.name_lists: List[List[List[str]]] = [surname_list_of_lists, first_middle_name_list_of_lists, second_middle_name_list_of_lists, first_name_list_of_lists]
+            self.name_lists_probabilities = [1.0, 0.5, 0.5, 1.0]
+            assert len(self.name_lists) == len(self.name_lists_probabilities)
+        elif self.lang == "bn":
+            surname_list_of_lists: List[List[str]] = [bengali_surnames]
+            first_name_list_of_lists: List[List[str]] = [bengali_firstnames_male, bengali_firstnames_female]
+            self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+            self.name_lists_probabilities = [1.0, 1.0]
+            assert len(self.name_lists) == len(self.name_lists_probabilities)
+        elif self.lang == "ur":
+            surname_list_of_lists: List[List[str]] = [urdu_surnames]
+            first_name_list_of_lists: List[List[str]] = [bengali_firstnames_male, bengali_firstnames_female]
+            self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+            self.name_lists_probabilities = [1.0, 1.0]
+            assert len(self.name_lists) == len(self.name_lists_probabilities)
 
-  def generate(self, gender: int = None):
-      """ Generate fake name """
-      if gender is None:
-          gender = random.choice(range(self.num_genders))
-      elif gender < 0 or gender >= self.num_genders:
-          raise Exception(f"Unknown gender type {gender}")
-      output_name = []
-      for i, name_list_of_lists in enumerate(self.name_lists):
-          # Sometimes, we might have a single list for all genders,
-          # thus we take the minimun to avoid out of index
-          name_list = name_list_of_lists[min(len(name_list_of_lists) - 1, gender)]
-          if random.random() <= self.name_lists_probabilities[i]:
-              output_name.append(random.choice(name_list))
-      return " ".join(output_name)
+    def generate(self, gender: int = None):
+        """ Generate fake name """
+        if gender is None:
+            gender = random.choice(range(self.num_genders))
+        elif gender < 0 or gender >= self.num_genders:
+            raise Exception(f"Unknown gender type {gender}")
+        output_name = []
+        for i, name_list_of_lists in enumerate(self.name_lists):
+            # Sometimes, we might have a single list for all genders,
+            # thus we take the minimun to avoid out of index
+            name_list = name_list_of_lists[min(len(name_list_of_lists) - 1, gender)]
+            if random.random() <= self.name_lists_probabilities[i]:
+                output_name.append(random.choice(name_list))
+        return " ".join(output_name)
 
     def check_fakename(self, fake_name, verbose=False):
         """ Check fake name close to real name"""
