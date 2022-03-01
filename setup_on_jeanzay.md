@@ -26,10 +26,10 @@ git clone https://github.com/ontocord/muliwai.git
 5 Set up python stuffs:
  ```
 module load pytorch-gpu/py3/1.7.0 
- ```
+
 pip install -r requirements_pierre_spacy.txt
-
-
+ ```
+ 
 6. Check if everything works on the dev node with a single GPU
  ```
 srun --pty --partition=prepost --account=six@gpu --nodes=1 --ntasks=1 --cpus-per-task=10 --gres=gpu:0 --hint=nomultithread --time=1:00:00 bash
