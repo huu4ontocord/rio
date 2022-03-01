@@ -5,10 +5,10 @@
  ```
 Todo nltk, dataset, transformers badaboum :)
 setup sentence transformers as well
-ln -s $six_ALL_CCFRWORK/PII/cache_dir $HOME/.neuralcoref
-ln -s $six_ALL_CCFRWORK/PII/cache_dir $HOME/.cache/transformers
-ln -s $six_ALL_CCFRWORK/PII/cache_dir $HOME/.cache/huggingface
-ln -s $six_ALL_CCFRWORK/PII/cache_dir $HOME/nltk_data
+ln -s $six_ALL_CCFRWORK/PII/cache_dir/.neuralcoref $HOME/.neuralcoref
+ln -s $six_ALL_CCFRWORK/PII/cache_dir/.cache/transformers $HOME/.cache/transformers
+ln -s $six_ALL_CCFRWORK/PII/cache_dir/.cache/huggingface $HOME/.cache/huggingface
+ln -s $six_ALL_CCFRWORK/PII/cache_dir/nltk_data $HOME/nltk_data
 
  ```
 
