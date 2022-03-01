@@ -4,6 +4,7 @@
 
  ```
 Todo nltk, dataset, transformers badaboum :)
+setup sentence transformers as well
 ln -s $six_ALL_CCFRWORK/PII/cache_dir $HOME/.neuralcoref
 ln -s $six_ALL_CCFRWORK/PII/cache_dir $HOME/.cache/transformers
 ln -s $six_ALL_CCFRWORK/PII/cache_dir $HOME/.cache/huggingface
