@@ -49,6 +49,8 @@ srun --pty --partition=prepost --account=six@gpu --nodes=1 --ntasks=1 --cpus-per
 
 export HF_DATASETS_OFFLINE=1 # ugly but Dataset and Transformers are bugged
 export TRANSFORMERS_OFFLINE=1
+
+time python process.py -src_lang zh -cutoff 30
  ```
  
  
@@ -60,6 +62,6 @@ srun --pty -A six@gpu --nodes=1 --ntasks=1 --cpus-per-task=10 --gres=gpu:$GPU_NU
 export HF_DATASETS_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 
-python process.py -src_lang zh -num_workers=$GPU_NUMBERS -cutoff 30
+time python process.py -src_lang zh -num_workers=$GPU_NUMBERS -cutoff 30
 
  ```
