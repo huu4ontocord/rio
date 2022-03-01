@@ -4,6 +4,11 @@
 
  ```
 Todo nltk, dataset, transformers badaboum :)
+ln -s $six_ALL_CCFRWORK/PII/cache_dir $HOME/.neuralcoref
+ln -s $six_ALL_CCFRWORK/PII/cache_dir $HOME/.cache/transformers
+ln -s $six_ALL_CCFRWORK/PII/cache_dir $HOME/.cache/huggingface
+ln -s $six_ALL_CCFRWORK/PII/cache_dir $HOME/nltk_data
+
  ```
 
 1. Check current project:
@@ -33,7 +38,7 @@ pip install -r requirements_pierre_spacy.txt
 6. Check if everything works on the dev node with a single GPU
  ```
 srun --pty --partition=prepost --account=six@gpu --nodes=1 --ntasks=1 --cpus-per-task=10 --gres=gpu:0 --hint=nomultithread --time=1:00:00 bash
-python process.py -src_lang zh -cutoff 30
+python process.py -src_lang zh -cutoff 30 -preload_cache
  ```
 
 
