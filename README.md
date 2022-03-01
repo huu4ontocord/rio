@@ -158,7 +158,7 @@ python processor.py -src_lang zh -preload_cache
 
 - The source code authored by Ontocord LLC and contributed by contributors of this project is licensed under Apache 2.0.
 - The TurkuNLP sample data is based on OSCAR and mc4. See the information uder turkunlp_data for more details.
-- The ontology data is derived from Conceptnet and Yago and is mostly licensed under a CC license.
+- The ontology data is derived from Conceptnet, Yago, wordnet, and Wikiann and is mostly licensed under a CC license.
 
 ## Yago
 Yago is licensed under CC BY 4.0. https://yago-knowledge.org/
@@ -211,3 +211,8 @@ The name of Princeton University or Princeton may not be used in advertising or 
 
 Open Multilingual WordNet Open Multilingual WordNet was compiled by Francis Bond, Kyonghee Paik, and Ryan Foster, from data provided by many multilingual WordNet projects. Here is the complete list of references to the projects that created the data.
 ```
+## Wikiann
+
+The code for wikiann/mmner is under Apache 2, and the underlying data is wikipedia data which is CC-BY-SA.
+
+See https://github.com/afshinrahimi/mmner and https://huggingface.co/datasets/wikiann.  
