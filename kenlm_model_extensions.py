@@ -8,7 +8,61 @@ from typing import Dict
 import kenlm
 import sentencepiece
 from huggingface_hub import cached_download, hf_hub_url
+## additional code to support kenlm entity querying
 
+kenlm_wiki_models = {}
+kenlm_oscar_models = {}
+
+#TODO - create a weighted average score between the two models
+def load_kenlm_model(src_lang="en", store_model=True, cache_dir=None):
+      """
+      Load a new one. Consider if we want to use an LRU.
+      """
+      src_lang = src_lang if src_lang in public_figure_kenlm_cutoff_map else "en"
+      if kenlm_wiki_models and src_lang in kenlm_wiki_models:
+        return [kenlm_wiki_models[src_lang], kenlm_oscar_models[src_lang]]
+      if cache_dir == None:
+        cache_dir = os.path.expanduser ('~')+"/.cache"
+      all_models = []
+      for kenlm_models, model_type in ((kenlm_wiki_models, "wikipedia"), (kenlm_oscar_models, "oscar")):
+          os.system(f"mkdir -p {cache_dir}/{model_type}")
+          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.arpa.bin"):
+            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.arpa.bin")
+            file = cached_download(file_url)
+            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.arpa.bin")
+          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.model"):
+            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.model")
+            file = cached_download(file_url)
+            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.model")
+          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.vocab"):
+            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.vocab")
+            file = cached_download(file_url)
+            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.vocab")
+          model =  KenlmModel(f"{cache_dir}/{model_type}", src_lang)
+          all_models.append(model)
+          if store_model: kenlm_models[src_lang] = model
+      return all_models
+
+#TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of gender, so we would have two patterns.
+public_figure_kenlm_cutoff_map = {'en': [{'cutoff': 500, 'pattern': "{} (born"}],
+                                    'yo': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
+                                    'zu': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
+                                    'sn': [{'cutoff': 500, 'pattern': "{} akazvarwa"}],
+                                    'st': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}],
+                                    'ny': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}],
+                                    'xh': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
+                                    'sw': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}],
+                                    'ig': [{'cutoff': 500, 'pattern': "{} amụrụ"}],
+                                    'ar': [{'cutoff': 600, 'pattern': "ولد {} من"}],
+                                    'zh': [{'cutoff': 500, 'pattern': "{}生於"}],
+                                    'vi': [{'cutoff': 500, 'pattern': "{} sinh ra"}, {'cutoff': 800, 'pattern': "{} sáng lập"}],
+                                    'hi': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}],
+                                    'ur': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}],
+                                    'id': [{'cutoff': 500, 'pattern': "{} lahir"}],
+                                    'bn': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
+                                    }
+
+### Edugp code
 
 class SentencePiece:
     def __init__(
