@@ -82,7 +82,7 @@ class OntologyManager:
   words from the ontology.
   """
 
-    default_strip_chars = "-,~`.?!@#$%^&*(){}[]|\\/-_+=<>;'\""
+    default_strip_chars = "-,~`.?!@#$%^&*(){}[]|\\/-_+=<>;'\" ,،、“”《》«»!:;?。…．"
     stopwords_all= set(itertools.chain(*[list(s) for s in stopwords.values()]))
     base_onto_name = "yago_cn_wn"
     default_data_dir = os.path.abspath(os.path.join(onto_dir, "data"))
@@ -688,7 +688,7 @@ class OntologyManager:
         for i in range(len_sent - 1):
             #print (i, sent[i], sent)
             if sent[i] is None: continue
-            start_word = sent[i].lower()  # .strip(self.strip_chars)
+            start_word = sent[i].lower().strip(self.strip_chars)
             if start_word in self.stopwords:
                 pos += len(sent[i]) + 1
                 continue
@@ -700,7 +700,7 @@ class OntologyManager:
                 for j in range(ngram_start - 1, ngram_end - 2, -1):
                     if len_sent - i > j:
                         wordArr = sent[i:i + 1 + j]
-                        new_word = " ".join(wordArr)
+                        new_word = " ".join(wordArr).strip(self.strip_chars)
                         if not self._has_nonstopword(wordArr): break
                         # we don't match sequences that start and end with stopwords
                         if wordArr[-1].lower() in self.stopwords: continue
@@ -712,7 +712,6 @@ class OntologyManager:
                           #print (new_word, label, len(new_word))
                           if (self.tag_type is None or label in self.tag_type) and (label in self.upper_ontology):
                             new_word = new_word.replace(" ", connector)
-                            new_word = new_word.lstrip(",")
                             if new_word not in self.stopwords:
                                 #print ('found word', new_word)
                                 sent[i] = new_word
