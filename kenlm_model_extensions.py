@@ -62,6 +62,20 @@ public_figure_kenlm_cutoff_map = {'en': [{'cutoff': 500, 'pattern': "{} (born"}]
                                     'bn': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
                                     }
 
+#TODO: refactor code in the faker_extensions with this code
+def check_fakename(lang, fake_name, verbose=False):
+      """ Check fake name close to real name"""
+      kenlm_models = load_kenlm_model(lang)
+      patterns = public_figure_kenlm_cutoff_map.get(lang, [{'cutoff': 500, 'pattern': "{} (born"}])
+      for model in kenlm_models:
+          for pattern in patterns:
+              test_name = pattern['pattern'].format(fake_name)
+              if model.get_perplexity(test_name) < pattern['cutoff']:
+                  if verbose:
+                      print(fake_name, model.get_perplexity(test_name))
+                  return True
+      return False
+            
 ### Edugp code
 
 class SentencePiece:
