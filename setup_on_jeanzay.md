@@ -3,7 +3,7 @@
 0. Prepare symlicks:
 
  ```
-Todo
+Todo nltk, dataset, transformers badaboum :)
  ```
 
 1. Check current project:
@@ -43,4 +43,17 @@ srun --pty --partition=prepost --account=six@gpu --nodes=1 --ntasks=1 --cpus-per
 
 export HF_DATASETS_OFFLINE=1 # ugly but Dataset and Transformers are bugged
 export TRANSFORMERS_OFFLINE=1
+ ```
+ 
+ 
+8. Target more gpus 
+ ```
+export GPU_NUMBERS=3
+srun --pty -A six@gpu --nodes=1 --ntasks=1 --cpus-per-task=10 --gres=gpu:$GPU_NUMBERS --hint=nomultithread --time=60 bash
+
+export HF_DATASETS_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+
+python process.py -src_lang zh -num_workers=$GPU_NUMBERS -cutoff 30
+
  ```
