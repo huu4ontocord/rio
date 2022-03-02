@@ -136,7 +136,7 @@ class TextAugmentDeviceModel:
       self.device = None
       self.device_id = None
     if not hasattr(self, 'qg') or self.qg is None: self.qg = qg_pipeline.pipeline("multitask-qa-qg", device=self.device) # TODO make sure it's running in half mode
-    if not hasattr(self, 'labse') or self.labse is None: self.labse =  SentenceTransformer("sentence-transformers/LaBSE", cache_folder=os.path.expanduser ('~')+"/.cache").half().eval().to(self.device)
+    if not hasattr(self, 'labse') or self.labse is None: self.labse =  SentenceTransformer(os.path.expanduser ('~')+"/.cache/"+"sentence-transformers/LaBSE").half().eval().to(self.device)
     if not hasattr(self, 'ner_model_name2pipelines') or self.ner_model_name2pipelines is None: self.ner_model_name2pipelines = {}
     if not hasattr(self, 'translation_pipelines') or self.translation_pipelines is None:
       self.translation_pipelines  = {}
