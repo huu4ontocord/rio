@@ -126,6 +126,8 @@ class TextAugmentDeviceModel:
         TextAugmentDeviceModel.available_device_models[max(0,available_device_model.device_id)] = available_device_model
 
   def initializer(self, device_id=None, device=None, src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
+    if device is None and device_id is None:
+      device = self.device
     if device_id is not None:
       self.device_id = int(device_id)
       self.device = "cpu" if device_id < 0 else "cuda:"+str(device_id)
@@ -170,14 +172,19 @@ class TextAugmentDeviceModel:
             try:
               model = model_cls.from_pretrained(model_name).half().eval().to(self.device)
               tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
-              ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=self.device_id)
+              if self.device == "cpu":
+                ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer)
+              else:
+                ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=self.device_id)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
               logger.info("problems loading model and tokenizer for pipeline. attempting to load without passing in model")
             except:
               tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
-              ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(tokenizer, {"use_fast": True},), device=self.device_id)
+              if self.device == "cpu":
+                ner_pipeline = pipeline("ner", model=model, tokenizer=(tokenizer, {"use_fast": True},), )
+              else:
+                ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(tokenizer, {"use_fast": True},), device=self.device_id)
               self.ner_model_name2pipelines[model_name] = ner_pipeline
-
 
 class TextAugment:
   device_id = None
