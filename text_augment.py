@@ -1897,7 +1897,7 @@ class TextAugment:
             #logger.info(("adding knelm public figure", ent))
             aHash[('PUBLIC_FIGURE', 'kenlm')] = aHash.get(('PUBLIC_FIGURE', 'kenlm'), 0) + 1.0 # use param kenlm_weight
 
-    if do_public_figure_expansion:
+    if False: # do_public_figure_expansion:
       for doc in docs.values():
         text  = doc[target_text_key]
         len_text = len(text)
