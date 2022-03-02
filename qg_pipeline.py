@@ -386,6 +386,7 @@ def pipeline(
             # For tuple we have (tokenizer name, {kwargs})
             tokenizer = AutoTokenizer.from_pretrained(tokenizer[0], **tokenizer[1])
         else:
+            print(tokenizer)
             tokenizer = AutoTokenizer.from_pretrained(tokenizer)
     
     # Instantiate model if needed
