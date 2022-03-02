@@ -1633,7 +1633,11 @@ class TextAugment:
     if target_lang != src_lang:
         if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
         if TextAugment.labse is None:
-            TextAugment.labse =  SentenceTransformer(os.path.join(os.path.expanduser ('~')+"/.cache","sentence-transformers/LaBSE")).eval()
+            try:
+              TextAugment.labse =  SentenceTransformer(os.path.join(os.path.expanduser ('~')+"/.cache","sentence-transformers/LaBSE")).eval()
+            except:
+              TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE").eval()
+
             if self.device == "cpu":
               TextAugment.labse  = torch.quantization.quantize_dynamic(TextAugment.labse , {torch.nn.Linear}, dtype=torch.qint8)
             else:
