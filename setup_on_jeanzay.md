@@ -55,7 +55,9 @@ time python process.py -src_lang zh -cutoff 30
  with commit  85c8737 we got 
 
  ```
-
+real	11m47.634s
+user	6m42.942s
+sys	1m43.794s
  ```
  
 8. Target more gpus 
