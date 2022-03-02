@@ -52,7 +52,11 @@ export TRANSFORMERS_OFFLINE=1
 
 time python process.py -src_lang zh -cutoff 30
  ```
- 
+ with commit  85c8737 we got 
+
+ ```
+
+ ```
  
 8. Target more gpus 
  ```
@@ -65,3 +69,10 @@ export TRANSFORMERS_OFFLINE=1
 time python process.py -src_lang zh -num_workers=$GPU_NUMBERS -cutoff 30
 
  ```
+ 
+  with commit  85c8737 we got 
+
+ ```
+
+ ```
+ 
