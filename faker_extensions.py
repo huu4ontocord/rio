@@ -103,7 +103,7 @@ class FakeNameGenerator:
             assert len(self.name_lists) == len(self.name_lists_probabilities)
 
     def generate(self, gender: int = None):
-        """ Generate fake name """
+        """ Generate fake name. Use gender to generate a gender-specific name. Use 0 for male and 1 for female """
         if gender is None:
             gender = random.choice(range(self.num_genders))
         elif gender < 0 or gender >= self.num_genders:
