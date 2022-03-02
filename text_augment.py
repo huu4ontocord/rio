@@ -1825,7 +1825,7 @@ class TextAugment:
             chunk2ner = ontology_manager.detect(doc[target_text_key])
             onto_items = []
             for c, label in chunk2ner.items():
-              if label not in ("PERSON", "PUBLIC_FIGURE"): continue # hard coded to only do people for now
+              if label not in ("PUBLIC_FIGURE",): continue # hard coded to only do famous people for now. we will depend on the other models to detect other NERs
               ner_word  = c[0].replace(" ", "").replace("_", "").replace("_", "") if self.cjk_detect(c[0]) else c[0].replace("_", " ").replace("_", " ").rstrip(strip_chars)
               if ner_word.lower() not in stopwords2:
                 if not self.cjk_detect(ner_word) and label in ('PERSON', 'PUBLIC_FIGURE', 'ORG') and " " not in ner_word: continue
