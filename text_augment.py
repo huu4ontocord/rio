@@ -1799,16 +1799,16 @@ class TextAugment:
               pass
             trans_text = before + " " + ent + " " + after
           trans_text = chunk[target_text_key] = trans_text.replace("  ", " ").strip()
-          if do_kenlm and target_lang == 'en' and target_lang in TextAugment.kenlm_wiki_models:
-              chunk[f'{target_lang}_kenlm'] = TextAugment.kenlm_wiki_models[target_lang].get_perplexity(chunk[target_text_key])
+          if do_kenlm and target_lang == 'en' and target_lang in kenlm_wiki_models:
+              chunk[f'{target_lang}_kenlm'] = kenlm_wiki_models[target_lang].get_perplexity(chunk[target_text_key])
           if doc.get(target_text_key, ""):
             chunk[target_offset_key] = len(doc.get(target_text_key, "")) + 1
           else:
             chunk[target_offset_key] = 0
           doc[target_text_key] = (doc.get(target_text_key, "") + " " + trans_text).strip()
-    if do_kenlm and target_lang == 'en' and target_lang in TextAugment.kenlm_wiki_models:
+    if do_kenlm and target_lang == 'en' and target_lang in kenlm_wiki_models:
       for doc in docs.values():
-        doc[f'{target_lang}_kenlm'] = TextAugment.kenlm_wiki_models[target_lang].get_perplexity(doc[target_text_key].replace(" .", " "))
+        doc[f'{target_lang}_kenlm'] = kenlm_wiki_models[target_lang].get_perplexity(doc[target_text_key].replace(" .", " "))
 
     if do_regex:
       docs = self.apply_regex_ner(target_lang, docs=docs, weight=regex_weight, text_key=target_text_key, ner_key=target_ner_key)
