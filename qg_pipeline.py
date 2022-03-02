@@ -326,20 +326,20 @@ SUPPORTED_TASKS = {
     "question-generation": {
         "impl": QGPipeline,
         "default": {
-            "model": "valhalla/t5-small-qg-hl" if 'PII' not in os.getcwd() else os.path.join(os.getcwd(),'../t5-small-qa-qg-hl/')),
-            "ans_model": "valhalla/t5-small-qa-qg-hl" if 'PII' not in os.getcwd() else os.path.join(os.getcwd(),'../t5-small-qa-qg-hl/')),
+            "model": "valhalla/t5-small-qg-hl" if 'PII' not in os.getcwd() else os.path.join(os.getcwd(),'../t5-small-qa-qg-hl/'),
+            "ans_model": "valhalla/t5-small-qa-qg-hl" if 'PII' not in os.getcwd() else os.path.join(os.getcwd(),'../t5-small-qa-qg-hl/'),
         }
     },
     "multitask-qa-qg": {
         "impl": MultiTaskQAQGPipeline,
         "default": {
-            "model": "valhalla/t5-small-qa-qg-hl" if 'PII' not in os.getcwd() else os.path.join(os.getcwd(),'../t5-small-qa-qg-hl/')),
+            "model": "valhalla/t5-small-qa-qg-hl" if 'PII' not in os.getcwd() else os.path.join(os.getcwd(),'../t5-small-qa-qg-hl/'),
         }
     },
     "e2e-qg": {
         "impl": E2EQGPipeline,
         "default": {
-            "model": "valhalla/t5-small-e2e-qg" if 'PII' not in os.getcwd() else os.path.join(os.getcwd(),'../t5-small-e2e-qg/')),
+            "model": "valhalla/t5-small-e2e-qg" if 'PII' not in os.getcwd() else os.path.join(os.getcwd(),'../t5-small-e2e-qg/'),
         }
     }
 }
