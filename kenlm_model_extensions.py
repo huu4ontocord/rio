@@ -17,14 +17,15 @@ kenlm_oscar_models = {}
 def load_kenlm_model(src_lang="en", store_model=True, cache_dir=None):
       """
       Load a new one. Consider if we want to use an LRU.
+      TODO: Incorporate OSCAR kenlm models. They are quite big, and we still need patterns and cutoffs.
       """
       src_lang = src_lang if src_lang in public_figure_kenlm_cutoff_map else "en"
       if kenlm_wiki_models and src_lang in kenlm_wiki_models:
-        return [kenlm_wiki_models[src_lang], kenlm_oscar_models[src_lang]]
+        return [kenlm_wiki_models[src_lang], ] # kenlm_oscar_models[src_lang]
       if cache_dir == None:
         cache_dir = os.path.expanduser ('~')+"/.cache"
       all_models = []
-      for kenlm_models, model_type in ((kenlm_wiki_models, "wikipedia"), (kenlm_oscar_models, "oscar")):
+      for kenlm_models, model_type in ((kenlm_wiki_models, "wikipedia"), ): #(kenlm_oscar_models, "oscar")
           os.system(f"mkdir -p {cache_dir}/{model_type}")
           if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.arpa.bin"):
             file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.arpa.bin")
