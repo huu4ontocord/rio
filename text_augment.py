@@ -1851,7 +1851,7 @@ class TextAugment:
     if do_docs_trim_for_person:
       docs, chunks = self.trim_to_prefer_person(docs, chunks)
 
-    if do_kenlm and target_lang in TextAugment.kenlm_wiki_models:
+    if do_kenlm and target_lang in kenlm_wiki_models:
       for doc in docs.values():
         ner = doc[target_ner_key]
         prev_public_figures = []
@@ -1884,7 +1884,7 @@ class TextAugment:
           for public_figure_kenlm_data in public_figure_kenlm_data_list:
             public_figure_kenlm_cutoff = public_figure_kenlm_data['cutoff']
             public_figure_kenlm_pattern = public_figure_kenlm_data['pattern']
-            kenlm_score = TextAugment.kenlm_wiki_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2))
+            kenlm_score = kenlm_wiki_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2))
             #logger.info((ent, kenlm_score))
             if kenlm_score <= public_figure_kenlm_cutoff:
               logger.info(("found public figure ", ent2, kenlm_score))
