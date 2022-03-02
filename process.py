@@ -92,6 +92,7 @@ if __name__ == "__main__":
     parser.add_argument('-do_skip_src_lang_processing', dest='do_skip_src_lang_processing', type=int, help='Wether or not to skip NER for src_lang (assumes NER is already perfored in the data provided)', default = 0)
     parser.add_argument('-do_hf_ner', dest='do_hf_ner', type=int, help='Wether or not to apply a huggingface NER model', default = 1)
     parser.add_argument('-do_dictionary', dest='do_ontology', type=int, help='Wether or not to use a dictionary', default = 1)
+    parser.add_argument('-do_trans', dest='do_trans', type=int, help='Wether or not to do translation (setting to 0 will make src_lang == target_lang)', default = 1)
     parser.add_argument('-do_backtrans', dest='do_backtrans', type=int, help='Wether or not to do back translation', default = 1)
     parser.add_argument('-do_augment', dest='do_augment', type=int, help='Wether or not to do translation augmentation', default = 0)
     parser.add_argument('-do_anonymization', dest='do_anonymization', type=int, help='Wether or not to anonymize the src_lang', default = 0)
@@ -127,6 +128,7 @@ if __name__ == "__main__":
       args.do_qg_rel = False
       args.do_ontology_only = False
       args.do_backtrans = False
+      args.do_trans = False
       args.target_lang = args.src_lang
       args.do_anonymization = False
       args.do_augmentation = False
@@ -137,6 +139,7 @@ if __name__ == "__main__":
       args.do_qg_rel = False
       args.do_ontology_only = False
       args.do_backtrans = False
+      args.do_trans = False
       args.target_lang = args.src_lang
       args.do_anonymization = False
       args.do_augmentation = False
@@ -147,6 +150,7 @@ if __name__ == "__main__":
       args.do_qg_rel = False
       args.do_ontology_only = False
       args.do_backtrans = False
+      args.do_trans = False
       args.target_lang = args.src_lang
       args.do_anonymization = False
       args.do_augmentation = False
@@ -155,6 +159,7 @@ if __name__ == "__main__":
       args.do_hf_ner = False
       args.do_regex = False
       args.do_backtrans = False
+      args.do_trans = False
       args.do_qg_rel = True
       args.do_ontology_only = False
       args.target_lang = args.src_lang
@@ -165,6 +170,7 @@ if __name__ == "__main__":
       args.do_hf_ner = False
       args.do_regex = False
       args.do_backtrans = False
+      args.do_trans = False
       args.do_qg_rel = False
       args.do_ontology_only = True
       args.target_lang = args.src_lang
@@ -176,10 +182,14 @@ if __name__ == "__main__":
     if src_lang is not None:
       src_lang = src_lang.split(",")
     else:
-      src_lang = []
-    if not args.target_lang:
+      src_lang = ["en"]
+    if not args.do_trans:
+      do_backtrans = False
+      target_lang = src_lang
+    elif not args.target_lang:
         target_lang =["en"]
-    target_lang = args.target_lang.split(",")
+    else:
+      target_lang = args.target_lang.split(",")
     if len(target_lang) < len(src_lang):
       target_lang.extend([target_lang[0]]*(len(src_lang)-len(target_lang)))
     cutoff = args.cutoff

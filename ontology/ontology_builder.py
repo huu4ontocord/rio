@@ -48,7 +48,13 @@ trannum = str.maketrans("0123456789", "1111111111")
 import sys, os
 import json
 import faker
-
+import re
+from collections import OrderedDict
+import json, os, glob
+from collections import Counter
+import re
+from collections import OrderedDict
+from tqdm import tqdm    
 from faker.providers import person, job
 
 from collections import Counter
@@ -1211,7 +1217,860 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
     ret = [(a, ner_label) for a in list(set(ret_list + list(ret_hash.keys())))]                              
     return ret, word2ner + ret, block_list
 
+  def fix_and_enhance_word2ner(self, word2ner_file, wikiann_file, new_word2ner_file):
+    word2ner = json.load(open(word2ner_file, "rb"))
+    r = re.compile(r"^[\d〇一二三四五六七八九]+$")
+    wikiann = json.load(open(wikiann_file, "rb"))
+    all_wikiann_ents = {}
 
+    for lang in wikiann.keys():
+      is_cjk = lang in ('zh', 'ja', 'ko')
+      for ent_type, ent in wikiann[lang]:
+        #print (ent_type, ent)
+        ent = ent.replace(" , ", ", ")
+        ent = ent.replace(" '", "'")
+        ent = ent.replace(" .", ".")
+        ent = ent.strip(" ,")
+
+        if is_cjk: ent = ent.replace(" ", "")
+        if len(ent) <= 4: continue
+        if len(ent) > 50: continue
+        if ent.startswith('List of '): continue
+        ent = self.canonical_word(ent)[0]
+        ent_type = 'LOCATION' if ent_type == 'LOC' else 'PUBLIC_FIGURE' if ent_type == 'PER' else ent_type
+        
+        ent = ent.replace(" ", "_").replace("-", "_").replace("–", "_")
+        if r.match(ent.replace("_","").replace("/","").replace(".","")): continue
+        ent_arr =  ent.split("_")
+        if (len(ent_arr[0]) == 4 and r.match(ent_arr[0])) or (len(ent_arr[-1]) == 4 and r.match(ent_arr[-1])): continue
+        if ent_type == 'LOCATION' and (r.match(ent[0]) or r.match(ent[-1])):
+          ent_type = "EVENT"
+          continue #TODO
+        elif ent_type == 'LOCATION' and ent.count("_") > 0:
+          ent_type = "GPE"
+        elif ent_type == 'ORG' and ent.endswith("_party"):
+          ent_type = "POLITICAL_PARTY"
+        elif ent_type == 'ORG' and ent.endswith("_union"):
+          ent_type = "UNION"
+        all_wikiann_ents[ent.lower()] = [ent_type]
+
+    aHash = OrderedDict([(self.canonical_word(a[0], do_lower=True)[0], a[1:]) for a in word2ner if  (self.cjk_detect(a[0]) or len(a[0])> 1) and not r.match(a[0])])
+    del_words = []
+    for word, val in aHash.items():
+      word_arr = word.split("_")
+      if 'EVENT' not in val and ((len(word_arr[0]) == 4 and r.match(word_arr[0])) or (len(word_arr[-1]) == 4 and r.match(word_arr[-1]))): 
+        del_words.append(word)
+        continue
+      if ('PERSON' in val or 'PUBLIC_FIGURE' in val) and (len(word) <= 1 or word  in self.stopwords_all or (len(word.split("_")) == sum([len(a) for a in word.split("_")]))):
+        del_words.append(word)
+        continue
+      if 'PERSON' in val:
+        if word in builder.word2lang:
+          if self.cjk_detect(word) or len(word) > 10 or word.count("_") > 0:
+            #print ('changing', word)
+            aHash[word] = ['PUBLIC_FIGURE']
+    for word in del_words: del aHash[word]
+
+    for word, vals in all_wikiann_ents.items():
+      if 'LOCATION' in vals and ('FAC' in aHash.get(word, []) or 'GPE' in aHash.get(word, [])): continue
+      if 'ORG' in vals and ('LANGUAGE' in aHash.get(word, []) or 'RACE' in aHash.get(word, []) or 'RELIGION' in aHash.get(word, []) or 'NORP' in aHash.get(word, []) or 'UNION' in aHash.get(word, []) or 'SOC_ECO_CLASS' in aHash.get(word, []) or 'POLITICAL_PARTY' in aHash.get(word, [])): continue
+      aHash[word] = vals
+
+
+    for word in ['arnold_schönberg',
+      'winnie_the_pooh',
+      'nolan_ryan',
+      'arnold_schoenberg',
+      'anders_celsius',
+      'ice_cube',
+      'britney_spears',
+      'justin_bieber',
+      'forrest_gump',
+      'cyndi_lauper',
+      'heidi_klum',
+      'julius_caesar',
+      'barack_obama',
+      'emiliano_zapata',
+      'gautama_buddha',
+      'gordon_brown',
+      'david_cameron',
+      'al_gore',
+      'roger_moored',
+      'douglas_adams',
+      'rudolf_hess',
+      'mickey_mouse',
+      'billy_joel',
+      'joseph_louis_gay_lussac',
+      'gordon_brown',
+      'sherwood_anderson',
+      'david_cameron',
+      'billy_graham',
+      'carl_david_anderson',
+      'marian_anderson',
+      'saint_barthélemy',
+      'tinea_versicolor',
+      'hevea_brasiliensis',
+      'john_kerry',
+      'rudolf_hess',
+      'otuz_iki',
+      'phil_jackson',
+      'mona_lisa',
+      'otho',
+      'libby_smith',
+      'alfred_deakin',
+      'douglas_adams',
+      'e_e_cummings',
+      'margaret_mitchell',
+      'gaius_julius_caesar',
+      'haruki_murakami',
+      'don_delillo',
+      'roger_moore',
+      'david_lynch',
+      'edward_albee',
+      'john_jacob_astor',
+      'anne_boleyn',
+      'frank_herbert',
+      'al_gore',
+      'julius_caesar',
+      'h_g_wells',
+      'philip_warren_anderson',
+      'khalil_gibran',
+      'herbert_george_wells',
+      'abu_sayyaf',
+      'гордон_браун',
+      'мона_лиза',
+      'дэвид_кэмерон',
+      'igor_sikorsky',
+      'ουτε_ουτε',
+      'scott_henderson',
+      'clark_kent',
+      'michael_flatley',
+      'jin_jang',
+      'john_woo',
+      'diego_garcia',
+      'boletus_edulis',
+      'francesco_d_assisi',
+      'ignacio_de_loyola',
+      'domingo_de_guzmán',
+      'alejandro_toledo',
+      'ignatius_loyola',
+      'abu_bakar',
+      'ictiobus_niger',
+      'annie_clark',
+      'mad_hatter',
+      'maxwell_anderson',
+      'christopher_fry',
+      'al_amin',
+      'martha_stewart',
+      'pearl_white',
+      'saint_vincent',
+      'robert_laird_borden',
+      'la_grange',
+      'dom_pérignon',
+      'aboe_bakr',
+      'mindong',
+      'george_v',
+      'edward_osborne_wilson',
+      'de_witt',
+      'john_silver',
+      'seleucus_i_nicator',
+      'john_thomas',
+      'peter_dawson',
+      'योयो',
+      'mark_white',
+      'abū_bakr',
+      'e_o_wilson',
+      'ty_cobb',
+      'abu_bakr',
+      'zeus_faber',
+      'melanoperdix_niger',
+      'i_ching',
+      'kahlil_gibran',
+      'роджер_мур',
+      'джоконда',
+      'дуглас_адамс',
+      'тайшань',
+      'джон_ву',
+      'мона_ліза',
+      'tiny_tim',
+      'харукі_муракамі',
+      'юта_джаз',
+      'тянь_шань',
+      'джон_керри',
+      'диего_гарсия',
+      'витамин_c',
+      'абу_бакр',
+      'харуки_мураками',
+      'dom_pedro',
+      'völundr',
+      'abu_bakr_as_siddiq',
+      'willard_frank_libby',
+      'prince_albert',
+      'yuan_tan',
+      'yijing',
+      'william_playfair',
+      'min_dong',
+      'roger_eliot_fry',
+      'pitiriasi_versicolor',
+      'дин_лин',
+      'сен_бартелеми',
+      'st_vincent',
+      'кларк_кент',
+      'tchaj_šan',
+      'dominik_guzmán',
+      'františek_z_assisi',
+      'i_ťing',
+      'ignác_z_loyoly',
+      'dr_watson',
+      'brett_whiteley',
+      'abu_bekr',
+      'mona_liza',
+      'robert_borden',
+      'johannes_chrysostomos',
+      'ignatius_av_loyola',
+      'lise_lotte',
+      'pierre_pérignon',
+      'ding_ling',
+      'colleen_fitzpatrick',
+      'rex_hunt',
+      'kim_yoo_jin',
+      'johannes_khrysostomos',
+      'archie_goodwin',
+      'jiang_shi',
+      'henry_jenkins',
+      'john_pearse',
+      'harvey_smith',
+      'tian_cha',
+      'seleucus',
+      'jason_robinson',
+      'alois_alzheimer',
+      'peter_brook',
+      'eugen_jahnke',
+      'bill_hook',
+      'leste_sueste',
+      'francisco_de_asís',
+      'san_vicente',
+      'diego_garcía',
+      'jack_russell',
+      'jonathan_silver',
+      'françois_d_assise',
+      'ignace_de_loyola',
+      'blessed_virgin',
+      'st_mary_magdalene',
+      'albert_francis_charles_augustus_emmanuel',
+      'rudbeckia_hirta',
+      'ilich_sanchez',
+      'glen_gebhard',
+      'william_franklin_graham',
+      'henry_beauclerc',
+      'st_john_chrysostom',
+      'philip_ii_of_spain',
+      'st_ignatius_of_loyola',
+      'saint_ambrose',
+      'sanchez',
+      'mary_magdalene',
+      'st_ambrose',
+      'nan_ling',
+      'apostle_paul',
+      'prince_eugene_of_savoy',
+      'hector_hevodidbon',
+      'richard_roe',
+      'saul_of_tarsus',
+      'st_dominic',
+      'saint_dominic',
+      'andres_martinez',
+      'henry_i',
+      'ilich_ramirez_sanchez',
+      'albert_gore_jr',
+      'zeno_of_citium',
+      'rudbeckia_serotina',
+      'philip_ii_of_macedon',
+      'edward_franklin_albeen',
+      'domingo_de_guzman',
+      'john_chrysostom',
+      'mitch_morgan',
+      'otto_i',
+      'igor_ivanovich_sikorsky',
+      'saint_ignatius_of_loyola',
+      'ignatius_of_loyola',
+      'giovanni_di_bernardone',
+      'aga_khan',
+      'otho_of_lagery',
+      'michael_assat',
+      'walther_richard_rudolf_hess',
+      'margaret_munnerlyn_mitchell',
+      'chí_minh',
+      'yesu kristo',
+      '毛泽东',
+      'hillary clinton',
+      'jesus cristo',
+      'nelson mandela',
+      'pau casals',
+      'jesus christ',
+      'jesu kristu',
+      'king james',
+      'jesu kriste',
+      'james bond',
+      'yesus kristus',
+      'yesu kristu',
+      '耶穌',
+      '普京',
+      'vladimir putin',
+      '李小龙',
+      'صلاح الدين',
+      'عیسی علیہ السلام',
+      'walt disney',
+      '蒋介石',
+      'santa anna',
+      'محمد علی',
+      'jesu kristo',
+      '福特',
+      'محمد علی جناح',
+      'fidel castro',
+      'san luis',
+      'इंदिरा गांधी',
+      'victor hugo',
+      'jesu kristi',
+      'মোহাম্মদ আলী',
+      'رئيس الدولة',
+      'peter pan',
+      'महात्मा गांधी',
+      'عیسیٰ علیہ السلام',
+      '查理',
+      '负有',
+      'আশা করা',
+      'albert einstein',
+      'michael jackson',
+      '达赖喇嘛',
+      '耶稣',
+      '摩根',
+      '乔治',
+      '哈利',
+      'bob dylan',
+      'john wesley',
+      'موسیٰ علیہ السلام',
+      '巴赫',
+      '泰勒',
+      'yesu kristo.',
+      '列宁',
+      'فلاديمير بوتين',
+      '耶穌基督',
+      'woody allen',
+      'saint louis',
+      '克劳威尔',
+      'william shakespeare',
+      '坦诚',
+      'bill gates',
+      'اندرا گاندھی',
+      '康德',
+      'brad pitt',
+      '轮换',
+      'elvis presley',
+      'paul mccartney',
+      'tony blair',
+      '卡特',
+      '安东尼',
+      '亨利',
+      'adolf hitler',
+      'martin luther king',
+      'de gaulle',
+      '经管',
+      'जवाहरलाल नेहरू',
+      'jesu kriste.',
+      'holy ghost',
+      'sherlock holmes',
+      'stephen king',
+      'jesus cristo.',
+      'اسامہ بن لادن',
+      'jesu kristoren',
+      'napoléon iii',
+      'john lennon',
+      'صدام حسين',
+      'donald trump',
+      'nguyễn văn',
+      'paul kagame',
+      'hajar jahanam',
+      'santa maria',
+      'chisinihala chisipanishi',
+      'sant jordi',
+      'harry potter',
+      'sant pere',
+      'chikwangali chikwanyama',
+      'consell comarcal',
+      'chiromaniya chirundi',
+      'federació catalana',
+      'nguyễn xuân',
+      'lê văn',
+      '大桥',
+      'perezida paul',
+      'chicheki chichewa',
+      'anita loos',
+      'jean claude',
+      'chiabeniya chiafirikana',
+      'nguyễn hữu',
+      'nguyễn thị',
+      'josep maria',
+      'jose mourinho',
+      'trần văn',
+      'jean paul',
+      'emmanuel macron',
+      'william branham',
+      'pedro sánchez',
+      'general manager',
+      'jean bosco',
+      'jean pierre',
+      'sant miquel',
+      'carles puigdemont',
+      'phạm văn',
+      'sumatera utara',
+      'mariano rajoy',
+      'chitsotsilu chitswana',
+      'lionel messi',
+      'sant pau',
+      'juan carlos',
+      'jeannette kagame',
+      'michel temer',
+      'chitumbuka chiturkishi',
+      'chikaonde chikatalani',
+      'lê thị',
+      'nicolas sarkozy',
+      'concurso público',
+      'pompeu fabra',
+      'martin luther',
+      'jose luis',
+      'nguyễn ngọc',
+      'juan pablo',
+      'victoria falls',
+      'chiswati chiswedishi',
+      '双赢',
+      'jean baptiste',
+      'jean de dieu',
+      '阴阳',
+      'chitsonga chitswana',
+      'chiazerbaijani chiazerbaijani',
+      'chitahiti chitaliyana',
+      'chiameniya chiamuhariki',
+      'chikamba chikambodiya',
+      'angela merkel',
+      'jean marie',
+      'phan văn',
+      'marine le',
+      'stan lee',
+      'martin munezero',
+      '鲁迅',
+      'patrick young',
+      'robert mugabe',
+      'phạm thị',
+      'josep m.',
+      'ngô đình',
+      'madamu jeannette',
+      '刘备',
+      'benestar social',
+      'chikurdish kurmanji',
+      'hoàng văn',
+      'chiazebaijani chiazibaijani',
+      'john pombe',
+      'paul makonda',
+      'roma) seshona',
+      'nguyễn đình',
+      'hồ ngọc',
+      '雷锋',
+      'josé antonio',
+      'catalan cebuano',
+      'thor thunderstruck',
+      'françois hollande',
+      'chisinhala chisipanishi',
+      '韩信',
+      'victoire ingabire',
+      'nguyễn thanh',
+      'justin bieber',
+      'chiswahili chiswedishi',
+      'selim bridge',
+      'võ văn',
+      'mark zuckerberg',
+      'chikazakhi chikebuano',
+      'chikulowesha chikurdishi',
+      'chiabeniya chiacholi',
+      'louise mushikiwabo',
+      'específico de',
+      'luis enrique',
+      'ivangeli lokufika',
+      'chikwichwa (imbabura',
+      'aaron connolly',
+      'nguyễn huy',
+      'amangqina kayehova',
+      'santa clara',
+      'danish dutch',
+      'beverly hills',
+      'chikurdishi kurmanji',
+      'cahit turhan',
+      'jay polly',
+      'sant francesc',
+      'jean damascene',
+      'trần thị',
+      'nguyễn phú',
+      'juan manuel',
+      'chiswati chiswidishi',
+      'chisililiki) chikadishi',
+      'chiayisilandi chiazebaijani',
+      'santa maría',
+      'bandar udara',
+      'martin vrijland',
+      'george w.',
+      'st. john',
+      'joan manuel',
+      'san joan',
+      'jules sentore',
+      'nguyễn chí',
+      'nguyễn minh',
+      'phạm ngọc',
+      'joan herrera',
+      'senahuatl senahuatl',
+      'đinh la',
+      'chris brown',
+      'chitekimeni chitekishi',
+      'victor osimhen',
+      'andra mari',
+      'randy hall',
+      'chitajiki chitaliyana',
+      'hoàng minh',
+      'danau toba',
+      'bill gates',
+      '李娜',
+      'john mccain',
+      'jose antonio',
+      'trần quốc',
+      'trần đại',
+      'nguyễn công',
+      'hồ xuân',
+      'benjamin dube',
+      'nguyễn anh',
+      'phạm hùng',
+      'nguyễn quốc',
+      'enrique peña',
+      'chiafirikana chiameniya',
+      'trần duy',
+      'josé luis',
+      'đàm vĩnh',
+      '我也是',
+      'chiamuhariki chiangime',
+      'chichewa chichokwe',
+      'lê hồng',
+      'vũ đình',
+      'manuel valls',
+      'i. p.',
+      'joseph kabila',
+      'chitagalogi chitaliyana',
+      'xi jinping',
+      'quang hải',
+      'salvador espriu',
+      'chiafrikanzi chialbaniya',
+      'mauritius secreole',
+      'generalitat valenciana',
+      'billy graham',
+      'jesu kristu.',
+      '沉睡',
+      'karl marx',
+      'steven spielberg',
+      'ronald reagan',
+      'bill clinton',
+      '布什',
+      '托马斯',
+      '赫鲁晓夫',
+      'pablo picasso',
+      'jésus christ',
+      '摩西',
+      'isaac newton',
+      '琼斯',
+      '不折不扣',
+      'sigmund freud',
+      '伊丽莎白',
+      '大卫',
+      'yesu kristu.',
+      '贝多芬',
+      'marco polo',
+      'bin laden',
+      'joseph smith',
+      'marco aurélio',
+      'giê su',
+      'lê nin',
+      '缆车',
+      '腓特烈五世',
+      'meryl streep',
+      'robin hood',
+      'mick jagger',
+      'یاسر عرفات',
+      '学士学位',
+      '萨特',
+      'indiana jones',
+      'che guevara',
+      '最為',
+      '斯大林',
+      'frank sinatra',
+      '前男友',
+      '大伟',
+      'winston churchill',
+      'lope de vega',
+      'george orwell',
+      'george lucas',
+      'francisco franco',
+      'neil armstrong',
+      'stanley kubrick',
+      'george bush',
+      'bruce lee',
+      '耐寒',
+      'jane austen',
+      'jimmy carter',
+      '高宗',
+      '罗伯特',
+      '大衛',
+      '希特勒',
+      'حسني مبارك',
+      'jimi hendrix',
+      '莱特',
+      'ابن رشد',
+      'linus pauling',
+      '凯利'
+        ]:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['PUBLIC_FIGURE']
+
+
+    for word in ['melissa',
+          'john_doe', 'tumelo', '彼得', ]:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['PERSON']      
+
+
+    for word in ['baden_baden',
+      'saint_lucia', 'chile',
+      'corpus_christi',
+      'friedrichshain_kreuzberg',
+      'andorra_la_vella',
+      'taishan',
+      'oton',
+      'otone',
+      'hong_kong','u. s.','hong kong.', 'los angeles', 
+      'euskal_herriko', 'são_paulo', 'united_states', 'euskal_herrian']:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['GPE']
+
+    for word in ['tian_shan',
+      'mont_tai',
+      'tai_shan',
+      'mount_hubbard',
+      'monte_tai',]:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['LOCATION']
+
+    for word in ['honda_civic',
+      'audi_quattro',
+      'taco_bell',
+      'gore_tex',
+      'realidade_virtual',
+      'virtual_reality',
+      'viola',
+      'mozilla_firefox',
+      'gore_tex',
+      'power_pill',
+      'q_tip',
+      'taco_bell',
+      'tee_ball',
+      'newtonmeter',
+      'džokonda',
+      'cable_car',
+      '遥控', 'android_casino', 'charter_flight', 'post_generator', 'remote control',
+      ]:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['PRODUCT']
+
+    for word in ['t_bone_steak',
+    't_bone',]:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['FOOD']
+
+    aHash['corn'] = ['PLANT']
+
+    aHash['gasterosteus_aculeatus'] = ['ANIMAL']
+
+    for word in ['federal_bureau_of_investigation',
+    'pink_floyd',
+    'red_hot_chili_peppers',
+    'the_rolling_stones', 'louis vuitton',
+    'utah_jazz', 'john_deere', 'calvin_klein',
+    'twitter', 'republic', ]:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['ORG']
+
+    for word in ['kuru_disease',
+    'aura_disease',
+    'bubo_disease',
+    'noma_disease',
+    'gall_disease']:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['DISEASE']
+
+    #OTHER
+    for word in ['gimp',
+      'lisp',
+      'para',
+      'pain',
+      'rage',
+      'rust',
+      'wale',
+      'kuru',
+      'aura',
+      'bubo',
+      'noma',
+      'gall',
+      'chill',
+      'bite',
+      'dose',
+      'pest',
+      'energy',
+      'pull',
+      'lump',
+      'crud',
+      'arousal',
+      'suba',
+      'flux',
+      'passion',
+      'smut',
+      'inversion',
+      'rosette',
+      'harm',
+      'radiation',
+      'transposition',
+      'mouse',
+      'shopping',
+      'body_count',
+      'the_real_world',
+      'three_amigos',
+      'center',
+      'trade',
+      'mate',
+      'para',
+      'make',
+      'the_independent',
+      'independent',
+      'major',
+      'persona_non_grata',
+      'land',
+      'cookie',
+      'grip',
+      'monitor',
+      'dot_dot_dot',
+      'autocontrolo',
+      'deep_fried',
+      'este_sudeste',
+      'self_control',
+      'cha_cha',
+      'jo_jo',
+      'core_dump',
+      'la_la',
+      'ha_ha',
+      'yin_yang',
+      'selvfølelse',
+      'йо_йо',
+      'ні_ні',
+      'win_win',
+      'yo_yo',
+      'est_sud_est',
+      'in_memory',
+      'cha_cha_cha',
+      'cha_cha_chá',
+      'chachachá',
+      'ani_ani',
+      's. l.', 'c. m..', 'd. c.', 'ho ho', 
+      'sistema',
+      'sistem',
+      'exemple',
+      'untuk',
+      'ن کی',
+      'gehiago',
+      'kebutuhan',
+      'العمل',
+      'mieux',
+      'gestão',
+      'gestió',
+      'disponible',
+      'sistemas',
+      'picaw',
+      'iritsi',
+      '语言',
+      '最为',
+      '壹',
+      '11日',
+      '集團',
+      '局长',
+      '語言',
+      '言語',
+      '交替',
+      '取',
+      'chikwangali_chikwanyama',
+      '1_samuele', 
+      'ladylucks',
+      'umntu',
+      'بالنسبة',
+      'chose',
+      '1_samueli', 
+      '1_samuweli', 
+      'c. e.','constructive side', 'c. m.', 'j. m.', 'la la', 
+      'antes de', 'king james version', 'choses', 'display','follow', 'rural', 'academy awards', 'academy award', 'main mark', ]:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['OTHER'] 
+
+    for word in ['diciembre']:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['DATE']
+
+    for word in ['پولیس', '国家主席', 'ئي الدولة', 'managing director', ]:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        word = word.replace(" ", "_")
+      aHash[word] = ['JOB']
+
+    for word in ['c_vitamini',
+      'c_vitamin',
+      'vitamin_c',
+      'vitamina_c'
+      ]:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['CHEMICAL_SUBSTANCE']
+
+    for word in ['11_products']:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['QUANTITY']  
+
+    for word in ['chinese mandarin', 'romanian russian', ]:
+      word = self.canonical_word(word, do_lower=True)[0]
+      if word:
+        aHash[word] = ['LANGUAGE']  
+
+    for ent, val in aHash.items():
+      if 'LOC' in val:
+        val = ['LOCATION']
+        aHash[ent] = val
+      if ('LOCATION' in val or 'GPE' in val or 'FAC' in val) and (r.match(ent.split("_")[0]) or r.match(ent.split("_")[-1])):
+        val = ['ADDRESS']
+        aHash[ent] = val
+    
+    word2ner = [[a[0]]+a[1] for a in aHash.items()]
+    random.shuffle(word2ner)
+    json.dump(word2ner, open(new_word2ner_file, "w", encoding="utf8"))
+    
 if __name__ == "__main__":  
   data_dir = tmp_dir = None
   if "-s" in sys.argv:
@@ -1219,4 +2078,3 @@ if __name__ == "__main__":
   if "-c" in sys.argv:
     builder = OntologyBuilder(tmp_dir=tmp_dir, data_dir=data_dir)
     rel2 = builder.save_cross_lingual_ontology()
-
