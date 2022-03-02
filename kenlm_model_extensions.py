@@ -28,8 +28,12 @@ def load_kenlm_model(src_lang="en", store_model=True, cache_dir=None):
       for kenlm_models, model_type in ((kenlm_wiki_models, "wikipedia"), ): #(kenlm_oscar_models, "oscar")
           os.system(f"mkdir -p {cache_dir}/{model_type}")
           if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.arpa.bin"):
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.arpa.bin")
-            file = cached_download(file_url)
+            try:
+              file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.arpa.bin")
+              file = cached_download(file_url)
+            except:
+              print (f'could not find model {src_lang}.arpa.bin. will stop searching...')
+              return all_models
             os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.arpa.bin")
           if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.model"):
             file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.model")
