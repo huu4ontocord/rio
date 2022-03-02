@@ -122,7 +122,7 @@ class TextAugmentDeviceModel:
     for available_device_model, device_id in zip(TextAugmentDeviceModel.available_device_models, TextAugmentDeviceModel.available_devices):
         if available_device_model is None:
           available_device_model = TextAugmentDeviceModel(device_id=device_id)
-        available_device_model.initializer(src_langs=src_langs, target_langs=target_langs, aug_langs=aug_langs)
+        available_device_model.initializer(src_langs=src_langs, target_langs=target_langs, aug_langs=aug_langs,device_id=device_id)
         TextAugmentDeviceModel.available_device_models[max(0,available_device_model.device_id)] = available_device_model
 
   def initializer(self, device_id=None, device=None, src_langs=["en"], target_langs=["en"], aug_langs=["en"]):
