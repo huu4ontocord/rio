@@ -15,7 +15,7 @@ We also use spacy and regex as added signals for NER tags.
 The translation techniques used are very compute heavy, and not intended to perform fast detection or anonymization of a dataset. Instead, it is intended to be used to create augmented training data to train a relatively fast model (e.g., spacy or transformer model) for languages where there is little or no NER data.
 
 # Installing
-If you want to be able to do gender detection and coref detection, you will need to load neuralcoref below. However, you will only be able to use space english if you load neural coref. You can also load a larger spacy model for more accuracy but more memory.
+If you want to be able to do gender detection and coref detection, you will need to load neuralcoref below. However, you will only be able to use spacy english if you load neural coref. You can also load a larger spacy model for more accuracy but more memory.
 ```
 git clone https://github.com/ontocord/muliwai
 pip install https://github.com/kpu/kenlm/archive/master.zip
@@ -158,7 +158,7 @@ python processor.py -src_lang zh -preload_cache
 
 - The source code authored by Ontocord LLC and contributed by contributors of this project is licensed under Apache 2.0.
 - The TurkuNLP sample data is based on OSCAR and mc4. See the information uder turkunlp_data for more details.
-- The ontology data is derived from Conceptnet and Yago and is mostly licensed under a CC license.
+- The ontology data is derived from Conceptnet, Yago, wordnet, and Wikiann and is mostly licensed under a CC license.
 
 ## Yago
 Yago is licensed under CC BY 4.0. https://yago-knowledge.org/
@@ -211,3 +211,8 @@ The name of Princeton University or Princeton may not be used in advertising or 
 
 Open Multilingual WordNet Open Multilingual WordNet was compiled by Francis Bond, Kyonghee Paik, and Ryan Foster, from data provided by many multilingual WordNet projects. Here is the complete list of references to the projects that created the data.
 ```
+## Wikiann
+
+The code for wikiann/mmner is under Apache 2, and the underlying data is wikipedia data which is CC-BY-SA.
+
+See https://github.com/afshinrahimi/mmner and https://huggingface.co/datasets/wikiann.  

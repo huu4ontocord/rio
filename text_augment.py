@@ -186,14 +186,34 @@ class TextAugment:
   m2m_tokenizer = None
   en_spacy_nlp = None
   faker_en_list  = None
-  ontology_manager = None
   max_stoword_len_zh = max([0]+[len(a) for a in stopwords.get('zh', [])])
   max_stoword_len_ko = max([0]+[len(a) for a in stopwords.get('ko', [])])
   max_stoword_len_ja = max([0]+[len(a) for a in stopwords.get('ja', [])])
   stopwords_en = set(stopwords.get('en',[]))
   cache_dir = None
+  #currently the ontology is better in some languages than others. let's use this to weigh its decisions
+  onto_weights = {'ar': 0.7,
+     'as': 0.4608695652173913,
+     'bn': 0.8617210682492582,
+     'ca': 0.828310502283105,
+     'en': 0.7486245641224332,
+     'es': 0.7927480471027166,
+     'eu': 0.7512268618166165,
+     'fr': 0.906392199349946,
+     'gu': 0.5492063492063493,
+     'hi': 0.9072243346007605,
+     'id': 0.8701458901672401,
+     'ig': 0.9733333333333334,
+     'mr': 0.7801952580195257,
+     'pa': 0.3739130434782609,
+     'pt': 0.8598342782381161,
+     'sw': 0.7892857142857144,
+     'ur': 0.9623066104078761,
+     'vi': 0.8259711431742509,
+     'yo': 0.8341463414634145,
+     'zh': 0.5014218009478673}
 
-  def __init__(self, device=None, single_process=1, available_device_model=None, labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, cache_dir=None):
+  def __init__(self, device=None, single_process=1, available_device_model=None, labse=None,  translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, cache_dir=None):
     if cache_dir is None:
         cache_dir = os.path.expanduser ('~')+"/.cache"
     if TextAugment.cache_dir is None:
@@ -213,9 +233,9 @@ class TextAugment:
         TextAugment.device = "cpu"
     logger.info (('running on ', TextAugment.device))
     if single_process:
-      self.initializer(available_device_model=available_device_model, device=TextAugment.device, labse=labse, ontology_manager=ontology_manager, translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, cache_dir=cache_dir)
+      self.initializer(available_device_model=available_device_model, device=TextAugment.device, labse=labse,  translation_pipelines=translation_pipelines, ner_model_name2pipelines=ner_model_name2pipelines, en_spacy_nlp=en_spacy_nlp, faker_en_list=faker_en_list, qg=qg, cache_dir=cache_dir)
 
-  def initializer(self, device_id_by_proess_id=True, all_available_device_model=None, available_device_model=None, device=None,  labse=None, ontology_manager=None, translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, cache_dir=None):
+  def initializer(self, device_id_by_proess_id=True, all_available_device_model=None, available_device_model=None, device=None,  labse=None,  translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, cache_dir=None):
     if all_available_device_model is not None:
       TextAugmentDeviceModel.available_device_models   = all_available_device_model
       TextAugmentDeviceModel.available_devices = [d.device_id for d in all_available_device_model]
@@ -280,7 +300,6 @@ class TextAugment:
     if translation_pipelines is not None: TextAugment.translation_pipelines = translation_pipelines
     if ner_model_name2pipelines is not None: TextAugment.ner_model_name2pipelines = ner_model_name2pipelines
     if qg is not None: TextAugment.qg = qg
-    if ontology_manager is not None: TextAugment.ontology_manager = ontology_manager
     if en_spacy_nlp is not None: TextAugment.en_spacy_nlp = en_spacy_nlp
     if faker_en_list is not None: TextAugment.faker_en_list = faker_en_list
     if TextAugment.en_spacy_nlp is None: TextAugment.en_spacy_nlp = spacy.load('en_core_web_sm')
@@ -292,8 +311,6 @@ class TextAugment:
         logger.info("Neuralcoref not loaded. Using normal spacy")
         pass
 
-    if TextAugment.ontology_manager is None: TextAugment.ontology_manager = OntologyManager('en') #src_lang=src_lang
-    #speed up loading if we don't use kenlm models
     if TextAugment.faker_en_list is None:
       TextAugment.faker_en_list  = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
       for faker_en in faker_en_list:
@@ -1603,7 +1620,11 @@ class TextAugment:
           pass
     model = None
     ner_pipelines = []
-
+    
+    ontology_manager = None
+    if do_ontology:
+       ontology_manager = OntologyManager(target_lang) 
+    
     # init the kenlm pipeline
     if do_kenlm:
         if target_lang not in kenlm_wiki_models:
@@ -1612,7 +1633,11 @@ class TextAugment:
     if target_lang != src_lang:
         if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
         if TextAugment.labse is None:
-            TextAugment.labse =  SentenceTransformer(os.path.join(os.path.expanduser ('~')+"/.cache","sentence-transformers/LaBSE")).eval()
+            try:
+              TextAugment.labse =  SentenceTransformer(os.path.join(os.path.expanduser ('~')+"/.cache","sentence-transformers/LaBSE")).eval()
+            except:
+              TextAugment.labse =  SentenceTransformer("sentence-transformers/LaBSE").eval()
+
             if self.device == "cpu":
               TextAugment.labse  = torch.quantization.quantize_dynamic(TextAugment.labse , {torch.nn.Linear}, dtype=torch.qint8)
             else:
@@ -1675,9 +1700,7 @@ class TextAugment:
       target_offset_key = f'{target_lang}_offset'
       target_src_sim_key = f'{src_lang}_2_{target_lang}_sim'
 
-    public_figure_kenlm_data = public_figure_kenlm_cutoff_map.get(target_lang, {'cutoff': 500, 'pattern': "{} (born"})
-    public_figure_kenlm_cutoff = public_figure_kenlm_data['cutoff']
-    public_figure_kenlm_pattern = public_figure_kenlm_data['pattern']
+    public_figure_kenlm_data_list = public_figure_kenlm_cutoff_map.get(target_lang, [{'cutoff': 500, 'pattern': "{} (born"}])
     docs = self.collapse_ner(docs, ner_key = f'{src_lang}_signal_ner', collapse_ner_key = f'{src_lang}_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1)
 
     # do operations in the target_lang space
@@ -1780,26 +1803,26 @@ class TextAugment:
               pass
             trans_text = before + " " + ent + " " + after
           trans_text = chunk[target_text_key] = trans_text.replace("  ", " ").strip()
-          if do_kenlm and target_lang == 'en' and target_lang in TextAugment.kenlm_wiki_models:
-              chunk[f'{target_lang}_kenlm'] = TextAugment.kenlm_wiki_models[target_lang].get_perplexity(chunk[target_text_key])
+          if do_kenlm and target_lang == 'en' and target_lang in kenlm_wiki_models:
+              chunk[f'{target_lang}_kenlm'] = kenlm_wiki_models[target_lang].get_perplexity(chunk[target_text_key])
           if doc.get(target_text_key, ""):
             chunk[target_offset_key] = len(doc.get(target_text_key, "")) + 1
           else:
             chunk[target_offset_key] = 0
           doc[target_text_key] = (doc.get(target_text_key, "") + " " + trans_text).strip()
-    if do_kenlm and target_lang == 'en' and target_lang in TextAugment.kenlm_wiki_models:
+    if do_kenlm and target_lang == 'en' and target_lang in kenlm_wiki_models:
       for doc in docs.values():
-        doc[f'{target_lang}_kenlm'] = TextAugment.kenlm_wiki_models[target_lang].get_perplexity(doc[target_text_key].replace(" .", " "))
+        doc[f'{target_lang}_kenlm'] = kenlm_wiki_models[target_lang].get_perplexity(doc[target_text_key].replace(" .", " "))
 
     if do_regex:
       docs = self.apply_regex_ner(target_lang, docs=docs, weight=regex_weight, text_key=target_text_key, ner_key=target_ner_key)
 
-    if do_ontology and self.ontology_manager is not None:
+    if do_ontology and ontology_manager is not None:
         # dictionary matching context independent so has lower accuracies
         for doc in docs.values():
           doc[target_ner_key] = ner = doc.get(target_ner_key, {})
           if True:
-            chunk2ner = self.ontology_manager.tokenize(doc[target_text_key])['chunk2ner']
+            chunk2ner = ontology_manager.detect(doc[target_text_key])
             onto_items = []
             for c, label in chunk2ner.items():
               if label not in ("PERSON", "PUBLIC_FIGURE"): continue # hard coded to only do people for now
@@ -1809,7 +1832,7 @@ class TextAugment:
                 onto_items.append(((ner_word, c[1], c[1] + len(ner_word)), label))
             for ner_mention, label in list(set(onto_items)):
                 aHash = ner.get(ner_mention, {})
-                aHash[(label, 'onto')] = aHash.get((label, 'onto'), 0) + ontology_weight * (1.0 + len(ner_mention[0])/100) * backtrans_weight
+                aHash[(label, 'onto')] = aHash.get((label, 'onto'), 0) + ontology_weight * TextAugment.onto_weights.get(target_lang, 0.5) * backtrans_weight
                 ner[ner_mention] = aHash
 
     if do_spacy:
@@ -1832,7 +1855,7 @@ class TextAugment:
     if do_docs_trim_for_person:
       docs, chunks = self.trim_to_prefer_person(docs, chunks)
 
-    if do_kenlm and target_lang in TextAugment.kenlm_wiki_models:
+    if do_kenlm and target_lang in kenlm_wiki_models:
       for doc in docs.values():
         ner = doc[target_ner_key]
         prev_public_figures = []
@@ -1865,7 +1888,7 @@ class TextAugment:
           for public_figure_kenlm_data in public_figure_kenlm_data_list:
             public_figure_kenlm_cutoff = public_figure_kenlm_data['cutoff']
             public_figure_kenlm_pattern = public_figure_kenlm_data['pattern']
-            kenlm_score = TextAugment.kenlm_wiki_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2))
+            kenlm_score = kenlm_wiki_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2))
             #logger.info((ent, kenlm_score))
             if kenlm_score <= public_figure_kenlm_cutoff:
               logger.info(("found public figure ", ent2, kenlm_score))
@@ -1878,7 +1901,7 @@ class TextAugment:
             #logger.info(("adding knelm public figure", ent))
             aHash[('PUBLIC_FIGURE', 'kenlm')] = aHash.get(('PUBLIC_FIGURE', 'kenlm'), 0) + 1.0 # use param kenlm_weight
 
-    if do_public_figure_expansion:
+    if False: # do_public_figure_expansion:
       for doc in docs.values():
         text  = doc[target_text_key]
         len_text = len(text)
@@ -2505,7 +2528,6 @@ class TextAugment:
         yield []
       else:
         yield docs
-
   @staticmethod
   def preload_cache(src_langs=["en"], target_langs=["en"], domain=None):
     #print ("preload_cache")
@@ -2550,8 +2572,8 @@ class TextAugment:
             AutoModel.from_pretrained(model_name)
             AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
             AutoConfig.from_pretrained(model_name)
-    load_kenlm_model(src_lang, store_model=False, cache_dir=self.cache_dir)
-    load_kenlm_model(target_lang, store_model=False, cache_dir=self.cache_dir)
+    load_kenlm_model(src_lang, store_model=True)
+    load_kenlm_model(target_lang, store_model=True)
     #load_kenlm_model(src_lang, store_model=False, cache_dir=self.cache_dir)
 
   @staticmethod

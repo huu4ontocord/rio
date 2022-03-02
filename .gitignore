@@ -1,6 +1,2 @@
 __pycache__/
 .idea/
-data/
-test/
-chunk.jsonl
-test_out.py

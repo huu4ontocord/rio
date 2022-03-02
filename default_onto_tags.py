@@ -11,17 +11,21 @@ default_label2label = {'SOC_ECO_CLASS': 'NORP',
                            'LOCATION': 'LOC',                           
                            'FAC': 'LOC',
                            'MEDICAL_SYMPTOM': 'DISEASE',
+                           'CHEMICAL_SUBSTANCE': 'SUBSTANCE',
+                           'TITLE': 'OTHER',
+                           'PERSON_PRONOUN': 'OTHER',
                            }
 
 default_upper_ontology = {
         'PERSON': ['PERSON'],
         'PUBLIC_FIGURE': ['PUBLIC_FIGURE', 'PERSON'],
+        'LOC': ['LOC'],
         'ORG': ['ORG'],
         'NORP': ['NORP', 'ORG'],
         'AGE': ['AGE'],
         'DISEASE': ['DISEASE'],
+        'PRODUCT': ['PRODUCT'],
         'ADDRESS': ['ADDRESS', 'LOC'],
-        'LOC': ['LOC'],
         'USER': ['USER'],
         'URL': ['URL'],
         'ID': ['ID'],
@@ -36,26 +40,12 @@ default_upper_ontology = {
         'EVENT': ['EVENT'],
         'BIO_CHEM_ENTITY': ['BIO_CHEM_ENTITY'],
         'MEDICAL_THERAPY': ['MEDICAL_THERAPY'],
+        'SUBSTANCE': ['SUBSTANCE'],
         'LAW': ['LAW'],
         'ANAT': ['ANAT'],
         'QUANTITY': ['QUANTITY'],
         'DATE': ['DATE'],
         'TIME': ['TIME'],
-        'PRODUCT': ['PRODUCT'],
         'MISC': ['MISC'],
         'OTHER': ['OTHER'],
     }
-
-label_weight_factors = {'PUBLIC_FIGURE': 20, 'ANIMAL': 0.005, 'PLANT': 0.25, \
-                            'BIO_CHEM_ENTITY': 0.01, 'LANGUAGE': 10, 'RACE': 20, \
-                            'RELIGION': 15, 'RACE': 15,
-                            'RELIGION_MEMBER': 25,
-                            'GENDER': 15,
-                            'SOC_ECO_CLASS': 15,
-                            'POLITICAL_PARTY': 15,
-                            'MEDICAL_THERAPY': 100,                        
-                            'MEDICAL_SYMPTOM': 300,
-                            'UNION': 30,
-                            'POLITICAL_PARTY_MEMBER': 15,
-}
-

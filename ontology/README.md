@@ -1,5 +1,5 @@
 ## What is this
-- This is a library for accessing a large multilingual ontology.
+- This is a library for accessing a large multilingual ontology of approximately 8.5M words in many languages. 
 - What is an ontology? It is simply a dictionary that ties into a hiearchy (a PUBLIC_FIGURE is a type of PERSON).
 - The dictionary is based on Conceptnet5 and Yago entities. We have also created constraints on various entities, and hand crafted rules for conflicts between various types. 
 - See ontology_builder_data.py and ontology_builder.py for details on the constraints.
@@ -15,3 +15,6 @@ from muliwai.ontology.ontology_manager import OntologyManager
 onto = OntologyManager()
 onto.tokenize("George Washington was the 1st president of the United States")
 ```
+
+## Todo
+- Add linking to canonical (wikipedia) form

@@ -17,18 +17,23 @@ kenlm_oscar_models = {}
 def load_kenlm_model(src_lang="en", store_model=True, cache_dir=None):
       """
       Load a new one. Consider if we want to use an LRU.
+      TODO: Incorporate OSCAR kenlm models. They are quite big, and we still need patterns and cutoffs.
       """
       src_lang = src_lang if src_lang in public_figure_kenlm_cutoff_map else "en"
       if kenlm_wiki_models and src_lang in kenlm_wiki_models:
-        return [kenlm_wiki_models[src_lang], kenlm_oscar_models[src_lang]]
+        return [kenlm_wiki_models[src_lang], ] # kenlm_oscar_models[src_lang]
       if cache_dir == None:
         cache_dir = os.path.expanduser ('~')+"/.cache"
       all_models = []
-      for kenlm_models, model_type in ((kenlm_wiki_models, "wikipedia"), (kenlm_oscar_models, "oscar")):
+      for kenlm_models, model_type in ((kenlm_wiki_models, "wikipedia"), ): #(kenlm_oscar_models, "oscar")
           os.system(f"mkdir -p {cache_dir}/{model_type}")
           if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.arpa.bin"):
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.arpa.bin")
-            file = cached_download(file_url)
+            try:
+              file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.arpa.bin")
+              file = cached_download(file_url)
+            except:
+              print (f'could not find model {src_lang}.arpa.bin. will stop searching...')
+              return all_models
             os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.arpa.bin")
           if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.model"):
             file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.model")
@@ -62,6 +67,20 @@ public_figure_kenlm_cutoff_map = {'en': [{'cutoff': 500, 'pattern': "{} (born"}]
                                     'bn': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
                                     }
 
+#TODO: refactor code in the faker_extensions with this code
+def check_fakename(lang, fake_name, verbose=False):
+      """ Check fake name close to real name"""
+      kenlm_models = load_kenlm_model(lang)
+      patterns = public_figure_kenlm_cutoff_map.get(lang, [{'cutoff': 500, 'pattern': "{} (born"}])
+      for model in kenlm_models:
+          for pattern in patterns:
+              test_name = pattern['pattern'].format(fake_name)
+              if model.get_perplexity(test_name) < pattern['cutoff']:
+                  if verbose:
+                      print(fake_name, model.get_perplexity(test_name))
+                  return True
+      return False
+            
 ### Edugp code
 
 class SentencePiece:

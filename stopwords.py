@@ -56,7 +56,7 @@ stopwords = {
         "wat",
         "\u0149",
     ],
-    "ar": [
+    "ar": ["يو",
         "\u060c",
         "\u0623",
         "\u0627",
@@ -2073,7 +2073,7 @@ stopwords = {
         "\u03c4\u03c9\u03bd",
         "\u03c9\u03c3",
     ],
-    "en": [
+    "en": ["redir", "fc",
         "a",
         "a's",
         "able",
@@ -7000,7 +7000,7 @@ stopwords = {
         "\u057e\u0580\u0561",
         "\u0587",
     ],
-    "id": [
+    "id": [ "alih", 
         "ada",
         "adalah",
         "adanya",
@@ -13763,7 +13763,7 @@ stopwords = {
         "\u1ecdj\u1ecd\u0301",
         "\u1ecd\u0300p\u1ecd\u0300l\u1ecdp\u1ecd\u0300",
     ],
-    "zh": [
+    "zh": ['加',
         "\u3001",
         "\u3002",
         "\u3008",
