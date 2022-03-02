@@ -143,6 +143,8 @@ class TextAugmentDeviceModel:
       self.translation_pipelines["facebook/m2m100_418M"] =  M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").eval().half().to(self.device)
     seen = {}
     print(src_langs)
+    print(target_langs+aug_langs)
+    print(zip(src_langs, target_langs+aug_langs))
     print([(src_lang, target_lang) in zip(src_langs, target_langs+aug_langs)])
     pairs = list(set([(src_lang, target_lang) in zip(src_langs, target_langs+aug_langs)] + [(target_lang, src_lang) in zip(src_langs, target_langs+aug_langs)]))
     for pair in pairs:
