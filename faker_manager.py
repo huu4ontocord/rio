@@ -13,7 +13,7 @@ limitations under the License.
 from faker import Faker
 from faker.providers import person, company, geo, address, ssn, internet
 from fake_names import *
-from kenlm_model_extensions import *
+from kenlm_manager import *
 from typing import List
 import random
 import time
