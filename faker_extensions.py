@@ -139,51 +139,7 @@ class FakerExtensions:
           self.name_lists = [[]]
           self.name_lists_probabilities = [1.0]
 	
-  def company(self, ent=None, context=None):
-    if ent is None or context is None: 
-      try: 
-        return self.faker.company()
-      except:
-        return "COMPANY"
-    try:
-      co = self.faker.company()
-    except:
-      co = "COMPANY"
-    co = context[ent] = context.get(ent, co)
-    if " " in ent:
-        ent2 = ent.split(" ")[0]
-        if len(ent2) > 4:
-          if ent2 in context:
-            co2 = context[ent2]
-            if " " in co:
-              co = " ".join([co2]+co.split()[1:])
-            else:
-              co = co2 + " " + co
-            context[ent] = co
-          elif " " in context[ent]:
-            val = context[ent].split()[0]
-          else:
-            val = context[ent]
-          context[ent2] = context.get(ent2, val) 
-    return context[ent] 
-
-  def country(self, ent=None, context=None):
-    if ent is None or context is None: 
-      return self.faker.country()
-
-  def state(self, ent=None, context=None):
-    if ent is None or context is None: 
-      if self.lang == 'zh': 
-          return self.faker.province()
-      else: 
-          return self.faker.state()
-    if self.lang == 'zh': 
-        context[ent] =  context.get(ent, self.faker.province())
-    else: 
-        context[ent] =  context.get(ent, sself.faker.state())
-    return context[ent]
-
-  def generate_fakename(self, gender: int = None):
+  def generate_fakename(self, one_name=False, gender: int = None):
       """ Generate fake name """
       if gender is None:
           gender = random.choice(range(self.num_genders))
@@ -202,6 +158,8 @@ class FakerExtensions:
             name_list = name_list_of_lists[min(len(name_list_of_lists) - 1, gender)]
             if random.random() <= self.name_lists_probabilities[i]:
               output_name.append(random.choice(name_list))
+          if one_name and output_name:
+            return " ".join(output_name)
       return " ".join(output_name)
 
   def check_like_known_name(self, fake_name, verbose=False):
@@ -217,14 +175,17 @@ class FakerExtensions:
                   return True
       return False
 
-  def create_name(self, verbose=False):
+  def create_name(self, one_name=False, verbose=False):
       """ Create fake name and varify by kelnm models """
       success = False
       for _ in range(self.trials):
         if self.lang in ("pa", "gu","as", "mr", "vi", "bn", "ur", "ca", "yo", "sw", "sn", "st", "ig", "ny", "xh", "ca", "zu"): 
-          fake_name = self.generate_fakename()
+          fake_name = self.generate_fakename(one_name=one_name)
         else:
-          fake_name = self.faker.name()
+          if one_name:
+            fake_anme = self.faker.firstname()
+          else:
+            fake_name = self.faker.name()
         # we want our fake names to not be too close to a famous name
         if not self.check_like_known_name(fake_name, verbose):
             success = True
@@ -233,13 +194,16 @@ class FakerExtensions:
           print('Could not find any fake name. Try reducing perplexity_cutoff')
       return self.faker.name()
   
-  def firstname(self)
+  #TODO - create male and female versions of firstname and name
+  
+  def firstname(self, ent=None, context=None, verbose=False,):
+    return self.name(one_name=True, ent=ent, context=context, verbose=verbose)
 
-  def name(self, ent=None, context=None, verbose=False,):
+  def name(self, one_name=False, ent=None, context=None, verbose=False,):
     if ent is None or context is None: 
       return self.create_name(verbose=verbose)
     if ent in context: return context[ent]
-    na = self.create_name(verbose=verbose)
+    na = self.create_name(one_name=one_name, verbose=verbose)
     na  = context[ent] = context.get(ent, na)
     if " " in ent:
         ent1 = ent.split(" ")[0]
@@ -269,18 +233,71 @@ class FakerExtensions:
             context[ent2] = context.get(ent2, val) 
     return context[ent] 
 
+  def company(self, ent=None, context=None):
+    if ent is None or context is None: 
+      try: 
+        return self.faker.company()
+      except:
+        return "COMPANY"
+    try:
+      co = self.faker.company()
+    except:
+      co = "COMPANY"
+    co = context[ent] = context.get(ent, co)
+    if " " in ent:
+        ent2 = ent.split(" ")[0]
+        if len(ent2) > 4:
+          if ent2 in context:
+            co2 = context[ent2]
+            if " " in co:
+              co = " ".join([co2]+co.split()[1:])
+            else:
+              co = co2 + " " + co
+            context[ent] = co
+          elif " " in context[ent]:
+            val = context[ent].split()[0]
+          else:
+            val = context[ent]
+          context[ent2] = context.get(ent2, val) 
+    return context[ent] 
+
+  def ssn(self, ent=None, context=None):
+    if ent is None or context is None: 
+      return self.faker.ssn()
+    context[ent] =  context.get(ent, self.faker.ssn())
+    return context[ent]
+
+  def address(self, ent=None, context=None):
+    if ent is None or context is None: 
+      return self.faker.address()
+    context[ent] =  context.get(ent, self.faker.address())
+    return context[ent]
+
+  def country(self, ent=None, context=None):
+    if ent is None or context is None: 
+      return self.faker.country()
+    context[ent] =  context.get(ent, self.faker.country())
+    return context[ent]
+
+  def state(self, ent=None, context=None):
+    if ent is None or context is None: 
+      if self.lang == 'zh': 
+          return self.faker.province()
+      else: 
+          return self.faker.state()
+    if self.lang == 'zh': 
+        context[ent] =  context.get(ent, self.faker.province())
+    else: 
+        context[ent] =  context.get(ent, self.faker.state())
+    return context[ent]
+
 if __name__ == "__main__":
   # "pa", "gu","as", 
-  for lang in ["vi"]: # ["pa", "zh", "en", "yo","mr", "ny", "sn", "st", "xh", "zu", "ar", "bn", "ca",  "es", "eu", "fr", "hi", "id", "ig", "pt",  "sw", "ur","vi",  ]:
+  for lang in ["pa", "zh", "en", "yo","mr", "ny", "sn", "st", "xh", "zu", "ar", "bn", "ca",  "es", "eu", "fr", "hi", "id", "ig", "pt",  "sw", "ur","vi",  ]:
     print (f'*** {lang}')
     generator = FakerExtensions(lang=lang)
     start_time=time.time()
-    context = {}
     for i in range(100):
-
-        fake_name = generator.name(ent="John", context=context, verbose=True)
-        print ('found name', fake_name)
-
-        fake_name = generator.name(ent="John Doe", context=context, verbose=True)
+        fake_name = generator.name()
         print ('found name', fake_name)
     print(f"Running time {time.time() - start_time}")
