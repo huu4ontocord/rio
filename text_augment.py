@@ -1625,8 +1625,8 @@ class TextAugment:
     
     # init the kenlm pipeline
     if do_kenlm:
-        if target_lang not in kenlm_wiki_models:
-            load_kenlm_model(target_lang, cache_dir=self.cache_dir)
+        if target_lang not in kenlm_models["wikipedia" if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else "mc4"]:
+            load_kenlm_model(target_lang, cache_dir=self.cache_dir, pretrained_models=["wikipedia"] if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
 
     if target_lang != src_lang:
         if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
@@ -2570,8 +2570,8 @@ class TextAugment:
             AutoModel.from_pretrained(model_name)
             AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
             AutoConfig.from_pretrained(model_name)
-    load_kenlm_model(src_lang, store_model=True)
-    load_kenlm_model(target_lang, store_model=True)
+    load_kenlm_model(src_lang, store_model=True, pretrained_models=["wikipedia"] if src_lang not in ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
+    load_kenlm_model(target_lang, store_model=True, pretrained_models=["wikipedia"] if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
     #load_kenlm_model(src_lang, store_model=False, cache_dir=self.cache_dir)
 
   @staticmethod
