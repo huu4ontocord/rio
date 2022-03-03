@@ -1,3 +1,15 @@
+"""
+Copyright, 2021-2022 Ontocord, LLC, and other authors of Muliwai, All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 from faker import Faker
 from faker.providers import person, company, geo, address, ssn, internet
 from fake_names import *
@@ -83,7 +95,7 @@ class FakerExtensions:
       self.num_genders = 2
       if lang in ("gu","as", ):
         lang = "hi"
-      if lang in ("pa", "mr", "vi", "bn", "ur", "ca", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu"):
+      if lang in ("pa", "mr", "vi", "bn", "ur", "ca", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu", "st"):
         faker = self.faker = Faker("en_GB")
       else:
         faker = self.faker = Faker(random.choice(faker_map["es" if lang in ("eu", "ca") else lang]))
@@ -94,7 +106,7 @@ class FakerExtensions:
       faker.add_provider(internet)
       faker.add_provider(company)
 
-      self.kenlm_models = load_kenlm_model(self.lang)
+      self.kenlm_models = load_kenlm_model(self.lang, pretrained_models=["wikipedia"] if lang not in ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
       self.patterns = public_figure_kenlm_cutoff_map.get(self.lang, [{'cutoff': 500, 'pattern': "{} (born"}])
       if self.lang == "vi":
           surname_list_of_lists: List[List[str]] = [vietnamese_surnames]
@@ -140,7 +152,7 @@ class FakerExtensions:
           self.name_lists_probabilities = [1.0]
 	
   def generate_fakename(self, one_name=False, gender: int = None):
-      """ Generate fake name. Use gender to generate a gender-specific name. Use 0 for male and 1 for female  """
+      """ Generate fake name.  Use gender to generate a gender-specific name. Use 0 for male and 1 for female   """
       if gender is None:
           gender = random.choice(range(self.num_genders))
       elif gender < 0 or gender >= self.num_genders:
@@ -165,15 +177,13 @@ class FakerExtensions:
   def check_like_known_name(self, fake_name, verbose=False):
       """ Check fake name close to real common name."""
       if not self.kenlm_models: return False
-      for model in self.kenlm_models:
-          for pattern in self.patterns:
-              test_name = pattern['pattern'].format(fake_name)
-              score = model.get_perplexity(test_name)
-              if score < pattern['cutoff']:
-                  if verbose:
-                      print(fake_name, score, pattern['cutoff'])
-                  return True
-      return False
+      return check_for_common_name(
+        src_lang = self.lang,
+        pretrained_models = ['wikipedia'],
+        fake_name = fake_name,
+        verbose = verbose, 
+        kenlm_models = self.kenlm_models)
+        
 
   def create_name(self, one_name=False, verbose=False):
       """ Create fake name and varify by kelnm models """
@@ -192,42 +202,70 @@ class FakerExtensions:
             return fake_name
       if not success and verbose:
           print('Could not find any fake name. Try reducing perplexity_cutoff')
-      return self.faker.name()
+      if one_name:
+        fake_anme = self.faker.firstname()
+      else:
+        fake_name = self.faker.name()
   
   #TODO - create male and female versions of firstname and name
-  
-  def firstname(self, ent=None, context=None, verbose=False,):
+
+  def first_name(self, ent=None, context=None, verbose=False,):
     return self.name(one_name=True, ent=ent, context=context, verbose=verbose)
 
-  def name(self, one_name=False, ent=None, context=None, verbose=False,):
+  def name(self, one_name=False, ent=None, context=None, match_first_name=True, match_last_name=True, verbose=False,):
+    """ Provides an extension for faker's name method. Also manages the context when anonyimzing ent. 
+    Can match first and last names in the context.
+    Sentence: John Doe went to the store. John bought milk. => Jack Smith went to the store. Jack bought milk. 
+    """
     if ent is None or context is None: 
       return self.create_name(verbose=verbose)
     if ent in context: return context[ent]
     na = self.create_name(one_name=one_name, verbose=verbose)
     na  = context[ent] = context.get(ent, na)
+    is_cjk = self.lang in ("zh", "ko", "ja", "th")
     if " " in ent:
-        ent1 = ent.split(" ")[0]
-        if True:
+        if is_cjk:
+          ent_arr = ent
+        else:
+          #strip out prefixes and suffixes
+          ent_arr = ent.split(" ")
+          if ent_arr[0][-1] == ".":
+            ent_arr = ent_arr[1:]
+          if ent_arr[-1][-1] == ".":
+            ent_arr = ent_arr[:-1]
+        if match_first_name:
+          ent1 = ent_arr[0] if not is_cjk else (ent[:2] if len(ent) > 2 else ent[:1])
+          print ('ent1', ent1)
           if ent1 in context:
             na1 = context[ent1]
-            if " " in na:
+            if is_cjk:
+              na = "".join([na1]+na.split()[1:])
+            elif " " in na:
               na = " ".join([na1]+na.split()[1:])
             else:
               na = na1 + " " + na
             context[ent] = na
+          elif is_cjk:
+            val = context[ent][:2] if len(context[ent]) > 2 else context[ent][:1] 
+            context[ent1] = context.get(ent1, val) 
           elif " " in context[ent]:
             val = context[ent].split()[0]
             context[ent1] = context.get(ent1, val) 
-    
-        ent2 = ent.split(" ")[-1]
-        if len(ent2) > 2: # avoid contexts for jr. sr., etc.
+
+        if match_last_name:
+          ent2 = ent_arr[-1] if not is_cjk else (ent[-2:] if len(ent) > 3 else ent[-1:])
           if ent2 in context:
             na2 = context[ent2]
-            if " " in na:
+            if is_cjk:
+              na = "".join(na.split()[:-1] + [na2])
+            elif " " in na:
               na = " ".join(na.split()[:-1] + [na2])
             else:
               na = na + " " + na2
             context[ent] = na
+          elif is_cjk:
+            val = context[ent][-2:] if len(context[ent]) > 3 else context[ent][-1:] 
+            context[ent2] = context.get(ent2, val) 
           elif " " in context[ent]:
             val = context[ent].split()[-1]
             context[ent2] = context.get(ent2, val) 
@@ -293,11 +331,20 @@ class FakerExtensions:
 
 if __name__ == "__main__":
   # "pa", "gu","as", 
-  for lang in ["pa", "zh", "en", "yo","mr", "ny", "sn", "st", "xh", "zu", "ar", "bn", "ca",  "es", "eu", "fr", "hi", "id", "ig", "pt",  "sw", "ur","vi",  ]:
+  for lang in ["zh", "pa", "zh", "en", "yo","mr", "ny", "sn", "st", "xh", "zu", "ar", "bn", "ca",  "es", "eu", "fr", "hi", "id", "ig", "pt",  "sw", "ur","vi",  ]:
     print (f'*** {lang}')
     generator = FakerExtensions(lang=lang)
     start_time=time.time()
     for i in range(100):
         fake_name = generator.name()
         print ('found name', fake_name)
+
+    """
+    context = {}
+    for i in range(100):
+        fake_name = generator.name(ent="周淑", context=context)
+        print ('found name', fake_name)
+        fake_name = generator.name(ent="周淑华", context=context)
+        print ('found name', fake_name)
+    """
     print(f"Running time {time.time() - start_time}")
