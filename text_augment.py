@@ -1388,11 +1388,8 @@ class TextAugment:
                   context[ent] = context.get(ent, faker_target_lang.company())
                 except:
                   context[ent] = context.get(ent, faker_en.company())
-              for tag0 in ['ID', 'KEY', 'EMAIL', 'USER', 'IP_ADDRESS', 'PHONE', 'LICENSE_PLATE', 'PERSON']:
+              for tag0 in ['ID', 'KEY', 'EMAIL', 'USER', 'IP_ADDRESS', 'PHONE', 'LICENSE_PLATE']:
                 if tag0 in aug_scope and tag == tag0 and ent not in context:
-                  if '@' in ent:
-                    context[ent] = context.get(ent, tag)
-                  else:
                     context[ent] = context.get(ent, tag)
 
               if 'ADDRESS' in aug_scope and tag == 'ADDRESS' and ent not in context:
