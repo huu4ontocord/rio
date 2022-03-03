@@ -93,9 +93,9 @@ class FakerExtensions:
       self.lang = lang
       self.trials = trials
       self.num_genders = 2
-      if lang in ("gu","as", ):
+      if lang in ("as", ):
         lang = "hi"
-      if lang in ("pa", "mr", "vi", "bn", "ur", "ca", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu", "st"):
+      if lang in ("gu", "pa", "mr", "vi", "bn", "ur", "ca", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu", "st"):
         faker = self.faker = Faker("en_GB")
       else:
         faker = self.faker = Faker(random.choice(faker_map["es" if lang in ("eu", "ca") else lang]))
@@ -125,6 +125,12 @@ class FakerExtensions:
       elif self.lang == "pa":
           surname_list_of_lists: List[List[str]] = [punjabi_surnames]
           first_name_list_of_lists: List[List[str]] = [punjabi_firstnames_male, punjabi_firstnames_female]
+          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+          self.name_lists_probabilities = [1.0, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
+      elif self.lang == "gu":
+          surname_list_of_lists: List[List[str]] = [gujurati_surnames]
+          first_name_list_of_lists: List[List[str]] = [gujurati_firstnames_male, gujurati_firstnames_female]
           self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
           self.name_lists_probabilities = [1.0, 1.0]
           assert len(self.name_lists) == len(self.name_lists_probabilities)
@@ -330,8 +336,8 @@ class FakerExtensions:
     return context[ent]
 
 if __name__ == "__main__":
-  # "pa", "gu","as", 
-  for lang in ["zh", "pa", "zh", "en", "yo","mr", "ny", "sn", "st", "xh", "zu", "ar", "bn", "ca",  "es", "eu", "fr", "hi", "id", "ig", "pt",  "sw", "ur","vi",  ]:
+  # TODO: do "as"
+  for lang in ["zh", "pa", "gu","as", "zh", "en", "yo","mr", "ny", "sn", "st", "xh", "zu", "ar", "bn", "ca",  "es", "eu", "fr", "hi", "id", "ig", "pt",  "sw", "ur","vi",  ]:
     print (f'*** {lang}')
     generator = FakerExtensions(lang=lang)
     start_time=time.time()
