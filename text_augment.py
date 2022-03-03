@@ -42,7 +42,7 @@ import time
 from functools import partial
 from faker import Faker
 from faker.providers import person, company, geo, address, ssn, internet
-
+from faker_extensions import *
 import logging
 logger = logging.getLogger(__name__)
 
@@ -324,13 +324,14 @@ class TextAugment:
 
     if TextAugment.faker_en_list is None:
       TextAugment.faker_en_list  = faker_en_list = [Faker(faker_lang) for faker_lang in faker_map["en"]]
-      for faker_en in faker_en_list:
+      for i, faker_en in enumerate(faker_en_list):
           faker_en.add_provider(person)
           faker_en.add_provider(ssn)
           faker_en.add_provider(address)
           faker_en.add_provider(geo)
           faker_en.add_provider(internet)
           faker_en.add_provider(company)
+          TextAugment.faker_en_list[i] = FakerExtensions(faker_en)
     #print ("finished load")
     #TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
 
@@ -759,7 +760,7 @@ class TextAugment:
     for i in range(0, len(lst), n):
         yield lst[i: i + n]
 
-  def apply_regex_ner(self, src_lang, docs, context_window = 20, weight = 1.0, text_key=None, ner_key=None, signal='regex'):
+  def apply_regex_ner(self, src_lang, docs, context_window = 20, weight = 1.0, text_key=None, ner_key=None, signal='regex', tag_type={'ID', 'KEY', 'EMAIL', 'USER', 'IP_ADDRESS', 'PHONE', 'LICENSE_PLATE'}):
     """
     apply regexes from the rulebase. if there is a context, check if the context is met in the context_window.
     """
@@ -1375,16 +1376,7 @@ class TextAugment:
               if ent in context: continue
               #TODO - do proper gender based aug and gender swap
               if 'PERSON' in aug_scope and tag == 'PERSON' and ent not in context:
-                context[ent] = context.get(ent, faker_en.first_name() + " " + random.choice(bantu_surnames) if " " in ent and target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
-                                      random.choice(bantu_surnames) if target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh",) else \
-                                      random.choice(vietnamese_surnames) + " " + random.choice(vietnamese_firstnames) if " " in ent and target_lang =="vi" else \
-                                      random.choice(vietnamese_surnames) if  target_lang == "vi" else \
-                                      faker_en.first_name() + " " + random.choice(bengali_surnames) if " " in ent and target_lang =="bn" else \
-                                      random.choice(bengali_surnames) if target_lang == "bn" else \
-                                      random.choice(urdu_firstnames)  + " " + random.choice(urdu_surnames) if " " in ent and target_lang =="ur" else \
-                                      random.choice(urdu_surnames) if target_lang == "ur" else \
-                                      faker_target_lang.name() if " " in ent else \
-                                      faker_target_lang.first_name() )
+                context[ent] = context.get(ent, faker_target_lang.name() if " " in ent or target_lang not in ("ja", "ko", "zh") else faker_target_lang.first_name())
 
               if 'LOC' in aug_scope and tag == 'LOC' and ent not in context:
                 context[ent] = context.get(ent, faker_en.country() if  target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
@@ -1396,13 +1388,12 @@ class TextAugment:
                   context[ent] = context.get(ent, faker_target_lang.company())
                 except:
                   context[ent] = context.get(ent, faker_en.company())
-
-              if 'ID' in aug_scope and tag == 'ID' and ent not in context:
-                if '@' in ent:
-                  context[ent] = context.get(ent, faker_target_lang.email())
-                else:
-                  context[ent] = context.get(ent, str(random.randrange(10000000,999999999)) if target_lang in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu")  else \
-                                      faker_target_lang.ssn())
+              for tag0 in ['ID', 'KEY', 'EMAIL', 'USER', 'IP_ADDRESS', 'PHONE', 'LICENSE_PLATE', 'PERSON']:
+                if tag0 in aug_scope and tag == tag0 and ent not in context:
+                  if '@' in ent:
+                    context[ent] = context.get(ent, tag)
+                  else:
+                    context[ent] = context.get(ent, tag)
 
               if 'ADDRESS' in aug_scope and tag == 'ADDRESS' and ent not in context:
                 context[ent] = context.get(ent, faker_en.address() if target_lang not in ("yo", "sw","sn", "st", "ig", "ny", "xh", "bn", "ur", "vi", "eu") else \
@@ -1510,7 +1501,7 @@ class TextAugment:
         return docs, chunks
 
 
-  def anonymize(self, docs, chunks, src_lang, faker_src_lang, faker_en, anon_scope = {'ID', 'PERSON'}, target_lang=None):
+  def anonymize(self, docs, chunks, src_lang, faker_target_lang, faker_en, anon_scope =  {'ID', 'KEY', 'EMAIL', 'USER', 'IP_ADDRESS', 'PHONE', 'LICENSE_PLATE', 'PERSON'}, target_lang=None):
 
     #anonymization is very similar to augmentation, except we operate in the src_lang space, and don't require translation.
     #we will replace the words directly from {src_lang}_text to {src_lang}_text_anon.
@@ -1521,7 +1512,7 @@ class TextAugment:
     #print ("anonymize")
     if target_lang is None: target_lang = src_lang
 
-    self.create_augment_anon_context(docs, chunks, src_lang, faker_src_lang, faker_en, aug_scope=anon_scope, target_lang=src_lang, \
+    self.create_augment_anon_context(docs, chunks, src_lang, faker_target_lang, faker_en, aug_scope=anon_scope, target_lang=src_lang, \
                                           items_key=f'{src_lang}_items', context_key=f'{src_lang}_anon_context', ner_key=f'{src_lang}_ner')
 
     docs, chunks = self.replace_items_in_chunks(docs, chunks, src_lang, replace_with_bracket=False, do_augment=True, \
@@ -1581,6 +1572,7 @@ class TextAugment:
         faker_target_lang.add_provider(geo)
         faker_target_lang.add_provider(internet)
         faker_target_lang.add_provider(company)
+      faker_target_lang = FakeNameGenerator(lang=src_lang, faker=faker_target_lang)
 
       if src_lang not in ("eu", "ca") and src_lang not in faker_map:
         faker_src_lang = random.choice(self.faker_en_list)
@@ -1593,8 +1585,8 @@ class TextAugment:
         faker_src_lang.add_provider(geo)
         faker_src_lang.add_provider(internet)
         faker_src_lang.add_provider(company)
-
-      faker_en = random.choice(self.faker_en_list)
+      faker_src_lang = FakeNameGenerator(lang=src_lang, faker=faker_src_lang)
+      faker_en = FakeNameGenerator(lang="en", faker=random.choice(self.faker_en_list))
 
     else:
       faker_target_lang = None
