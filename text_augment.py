@@ -1801,16 +1801,16 @@ class TextAugment:
               pass
             trans_text = before + " " + ent + " " + after
           trans_text = chunk[target_text_key] = trans_text.replace("  ", " ").strip()
-          if do_kenlm and target_lang == 'en' and target_lang in kenlm_wiki_models:
-              chunk[f'{target_lang}_kenlm'] = kenlm_wiki_models[target_lang].get_perplexity(chunk[target_text_key])
+          #if do_kenlm and target_lang == 'en' and target_lang in kenlm_models['wikipedia']:
+          #    chunk[f'{target_lang}_kenlm'] = kenlm_wiki_models[target_lang].get_perplexity(chunk[target_text_key])
           if doc.get(target_text_key, ""):
             chunk[target_offset_key] = len(doc.get(target_text_key, "")) + 1
           else:
             chunk[target_offset_key] = 0
           doc[target_text_key] = (doc.get(target_text_key, "") + " " + trans_text).strip()
-    if do_kenlm and target_lang == 'en' and target_lang in kenlm_wiki_models:
-      for doc in docs.values():
-        doc[f'{target_lang}_kenlm'] = kenlm_wiki_models[target_lang].get_perplexity(doc[target_text_key].replace(" .", " "))
+    #if do_kenlm and target_lang == 'en' and target_lang in kenlm_models['wikipedia']:
+    #  for doc in docs.values():
+    #    doc[f'{target_lang}_kenlm'] = kenlm_models['wikipedia']['target_lang'][0].get_perplexity(doc[target_text_key].replace(" .", " "))
 
     if do_regex:
       docs = self.apply_regex_ner(target_lang, docs=docs, weight=regex_weight, text_key=target_text_key, ner_key=target_ner_key)
@@ -1883,11 +1883,15 @@ class TextAugment:
           ent2 = ent
           if not target_is_cjk and (ent == ent.upper() or ent == ent.lower()):
             ent2 = " ".join([(a[0].upper())+(a[1:].lower()) if len(a) > 1 else a for a in ent.split()])
-          match, kenlm_score= check_for_common_name(target_lang, ["wikipedia" if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else "mc4"],
+          match, kenlm_score, cutoff = check_for_common_name(target_lang, ["wikipedia" if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else "mc4"],
             ent2, kenlm_models["wikipedia" if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else "mc4"], return_score=True)
           if match:
-              logger.info(("found public figure ", ent2, kenlm_score))
-              public_figures.append(ent)
+            if (target_is_cjk and len(ent2) <= 3):
+              if kenlm_score > cutoff/2: continue
+            elif " " not in ent2:
+              if score > cutoff/2: continue
+            logger.info(("found public figure ", ent2, kenlm_score))
+            public_figures.append(ent)
 
         public_figures = set(public_figures)
         for ent, aHash in ner.items():
