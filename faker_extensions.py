@@ -71,19 +71,32 @@ for faker_lang in faker_list:
   lang, _ = faker_lang.split("_")
   faker_map[lang] = faker_map.get(lang, []) + [faker_lang]
 
-class FakeNameGenerator:
+class FakerExtensions:
   def __init__(
       self,
       lang: str = "vi",
       trials: int = 1000
+      
   ):
       self.lang = lang
       self.trials = trials
-      self.num_genders = 1
-      self.kenlm_models = load_kenlm_model(lang)
-      self.patterns = public_figure_kenlm_cutoff_map.get(lang, [{'cutoff': 500, 'pattern': "{} (born"}])
+      self.num_genders = 2
+      if lang in ("gu","as", ):
+        lang = "hi"
+      if lang in ("pa", "mr", "vi", "bn", "ur", "ca", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu"):
+        faker = self.faker = Faker("en_GB")
+      else:
+        faker = self.faker = Faker(random.choice(faker_map["es" if lang in ("eu", "ca") else lang]))
+      faker.add_provider(person)
+      faker.add_provider(ssn)
+      faker.add_provider(address)
+      faker.add_provider(geo)
+      faker.add_provider(internet)
+      faker.add_provider(company)
+
+      self.kenlm_models = load_kenlm_model(self.lang)
+      self.patterns = public_figure_kenlm_cutoff_map.get(self.lang, [{'cutoff': 500, 'pattern': "{} (born"}])
       if self.lang == "vi":
-          self.num_genders = 2
           surname_list_of_lists: List[List[str]] = [vietnamese_surnames]
           first_middle_name_list_of_lists: List[List[str]] = [vietnamese_first_middlenames_male, vietnamese_first_middlenames_female]
           second_middle_name_list_of_lists: List[List[str]] = [vietnamese_second_middlenames_male, vietnamese_second_middlenames_female]
@@ -97,14 +110,80 @@ class FakeNameGenerator:
           self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
           self.name_lists_probabilities = [1.0, 1.0]
           assert len(self.name_lists) == len(self.name_lists_probabilities)
-      elif self.lang == "ur":
-          surname_list_of_lists: List[List[str]] = [urdu_surnames]
-          first_name_list_of_lists: List[List[str]] = [bengali_firstnames_male, bengali_firstnames_female]
+      elif self.lang == "pa":
+          surname_list_of_lists: List[List[str]] = [punjabi_surnames]
+          first_name_list_of_lists: List[List[str]] = [punjabi_firstnames_male, punjabi_firstnames_female]
           self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
           self.name_lists_probabilities = [1.0, 1.0]
           assert len(self.name_lists) == len(self.name_lists_probabilities)
+      elif self.lang == "ur":
+          self.num_genders = 1
+          surname_list_of_lists: List[List[str]] = [urdu_surnames]
+          first_name_list_of_lists: List[List[str]] = [urdu_firstnames]
+          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+          self.name_lists_probabilities = [1.0, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
+      elif self.lang == "ca":
+          surname_list_of_lists: List[List[str]] = [catalan_surnames]
+          first_name_list_of_lists: List[List[str]] = [catalan_firstnames_male, catalan_firstnames_female]
+          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+          self.name_lists_probabilities = [1.0, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
+      elif self.lang in ("mr", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu"):
+          first_name_list_of_lists: List[List[str]] = [bantu_firstnames_male, bantu_firstnames_female]
+          surname_list_of_lists: List[List[str]] =  [bantu_surnames]
+          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+          self.name_lists_probabilities = [1.0, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
+      else:
+          self.name_lists = [[]]
+          self.name_lists_probabilities = [1.0]
+	
+  def company(self, ent=None, context=None):
+    if ent is None or context is None: 
+      try: 
+        return self.faker.company()
+      except:
+        return "COMPANY"
+    try:
+      co = self.faker.company()
+    except:
+      co = "COMPANY"
+    co = context[ent] = context.get(ent, co)
+    if " " in ent:
+        ent2 = ent.split(" ")[0]
+        if len(ent2) > 4:
+          if ent2 in context:
+            co2 = context[ent2]
+            if " " in co:
+              co = " ".join([co2]+co.split()[1:])
+            else:
+              co = co2 + " " + co
+            context[ent] = co
+          elif " " in context[ent]:
+            val = context[ent].split()[0]
+          else:
+            val = context[ent]
+          context[ent2] = context.get(ent2, val) 
+    return context[ent] 
 
-  def generate(self, gender: int = None):
+  def country(self, ent=None, context=None):
+    if ent is None or context is None: 
+      return self.faker.country()
+
+  def state(self, ent=None, context=None):
+    if ent is None or context is None: 
+      if self.lang == 'zh': 
+          return self.faker.province()
+      else: 
+          return self.faker.state()
+    if self.lang == 'zh': 
+        context[ent] =  context.get(ent, self.faker.province())
+    else: 
+        context[ent] =  context.get(ent, sself.faker.state())
+    return context[ent]
+
+  def generate_fakename(self, gender: int = None):
       """ Generate fake name """
       if gender is None:
           gender = random.choice(range(self.num_genders))
@@ -114,36 +193,94 @@ class FakeNameGenerator:
       for i, name_list_of_lists in enumerate(self.name_lists):
           # Sometimes, we might have a single list for all genders,
           # thus we take the minimun to avoid out of index
-          name_list = name_list_of_lists[min(len(name_list_of_lists) - 1, gender)]
-          if random.random() <= self.name_lists_probabilities[i]:
+          if not name_list_of_lists:
+            if gender==1:
+              output_name.append(self.faker.first_name_female())
+            else:
+              output_name.append(self.faker.first_name_male())
+          else:
+            name_list = name_list_of_lists[min(len(name_list_of_lists) - 1, gender)]
+            if random.random() <= self.name_lists_probabilities[i]:
               output_name.append(random.choice(name_list))
       return " ".join(output_name)
 
-  def check_fakename(self, fake_name, verbose=False):
-      """ Check fake name close to real name"""
+  def check_like_known_name(self, fake_name, verbose=False):
+      """ Check fake name close to real common name."""
+      if not self.kenlm_models: return False
       for model in self.kenlm_models:
           for pattern in self.patterns:
               test_name = pattern['pattern'].format(fake_name)
-              if model.get_perplexity(test_name) < pattern['cutoff']:
+              score = model.get_perplexity(test_name)
+              if score < pattern['cutoff']:
                   if verbose:
-                      print(fake_name, model.get_perplexity(test_name))
+                      print(fake_name, score, pattern['cutoff'])
                   return True
       return False
 
-  def create_fakename(self, verbose=False):
+  def create_name(self, verbose=False):
       """ Create fake name and varify by kelnm models """
       success = False
       for _ in range(self.trials):
-          fake_name = self.generate()
-          if self.check_fakename(fake_name, verbose):
-              success = True
-              return fake_name
-      if not success:
+        if self.lang in ("pa", "gu","as", "mr", "vi", "bn", "ur", "ca", "yo", "sw", "sn", "st", "ig", "ny", "xh", "ca", "zu"): 
+          fake_name = self.generate_fakename()
+        else:
+          fake_name = self.faker.name()
+        # we want our fake names to not be too close to a famous name
+        if not self.check_like_known_name(fake_name, verbose):
+            success = True
+            return fake_name
+      if not success and verbose:
           print('Could not find any fake name. Try reducing perplexity_cutoff')
+      return self.faker.name()
+  
+  def firstname(self)
+
+  def name(self, ent=None, context=None, verbose=False,):
+    if ent is None or context is None: 
+      return self.create_name(verbose=verbose)
+    if ent in context: return context[ent]
+    na = self.create_name(verbose=verbose)
+    na  = context[ent] = context.get(ent, na)
+    if " " in ent:
+        ent1 = ent.split(" ")[0]
+        if True:
+          if ent1 in context:
+            na1 = context[ent1]
+            if " " in na:
+              na = " ".join([na1]+na.split()[1:])
+            else:
+              na = na1 + " " + na
+            context[ent] = na
+          elif " " in context[ent]:
+            val = context[ent].split()[0]
+            context[ent1] = context.get(ent1, val) 
+    
+        ent2 = ent.split(" ")[-1]
+        if len(ent2) > 2: # avoid contexts for jr. sr., etc.
+          if ent2 in context:
+            na2 = context[ent2]
+            if " " in na:
+              na = " ".join(na.split()[:-1] + [na2])
+            else:
+              na = na + " " + na2
+            context[ent] = na
+          elif " " in context[ent]:
+            val = context[ent].split()[-1]
+            context[ent2] = context.get(ent2, val) 
+    return context[ent] 
 
 if __name__ == "__main__":
-    generator = FakeNameGenerator(lang="vi")
+  # "pa", "gu","as", 
+  for lang in ["vi"]: # ["pa", "zh", "en", "yo","mr", "ny", "sn", "st", "xh", "zu", "ar", "bn", "ca",  "es", "eu", "fr", "hi", "id", "ig", "pt",  "sw", "ur","vi",  ]:
+    print (f'*** {lang}')
+    generator = FakerExtensions(lang=lang)
     start_time=time.time()
+    context = {}
     for i in range(100):
-        fake_name = generator.create_fakename(verbose=True)
+
+        fake_name = generator.name(ent="John", context=context, verbose=True)
+        print ('found name', fake_name)
+
+        fake_name = generator.name(ent="John Doe", context=context, verbose=True)
+        print ('found name', fake_name)
     print(f"Running time {time.time() - start_time}")
