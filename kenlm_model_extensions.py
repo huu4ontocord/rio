@@ -10,8 +10,6 @@ import sentencepiece
 from huggingface_hub import cached_download, hf_hub_url
 
 ## additional code to support kenlm entity querying
-
-
 kenlm_models = {
     'wikipedia': {},
     'oscar': {}
@@ -64,8 +62,8 @@ def load_kenlm_model(
 
 # TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of
 #  gender, so we would have two patterns.
-public_figure_kenlm_cutoff_map = {'en': {'wikipedia': [{'cutoff': 500, 'pattern': "{} (born"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} (born"}]},
+public_figure_kenlm_cutoff_map = {'en': {'wikipedia': [{'cutoff': 500, 'pattern': "{} born"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} born"}]},
                                   'yo': {'wikipedia': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
                                          'oscar': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}]},
                                   'zu': {'wikipedia': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
