@@ -835,7 +835,7 @@ def is_fast_date(ent, int_arr=None, year_start=1600, year_end=2050):
   return False
 
 #cusip number probaly PII?
-def detect(sentence, src_lang,  tag_type={'ID'}, prioritize_lang_match_over_ignore=True, \
+def detect_ner_with_regex_and_context(sentence, src_lang,  tag_type={'ID'}, prioritize_lang_match_over_ignore=True, \
       ignore_stdnum_type={'isil', 'isbn', 'isan', 'imo', 'gs1_128', 'grid', 'figi', 'ean', 'casrn', 'cusip' }, \
       all_regex=None, context_window=20, min_id_length=6, max_id_length=50, \
       precedence={'ID':0, 'KEY': 1, 'PHONE':2, 'IP_ADDRESS':3, 'DATE':4, 'TIME':5, 'LICENSE_PLATE':6, 'USER':7, 'AGE':8, 'ADDRESS':9, 'URL':10}):
@@ -1109,5 +1109,3 @@ def detect(sentence, src_lang,  tag_type={'ID'}, prioritize_lang_match_over_igno
          all_ner = [a for a in all_ner if a[3] != 'DATE']           
       return all_ner
 
-#for backwards compatability
-detect_ner_with_regex_and_context = detect
