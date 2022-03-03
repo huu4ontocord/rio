@@ -1572,7 +1572,7 @@ class TextAugment:
         faker_target_lang.add_provider(geo)
         faker_target_lang.add_provider(internet)
         faker_target_lang.add_provider(company)
-      faker_target_lang = FakeNameGenerator(lang=src_lang, faker=faker_target_lang)
+      faker_target_lang = FakerExtension(lang=target_lang, faker=faker_target_lang)
 
       if src_lang not in ("eu", "ca") and src_lang not in faker_map:
         faker_src_lang = random.choice(self.faker_en_list)
@@ -1585,8 +1585,8 @@ class TextAugment:
         faker_src_lang.add_provider(geo)
         faker_src_lang.add_provider(internet)
         faker_src_lang.add_provider(company)
-      faker_src_lang = FakeNameGenerator(lang=src_lang, faker=faker_src_lang)
-      faker_en = FakeNameGenerator(lang="en", faker=random.choice(self.faker_en_list))
+      faker_src_lang = FakerExtension(lang=src_lang, faker=faker_src_lang)
+      faker_en = FakerExtension(lang="en", faker=Faker(random.choice(self.faker_en_list)))
 
     else:
       faker_target_lang = None
