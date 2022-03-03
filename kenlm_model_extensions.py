@@ -144,12 +144,8 @@ def check_for_common_name(
     if kenlm_models is None:
         kenlm_models = load_kenlm_model(src_lang, pretrained_models)
     public_patterns = public_figure_kenlm_cutoff_map.get(src_lang, public_figure_kenlm_cutoff_map.get('en'))
-
-    # check fake name in public figure with specific cutoff
-    for model_type in pretrained_models:
-        model = kenlm_models[model_type]
-        patterns = public_patterns[model_type]
-        for pattern in patterns:
+    for model_type, model in self.kenlm_models.items():
+       for pattern in self.patterns.get(model_type, public_patterns.get('wikipedia')):
             test_name = pattern['pattern'].format(fake_name)
             if model.get_perplexity(test_name) < pattern['cutoff']:
                 if verbose:
