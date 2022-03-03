@@ -1883,16 +1883,11 @@ class TextAugment:
           ent2 = ent
           if not target_is_cjk and (ent == ent.upper() or ent == ent.lower()):
             ent2 = " ".join([(a[0].upper())+(a[1:].lower()) if len(a) > 1 else a for a in ent.split()])
-          print(public_figure_kenlm_data_list)
-          for public_figure_kenlm_data in public_figure_kenlm_data_list["wikipedia" if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else "mc4"]:
-            public_figure_kenlm_cutoff = public_figure_kenlm_data['cutoff']
-            public_figure_kenlm_pattern = public_figure_kenlm_data['pattern']
-            kenlm_score = kenlm_wiki_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2))
-            #logger.info((ent, kenlm_score))
-            if kenlm_score <= public_figure_kenlm_cutoff:
+          match, kenlm_score= check_for_common_name(target_lang, ["wikipedia" if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else "mc4"],
+            ent2, kenlm_models["wikipedia" if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else "mc4"], return_score=True)
+          if match:
               logger.info(("found public figure ", ent2, kenlm_score))
               public_figures.append(ent)
-              break
 
         public_figures = set(public_figures)
         for ent, aHash in ner.items():
