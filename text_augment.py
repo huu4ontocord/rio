@@ -42,7 +42,6 @@ import time
 from functools import partial
 from faker import Faker
 from faker.providers import person, company, geo, address, ssn, internet
-from faker_extensions import *
 import logging
 logger = logging.getLogger(__name__)
 
