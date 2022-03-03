@@ -29,7 +29,7 @@ kenlm_models = {
 }
 
 # TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of
-#  gender, so we would have two patterns.
+#  gender, so we would have at least two patterns.
 public_figure_kenlm_cutoff_map = {'en': {'wikipedia': [{'cutoff': 500, 'pattern': "{} (born"}], # in wikipedia, you often have: Lincoln (born .... ) 
                                          'oscar': [{'cutoff': 500, 'pattern': "{} was born"}],
                                         },
@@ -157,10 +157,10 @@ def check_for_common_name(
                 if verbose:
                     print(name, score)
                 if return_score:
-                  return True, score
+                  return True, score, pattern['cutoff']
                 return True
     if return_score:
-      return False, score                 
+      return False, 0.0, 0.0                 
     return False
 
 
