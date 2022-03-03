@@ -340,7 +340,7 @@ class TextAugment:
           faker_en.add_provider(geo)
           faker_en.add_provider(internet)
           faker_en.add_provider(company)
-          TextAugment.faker_en_list[i] = FakerExtensions(faker_en)
+          TextAugment.faker_en_list[i] = FakerExtensions(lang="en", faker=faker_en)
     #print ("finished load")
     #TODO - create an abstraction for faker, so when faker returns None, we fallback to faker_en
 
