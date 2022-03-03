@@ -207,7 +207,10 @@ class FakerExtensions:
           if one_name:
             fake_name = self.faker.first_name()
           else:
-            fake_name = self.faker.name()
+            if self.lang in ("zh", "ja", "ko", "th"):
+              fake_name = self.faker.first_name()+self.faker.last_name()
+            else:
+              fake_name = self.faker.first_name()+" "+self.faker.last_name()
         # we want our fake names to not be too close to a famous name
         if not self.check_like_known_name(fake_name, verbose):
             success = True
@@ -359,6 +362,14 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
     new_ner.sort(key=lambda a: len(a[0]), reverse=True)     
     for idx, a_ner in enumerate(new_ner):
       ent = a_ner[0]
+      if a_ner[-1] == 'PERSON' and not is_cjk:
+          #strip out prefixes and suffixes
+          ent_arr = ent.split(" ")
+          if ent_arr[0][-1] == ".":
+            ent_arr = ent_arr[1:]
+          if ent_arr[-1][-1] == ".":
+            ent_arr = ent_arr[:-1]
+          ent = " ".join(ent_arr)
       tag = a_ner[-1]
       sentence = sentence.replace(ent+" ", f"<{idx}> ")
       sentence = sentence.replace(" "+ent, f" <{idx}>")
@@ -418,7 +429,7 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
 
 if __name__ == "__main__":
   if True:
-    print (augment_anonymize('John Smith is nice. John says hi.', 'en', [['John Smith', 0, 9, 'PERSON'], ['John', 20, 24, 'PERSON']], ))
+    print (augment_anonymize('Mr. John Smith Esq. is nice. John says hi.', 'en', [['Mr. John Smith Esq.', 0, 19, 'PERSON'], ['John', 25, 28, 'PERSON']], ))
     print (augment_anonymize('John is nice. John Smith says hi.', 'en', [['John', 0, 4, 'PERSON'], ['John Smith', 14, 24, 'PERSON']], ))
 
   if False:
