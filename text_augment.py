@@ -173,6 +173,7 @@ class TextAugmentDeviceModel:
               model = model_cls.from_pretrained(model_name).half().eval().to(self.device)
               tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
               if self.device == "cpu":
+                model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
                 ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer)
               else:
                 ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=self.device_id)
@@ -181,6 +182,7 @@ class TextAugmentDeviceModel:
             except:
               tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512,truncation=True)
               if self.device == "cpu":
+                model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
                 ner_pipeline = pipeline("ner", model=model, tokenizer=(tokenizer, {"use_fast": True},), )
               else:
                 ner_pipeline = pipeline("ner",  model=model_name, tokenizer=(tokenizer, {"use_fast": True},), device=self.device_id)
