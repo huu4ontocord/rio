@@ -30,59 +30,61 @@ kenlm_models = {
 
 # TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of
 #  gender, so we would have at least two patterns.
-public_figure_kenlm_cutoff_map = {'en': {'wikipedia': [{'cutoff': 500, 'pattern': "{} (born"}], # in wikipedia, you often have: Lincoln (born .... ) 
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} was born"}],
-                                        },
-                                  'yo': {'wikipedia': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
-                                        },
-                                  'zu': {'wikipedia': [{'cutoff': 400, 'pattern': "{} wazalwa ngo"}],
-                                         'oscar': [{'cutoff': 400, 'pattern': "{} wazalwa ngo"}],
-                                         'mc4': [{'cutoff': 400, 'pattern': "{} wazalwa ngo"}], # for now, we are using the mc4 model for zu and ig
-                                        },
-                                  'sn': {'wikipedia': [{'cutoff': 500, 'pattern': "{} akazvarwa"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} akazvarwa"}],
-                                        },
-                                  'st': {'wikipedia': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}],
-                                        },
-                                  'ny': {'wikipedia': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}],
-                                        },
-                                  'xh': {'wikipedia': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
-                                        },
-                                  'sw': {'wikipedia': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}],
-                                        },
-                                  'ig': {'wikipedia': [{'cutoff': 300, 'pattern': "{} amụrụ"}],
-                                         'oscar': [{'cutoff': 300, 'pattern': "{} amụrụ"}],
-                                         'mc4':[{'cutoff': 300, 'pattern': "{} amụrụ"}],
-                                        },
-                                  'ar': {'wikipedia': [{'cutoff': 600, 'pattern': "ولد {} من"}],
-                                         'oscar': [{'cutoff': 600, 'pattern': "ولد {} من"}]
-                                        },
-                                  'zh': {'wikipedia': [{'cutoff': 500, 'pattern': "{}生於"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{}生於"}]
-                                        },
-                                  'vi': {'wikipedia': [{'cutoff': 500, 'pattern': "{} sinh ra"},
-                                                       {'cutoff': 500, 'pattern': "{} sáng lập"}],
-                                         'oscar': [{'cutoff': 450, 'pattern': "{} sinh ra"},
-                                                   {'cutoff': 450, 'pattern': "{} sáng lập"}],                                        
-                                        },
-                                  'hi': {'wikipedia': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}],
-                                        },
-                                  'ur': {'wikipedia': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}],
-                                        },
-                                  'id': {'wikipedia': [{'cutoff': 500, 'pattern': "{} lahir"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} lahir"}],
-                                        },
-                                  'bn': {'wikipedia': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
-                                        }
-                                  }
+public_figure_kenlm_cutoff_map = {
+    'en': {'wikipedia': [{'cutoff': 500, 'pattern': "{} (born"}],  # in wikipedia, you often have: Lincoln (born .... )
+           'oscar': [{'cutoff': 500, 'pattern': "{} was born"}],
+           },
+    'yo': {'wikipedia': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
+           'oscar': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
+           },
+    'zu': {'wikipedia': [{'cutoff': 400, 'pattern': "{} wazalwa ngo"}],
+           'oscar': [{'cutoff': 400, 'pattern': "{} wazalwa ngo"}],
+           'mc4': [{'cutoff': 400, 'pattern': "{} wazalwa ngo"}],  # for now, we are using the mc4 model for zu and ig
+           },
+    'sn': {'wikipedia': [{'cutoff': 500, 'pattern': "{} akazvarwa"}],
+           'oscar': [{'cutoff': 500, 'pattern': "{} akazvarwa"}],
+           },
+    'st': {'wikipedia': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}],
+           'oscar': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}],
+           },
+    'ny': {'wikipedia': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}],
+           'oscar': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}],
+           },
+    'xh': {'wikipedia': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
+           'oscar': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
+           },
+    'sw': {'wikipedia': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}],
+           'oscar': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}],
+           },
+    'ig': {'wikipedia': [{'cutoff': 300, 'pattern': "{} amụrụ"}],
+           'oscar': [{'cutoff': 300, 'pattern': "{} amụrụ"}],
+           'mc4': [{'cutoff': 300, 'pattern': "{} amụrụ"}],
+           },
+    'ar': {'wikipedia': [{'cutoff': 600, 'pattern': "ولد {} من"}],
+           'oscar': [{'cutoff': 600, 'pattern': "ولد {} من"}]
+           },
+    'zh': {'wikipedia': [{'cutoff': 500, 'pattern': "{}生於"}],
+           'oscar': [{'cutoff': 500, 'pattern': "{}生於"}]
+           },
+    'vi': {'wikipedia': [{'cutoff': 500, 'pattern': "{} sinh ra"},
+                         {'cutoff': 500, 'pattern': "{} sáng lập"}],
+           'oscar': [{'cutoff': 450, 'pattern': "{} sinh ra"},
+                     {'cutoff': 450, 'pattern': "{} sáng lập"}],
+           },
+    'hi': {'wikipedia': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}],
+           'oscar': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}],
+           },
+    'ur': {'wikipedia': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}],
+           'oscar': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}],
+           },
+    'id': {'wikipedia': [{'cutoff': 500, 'pattern': "{} lahir"}],
+           'oscar': [{'cutoff': 500, 'pattern': "{} lahir"}],
+           },
+    'bn': {'wikipedia': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
+           'oscar': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
+           }
+}
+
 
 def load_kenlm_model(
         src_lang: str = "en",
@@ -112,7 +114,7 @@ def load_kenlm_model(
                 all_models[model_type] = kenlm_models[model_type][src_lang]
             else:
                 os.system(f"mkdir -p {cache_dir}/{model_type}")
-                found=True
+                found = True
                 for model_file in model_files:
                     if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.{model_file}"):
                         try:
@@ -122,15 +124,14 @@ def load_kenlm_model(
                             os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.{model_file}")
                         except:
                             warnings.warn(f'could not find model {src_lang}.{model_file}. will stop searching...')
-                            found=False
+                            found = False
                             break
                 if found:
-                  model = KenlmModel(f"{cache_dir}/{model_type}", src_lang)
-                  all_models[model_type] = model
-                  if store_model:
-                      kenlm_models[model_type][src_lang] = model
+                    model = KenlmModel(f"{cache_dir}/{model_type}", src_lang)
+                    all_models[model_type] = model
+                    if store_model:
+                        kenlm_models[model_type][src_lang] = model
     return all_models
-
 
 
 # TODO: refactor code in the faker_extensions with this code
@@ -138,9 +139,9 @@ def check_for_common_name(
         src_lang: str = "en",
         pretrained_models: list = ['wikipedia'],
         name: str = None,
-        verbose: bool = False, 
-        kenlm_models = None,
-        return_score= False,
+        verbose: bool = False,
+        kenlm_models=None,
+        return_score=False,
 ):
     """
     Check if a name is a public figure or a very common name
@@ -150,17 +151,17 @@ def check_for_common_name(
         kenlm_models = load_kenlm_model(src_lang, pretrained_models)
     public_patterns = public_figure_kenlm_cutoff_map.get(src_lang, public_figure_kenlm_cutoff_map.get('en'))
     for model_type, model in kenlm_models.items():
-       for pattern in public_patterns.get(model_type, public_patterns.get('wikipedia')):
+        for pattern in public_patterns.get(model_type, public_patterns.get('wikipedia')):
             test_name = pattern['pattern'].format(name)
             score = model.get_perplexity(test_name)
             if score < pattern['cutoff']:
                 if verbose:
                     print(name, score)
                 if return_score:
-                  return True, score, pattern['cutoff']
+                    return True, score, pattern['cutoff']
                 return True
     if return_score:
-      return False, 0.0, 0.0                 
+        return False, 0.0, 0.0
     return False
 
 
@@ -234,8 +235,9 @@ class KenlmModel:
             normalize_numbers: bool = True,
             punctuation: int = 1,
     ):
-        self.model = kenlm.Model(os.path.join(model_dataset, f"{language}.arpa.bin"))
-        self.tokenizer = SentencePiece(os.path.join(model_dataset, f"{language}.sp.model"))
+        self.model_dataset = model_dataset
+        self.model = kenlm.Model(os.path.join(self.model_dataset, f"{language}.arpa.bin"))
+        self.tokenizer = SentencePiece(os.path.join(self.model_dataset, f"{language}.sp.model"))
         self.accent = remove_accents
         self.case = lower_case
         self.numbers = normalize_numbers
@@ -303,7 +305,8 @@ class KenlmModel:
         line = self.remove_non_printing_char(line)
         return line
 
-    def strip_accents(self, line: str) -> str:
+    @staticmethod
+    def strip_accents(line: str) -> str:
         """Strips accents from a piece of text."""
         nfd = unicodedata.normalize("NFD", line)
         output = [c for c in nfd if unicodedata.category(c) != "Mn"]
@@ -320,3 +323,24 @@ class KenlmModel:
 
     def remove_non_printing_char(self, text: str) -> str:
         return self.non_printing_chars_re.sub("", text)
+
+    def check_common_name(self, name: str, return_score: bool = False):
+        """
+        Check if a name is a common name.
+
+        :param name: Name to check.
+        :param return_score: If True, return the score of the name and cutoff threshold of the pattern.
+        :return: True if name is a common name, False otherwise.
+        """
+        public_patterns = public_figure_kenlm_cutoff_map.get(self.language, public_figure_kenlm_cutoff_map.get('en'))
+        model_type = self.model_dataset.split("/")[-1]
+        for pattern in public_patterns.get(model_type, public_patterns.get('wikipedia')):
+            test_name = pattern['pattern'].format(name)
+            score = self.get_perplexity(test_name)
+            if score < pattern['cutoff']:
+                if return_score:
+                    return True, score, pattern['cutoff']
+                return True
+        if return_score:
+            return False, 0.0, 0.0
+        return False
