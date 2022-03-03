@@ -40,21 +40,20 @@ hf_ner_model_map = {
       'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0],],
 
       # NOT PART OF OUR ORIGINAL LANGUAGE SET. 
-      "fon": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 0.8]], 
-      "lg": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 0.8]], 
-      "rw": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 0.8]], 
-      "wo": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 0.8]], 
-      'gu': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      'as': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      'mr': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      'ml': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      'kn': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      'ne': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      'pa': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      'or': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      'ta': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      'te': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
-      
+      "fon": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 0.8]], 
+      "lg": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
+      "rw": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
+      "wo": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
+      'gu': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
+      'as': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
+      'mr': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
+      'ml': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
+      'kn': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
+      'ne': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
+      'pa': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
+      'or': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
+      'ta': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
+      'te': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
       }
 
 _id = 0
