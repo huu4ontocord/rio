@@ -87,25 +87,26 @@ class FakerExtensions:
   def __init__(
       self,
       lang: str = "vi",
-      trials: int = 1000
+      trials: int = 1000,
+      faker=None,
       
   ):
       self.lang = lang
       self.trials = trials
       self.num_genders = 2
-      if lang in ("as", ):
-        lang = "hi"
-      if lang in ("gu", "pa", "mr", "vi", "bn", "ur", "ca", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu", "st"):
-        faker = self.faker = Faker("en_GB")
+      if faker is None:
+        if lang in ("gu", "pa", "mr", "vi", "bn", "ur", "ca", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu", "st"):
+          faker = self.faker = Faker("en_GB")
+        else:
+          faker = self.faker = Faker(random.choice(faker_map["es" if lang in ("eu", "ca") else "hi" if lang in ("as", ) else lang]))
+        faker.add_provider(person)
+        faker.add_provider(ssn)
+        faker.add_provider(address)
+        faker.add_provider(geo)
+        faker.add_provider(internet)
+        faker.add_provider(company)
       else:
-        faker = self.faker = Faker(random.choice(faker_map["es" if lang in ("eu", "ca") else lang]))
-      faker.add_provider(person)
-      faker.add_provider(ssn)
-      faker.add_provider(address)
-      faker.add_provider(geo)
-      faker.add_provider(internet)
-      faker.add_provider(company)
-
+        self.faker = faker
       self.kenlm_models = load_kenlm_model(self.lang, pretrained_models=["wikipedia"] if lang not in ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
       self.patterns = public_figure_kenlm_cutoff_map.get(self.lang, [{'cutoff': 500, 'pattern': "{} (born"}])
       if self.lang == "vi":
