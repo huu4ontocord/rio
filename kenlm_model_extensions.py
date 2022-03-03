@@ -1,3 +1,15 @@
+"""
+Copyright, 2021-2022 Ontocord, LLC, and other authors of Muliwai, All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 # from https://huggingface.co/edugp/kenlm/blob/main/model.py which is under the Apache 2 License
 # thank you edugp!!
 import os
@@ -12,9 +24,65 @@ from huggingface_hub import cached_download, hf_hub_url
 ## additional code to support kenlm entity querying
 kenlm_models = {
     'wikipedia': {},
-    'oscar': {}
+    'oscar': {},
+    'mc4': {},
 }
 
+# TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of
+#  gender, so we would have two patterns.
+public_figure_kenlm_cutoff_map = {'en': {'wikipedia': [{'cutoff': 500, 'pattern': "{} (born"}], # in wikipedia, you often have: Lincoln (born .... ) 
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} was born"}],
+                                        },
+                                  'yo': {'wikipedia': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
+                                        },
+                                  'zu': {'wikipedia': [{'cutoff': 400, 'pattern': "{} wazalwa ngo"}],
+                                         'oscar': [{'cutoff': 400, 'pattern': "{} wazalwa ngo"}],
+                                         'mc4': [{'cutoff': 400, 'pattern': "{} wazalwa ngo"}], # for now, we are using the mc4 model for zu and ig
+                                        },
+                                  'sn': {'wikipedia': [{'cutoff': 500, 'pattern': "{} akazvarwa"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} akazvarwa"}],
+                                        },
+                                  'st': {'wikipedia': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}],
+                                        },
+                                  'ny': {'wikipedia': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}],
+                                        },
+                                  'xh': {'wikipedia': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
+                                        },
+                                  'sw': {'wikipedia': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}],
+                                        },
+                                  'ig': {'wikipedia': [{'cutoff': 300, 'pattern': "{} amụrụ"}],
+                                         'oscar': [{'cutoff': 300, 'pattern': "{} amụrụ"}],
+                                         'mc4':[{'cutoff': 300, 'pattern': "{} amụrụ"}],
+                                        },
+                                  'ar': {'wikipedia': [{'cutoff': 600, 'pattern': "ولد {} من"}],
+                                         'oscar': [{'cutoff': 600, 'pattern': "ولد {} من"}]
+                                        },
+                                  'zh': {'wikipedia': [{'cutoff': 500, 'pattern': "{}生於"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{}生於"}]
+                                        },
+                                  'vi': {'wikipedia': [{'cutoff': 500, 'pattern': "{} sinh ra"},
+                                                       {'cutoff': 500, 'pattern': "{} sáng lập"}],
+                                         'oscar': [{'cutoff': 450, 'pattern': "{} sinh ra"},
+                                                   {'cutoff': 450, 'pattern': "{} sáng lập"}],                                        
+                                        },
+                                  'hi': {'wikipedia': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}],
+                                        },
+                                  'ur': {'wikipedia': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}],
+                                        },
+                                  'id': {'wikipedia': [{'cutoff': 500, 'pattern': "{} lahir"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} lahir"}],
+                                        },
+                                  'bn': {'wikipedia': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
+                                        }
+                                  }
 
 def load_kenlm_model(
         src_lang: str = "en",
@@ -60,57 +128,21 @@ def load_kenlm_model(
     return all_models
 
 
-# TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of
-#  gender, so we would have two patterns.
-public_figure_kenlm_cutoff_map = {'en': {'wikipedia': [{'cutoff': 500, 'pattern': "{} born"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} born"}]},
-                                  'yo': {'wikipedia': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}]},
-                                  'zu': {'wikipedia': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}]},
-                                  'sn': {'wikipedia': [{'cutoff': 500, 'pattern': "{} akazvarwa"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} akazvarwa"}]},
-                                  'st': {'wikipedia': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}]},
-                                  'ny': {'wikipedia': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}]},
-                                  'xh': {'wikipedia': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}]},
-                                  'sw': {'wikipedia': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}]},
-                                  'ig': {'wikipedia': [{'cutoff': 500, 'pattern': "{} amụrụ"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} amụrụ"}]},
-                                  'ar': {'wikipedia': [{'cutoff': 600, 'pattern': "ولد {} من"}],
-                                         'oscar': [{'cutoff': 600, 'pattern': "ولد {} من"}]},
-                                  'zh': {'wikipedia': [{'cutoff': 500, 'pattern': "{}生於"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{}生於"}]},
-                                  'vi': {'wikipedia': [{'cutoff': 500, 'pattern': "{} sinh ra"},
-                                                       {'cutoff': 500, 'pattern': "{} sáng lập"}],
-                                         'oscar': [{'cutoff': 450, 'pattern': "{} sinh ra"},
-                                                   {'cutoff': 450, 'pattern': "{} sáng lập"}]},
-                                  'hi': {'wikipedia': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}]},
-                                  'ur': {'wikipedia': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}]},
-                                  'id': {'wikipedia': [{'cutoff': 500, 'pattern': "{} lahir"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} lahir"}]},
-                                  'bn': {'wikipedia': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
-                                         'oscar': [{'cutoff': 500, 'pattern': "{} জন্ম"}]}
-                                  }
-
 
 # TODO: refactor code in the faker_extensions with this code
-def check_fake_name(
+def check_for_common_name(
         src_lang: str = "en",
         pretrained_models: list = ['wikipedia'],
         fake_name: str = None,
-        verbose: bool = False
+        verbose: bool = False, 
+        kenlm_models = None,
 ) -> bool:
     """
-    Check fake name in public figure
+    Check if a name is a public figure or a very common name
     """
     # load all kenlm models and cutoff patterns
-    kenlm_models = load_kenlm_model(src_lang, pretrained_models)
+    if kenlm_models is None:
+        kenlm_models = load_kenlm_model(src_lang, pretrained_models)
     public_patterns = public_figure_kenlm_cutoff_map.get(src_lang, public_figure_kenlm_cutoff_map.get('en'))
 
     # check fake name in public figure with specific cutoff
