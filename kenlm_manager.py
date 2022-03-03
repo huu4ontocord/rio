@@ -137,10 +137,11 @@ def load_kenlm_model(
 def check_for_common_name(
         src_lang: str = "en",
         pretrained_models: list = ['wikipedia'],
-        fake_name: str = None,
+        name: str = None,
         verbose: bool = False, 
         kenlm_models = None,
-) -> bool:
+        return_score= False,
+):
     """
     Check if a name is a public figure or a very common name
     """
@@ -150,11 +151,16 @@ def check_for_common_name(
     public_patterns = public_figure_kenlm_cutoff_map.get(src_lang, public_figure_kenlm_cutoff_map.get('en'))
     for model_type, model in kenlm_models.items():
        for pattern in public_patterns.get(model_type, public_patterns.get('wikipedia')):
-            test_name = pattern['pattern'].format(fake_name)
-            if model.get_perplexity(test_name) < pattern['cutoff']:
+            test_name = pattern['pattern'].format(name)
+            score = model.get_perplexity(test_name)
+            if score < pattern['cutoff']:
                 if verbose:
-                    print(fake_name, model.get_perplexity(test_name))
+                    print(name, score)
+                if return_score:
+                  return True, score
                 return True
+    if return_score:
+      return False, score                 
     return False
 
 
