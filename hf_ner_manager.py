@@ -40,20 +40,20 @@ hf_ner_model_map = {
       'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0],],
 
       # NOT PART OF OUR ORIGINAL LANGUAGE SET. 
-      "fon": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 0.8]], 
-      "lg": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
-      "rw": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
-      "wo": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
-      'gu': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'as': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'mr': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'ml': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'kn': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'ne': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'pa': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'or': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'ta': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'te': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
+      "fon": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 0.8]], 
+      "lg": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 0.8]], 
+      "rw": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 0.8]], 
+      "wo": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 0.8]], 
+      'gu': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'as': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'mr': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'ml': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'kn': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'ne': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'pa': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'or': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'ta': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'te': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
       
       }
 
@@ -323,8 +323,14 @@ def detect_ner_with_hf_model(sentence, src_lang,  tag_type={'PERSON', 'PUBLIC_FI
     # now let's step through
     models = load_kenlm_model(src_lang, pretrained_models=["wikipedia"] if src_lang not in  ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
     for i, a_ner in enumerate(doc[ner_key]):
-      match, score = check_for_common_name(src_lang, pretrained_models=["wikipedia"] if src_lang not in  ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"], name=a_ner[0], kenlm_models=models, return_score=True)
+      ent = a_ner[0]
+      match, score, cutoff = check_for_common_name(src_lang, pretrained_models=["wikipedia"] if src_lang not in  ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"], name=ent, kenlm_models=models, return_score=True)
       if match:
+        #single word or short names may require an even lower cutoff
+        if src_is_cjk and len(ent) <= 3:
+          if score > cutoff/2: continue
+        elif sep not in ent:
+          if score > cutoff/2: continue
         a_ner = list(a_ner)
         a_ner[-1] = 'PUBLIC_FIGURE'
         doc[ner_key][i] = tuple(a_ner)
