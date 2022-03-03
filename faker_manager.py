@@ -205,7 +205,7 @@ class FakerExtensions:
           fake_name = self.generate_fakename(one_name=one_name)
         else:
           if one_name:
-            fake_anme = self.faker.firstname()
+            fake_name = self.faker.first_name()
           else:
             fake_name = self.faker.name()
         # we want our fake names to not be too close to a famous name
@@ -229,12 +229,13 @@ class FakerExtensions:
     Can match first and last names in the context.
     Sentence: John Doe went to the store. John bought milk. => Jack Smith went to the store. Jack bought milk. 
     """
-    if ent is None or context is None: 
-      return self.create_name(verbose=verbose)
+    is_cjk = self.lang in ("zh", "ko", "ja", "th")
+    if ent is None or context is None:   
+      return self.create_name(one_name=one_name, verbose=verbose)
     if ent in context: return context[ent]
+    if not is_cjk and " " not in ent: one_name = True
     na = self.create_name(one_name=one_name, verbose=verbose)
     na  = context[ent] = context.get(ent, na)
-    is_cjk = self.lang in ("zh", "ko", "ja", "th")
     if " " in ent:
         if is_cjk:
           ent_arr = ent
@@ -247,7 +248,6 @@ class FakerExtensions:
             ent_arr = ent_arr[:-1]
         if match_first_name:
           ent1 = ent_arr[0] if not is_cjk else (ent[:2] if len(ent) > 2 else ent[:1])
-          print ('ent1', ent1)
           if ent1 in context:
             na1 = context[ent1]
             if is_cjk:
@@ -261,7 +261,10 @@ class FakerExtensions:
             val = context[ent][:2] if len(context[ent]) > 2 else context[ent][:1] 
             context[ent1] = context.get(ent1, val) 
           elif " " in context[ent]:
-            val = context[ent].split()[0]
+            val_arr = context[ent].split()
+            if val_arr[0][-1] == ".":
+              val_arr = val_arr[1:]
+            val = val_arr[0]
             context[ent1] = context.get(ent1, val) 
 
         if match_last_name:
@@ -279,7 +282,10 @@ class FakerExtensions:
             val = context[ent][-2:] if len(context[ent]) > 3 else context[ent][-1:] 
             context[ent2] = context.get(ent2, val) 
           elif " " in context[ent]:
-            val = context[ent].split()[-1]
+            val_arr = context[ent].split()
+            if val_arr[-1][-1] == ".":
+              val_arr = val_arr[:-1]
+            val = val_arr[-1]
             context[ent2] = context.get(ent2, val) 
     return context[ent] 
 
@@ -351,7 +357,7 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
     # we want to match the longest spans for anonymization
     new_ner = copy.deepcopy(ner)
     new_ner.sort(key=lambda a: len(a[0]), reverse=True)     
-    for idx, a_ner in enumerate(ner):
+    for idx, a_ner in enumerate(new_ner):
       ent = a_ner[0]
       tag = a_ner[-1]
       sentence = sentence.replace(ent+" ", f"<{idx}> ")
@@ -360,7 +366,7 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
         sentence = sentence.replace(ent, f"<{idx}>") 
     context = {}
     new_ner2 = []
-    for idx, a_ner in enumerate(ner):
+    for idx, a_ner in enumerate(new_ner):
       ent = a_ner[0]
       tag = a_ner[-1]
       if tag == 'PERSON':
@@ -390,10 +396,11 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
   
       #TODO: NORP, AGE, DISEASE, URL, LICENSE_PLATE, GENDER, JOB, MEDICAL_THERAPY
         
-    sentence = sentence.replace("  ", " ")
+    sentence = sentence.replace("  ", " ").strip()
     new_ner3 = []
     sentence2 = copy.copy(sentence)
     len_text = len(sentence2)
+    new_ner2.sort(key=lambda a: len(a[0]), reverse=True)
     for a_ner in new_ner2:
         ent, tag = a_ner
         pos = 0
@@ -404,16 +411,24 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
           pos = end+1
           mention2 = [ent, start, end, tag]
           new_ner3.append(mention2)
-        sentence2.replace(ent, " "*len(ent))
+        sentence2 = sentence2.replace(ent, " "*len(ent))
           
-
+  new_ner3.sort(key=lambda a: a[1])
   return sentence, new_ner3
 
 if __name__ == "__main__":
   if True:
     print (augment_anonymize('John Smith is nice. John says hi.', 'en', [['John Smith', 0, 9, 'PERSON'], ['John', 20, 24, 'PERSON']], ))
+    print (augment_anonymize('John is nice. John Smith says hi.', 'en', [['John', 0, 4, 'PERSON'], ['John Smith', 14, 24, 'PERSON']], ))
+
   if False:
     # TODO: do "as"
+    generator = FakerExtensions(lang='zh')
+    fake_name = generator.name(ent="周淑", context=context)
+    print ('found name', fake_name)
+    fake_name = generator.name(ent="周淑华", context=context)
+    print ('found name', fake_name)
+  if False:
     for lang in ["zh", "pa", "gu","as", "zh", "en", "yo","mr", "ny", "sn", "st", "xh", "zu", "ar", "bn", "ca",  "es", "eu", "fr", "hi", "id", "ig", "pt",  "sw", "ur","vi",  ]:
       print (f'*** {lang}')
       generator = FakerExtensions(lang=lang)
