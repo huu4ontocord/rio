@@ -67,6 +67,7 @@ from hf_ner_manager import *
 from banned_words import *
 from char_manager import *
 import pii_regexes
+from cjk import cjk_detect
 from ontology.ontology_manager import OntologyManager
 try:
   if not stopwords:
@@ -741,18 +742,7 @@ class TextAugment:
         translations.extend(outputs)
     return translations
 
-  @staticmethod
-  def cjk_detect(texts):
-    # korean
-    if re.search("[\uac00-\ud7a3]", texts):
-        return "ko"
-    # japanese
-    if re.search("[\u3040-\u30ff]", texts):
-        return "ja"
-    # chinese
-    if re.search("[\u4e00-\u9FFF]", texts):
-        return "zh"
-    return None
+
 
   @staticmethod
   def batch(lst, n):
@@ -832,7 +822,7 @@ class TextAugment:
       for ner_result in results:
         start = ner_result['start']
         if start >= len_text: continue
-        if not self.cjk_detect(text[ner_result['start']:ner_result['end']]):
+        if not cjk_detect(text[ner_result['start']:ner_result['end']]):
               if text[start] not in strip_chars:
                 for j in range(1, start):
                   if start - j == -1 or text[start-j] in strip_chars:
@@ -1165,7 +1155,7 @@ class TextAugment:
 
           ner_word = mention[0]
           if ner_word and ner_word.lower() not in stopwords:
-              if not self.cjk_detect(ner_word):
+              if not cjk_detect(ner_word):
                 if ner_word not in text: continue
                 i += text[i:].index(ner_word)
                 ner_word = text[i:].split(" ", 1)[0]
@@ -1216,7 +1206,7 @@ class TextAugment:
             if label in ('GPE', 'FAC'): label = 'LOC'
             ner_word = ner_word.strip(strip_chars)
             if ner_word and ner_word.lower() not in stopwords:
-              if not self.cjk_detect(ner_word):
+              if not cjk_detect(ner_word):
                 if ner_word not in text: continue
                 i += text[i:].index(ner_word)
                 ner_word = text[i:].split(" ", 1)[0]
@@ -1284,7 +1274,7 @@ class TextAugment:
                 continue
             except:
               pass
-            if ner_word.lower() in stopwords or (not self.cjk_detect(ner_word) and len(ner_word) <= 1):
+            if ner_word.lower() in stopwords or (not cjk_detect(ner_word) and len(ner_word) <= 1):
               #print ("deleting ", ner_word)
               del doc[ner_key][key]
 
@@ -1445,7 +1435,7 @@ class TextAugment:
               continue
             if key[2] > offset_end:
               break
-            if len(key[0]) < 4 and not self.cjk_detect(key[0]):
+            if len(key[0]) < 4 and not cjk_detect(key[0]):
               if " "+key[0]+" " in text[i:]:
                 j = text.index(" "+key[0]+" ", i)
                 text = text[:j]+(text[j:].replace(" "+key[0]+" ", f"  **{idx}**  ", 1))
@@ -1466,7 +1456,7 @@ class TextAugment:
           doc = docs[_id]
           for key in doc[items_key]:
             idx = key[-1]
-            if len(key[0]) < 5 and not self.cjk_detect(key[0]):
+            if len(key[0]) < 5 and not cjk_detect(key[0]):
               text = text.replace(" "+key[0]+" ", f"  **{idx}**  ")
             else:
               text = text.replace(key[0], f" **{idx}** ")
@@ -1827,9 +1817,9 @@ class TextAugment:
             onto_items = []
             for c, label in chunk2ner.items():
               if label not in ("PUBLIC_FIGURE",): continue # hard coded to only do famous people for now. we will depend on the other models to detect other NERs
-              ner_word  = c[0].replace(" ", "").replace("_", "").replace("_", "") if self.cjk_detect(c[0]) else c[0].replace("_", " ").replace("_", " ").rstrip(strip_chars)
+              ner_word  = c[0].replace(" ", "").replace("_", "").replace("_", "") if cjk_detect(c[0]) else c[0].replace("_", " ").replace("_", " ").rstrip(strip_chars)
               if ner_word.lower() not in stopwords2:
-                if not self.cjk_detect(ner_word) and label in ('PERSON', 'PUBLIC_FIGURE', 'ORG') and " " not in ner_word: continue
+                if not cjk_detect(ner_word) and label in ('PERSON', 'PUBLIC_FIGURE', 'ORG') and " " not in ner_word: continue
                 onto_items.append(((ner_word, c[1], c[1] + len(ner_word)), label))
             for ner_mention, label in list(set(onto_items)):
                 aHash = ner.get(ner_mention, {})
