@@ -112,6 +112,7 @@ def load_kenlm_model(
                 all_models[model_type] = kenlm_models[model_type][src_lang]
             else:
                 os.system(f"mkdir -p {cache_dir}/{model_type}")
+                found=True
                 for model_file in model_files:
                     if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.{model_file}"):
                         try:
@@ -121,10 +122,13 @@ def load_kenlm_model(
                             os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.{model_file}")
                         except:
                             warnings.warn(f'could not find model {src_lang}.{model_file}. will stop searching...')
-                model = KenlmModel(f"{cache_dir}/{model_type}", src_lang)
-                all_models[model_type] = model
-                if store_model:
-                    kenlm_models[model_type][src_lang] = model
+                            found=False
+                            break
+                if found:
+                  model = KenlmModel(f"{cache_dir}/{model_type}", src_lang)
+                  all_models[model_type] = model
+                  if store_model:
+                      kenlm_models[model_type][src_lang] = model
     return all_models
 
 
@@ -144,8 +148,8 @@ def check_for_common_name(
     if kenlm_models is None:
         kenlm_models = load_kenlm_model(src_lang, pretrained_models)
     public_patterns = public_figure_kenlm_cutoff_map.get(src_lang, public_figure_kenlm_cutoff_map.get('en'))
-    for model_type, model in self.kenlm_models.items():
-       for pattern in self.patterns.get(model_type, public_patterns.get('wikipedia')):
+    for model_type, model in kenlm_models.items():
+       for pattern in public_patterns.get(model_type, public_patterns.get('wikipedia')):
             test_name = pattern['pattern'].format(fake_name)
             if model.get_perplexity(test_name) < pattern['cutoff']:
                 if verbose:
