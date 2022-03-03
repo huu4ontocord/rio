@@ -13,6 +13,8 @@ limitations under the License.
 import torch
 from transformers import pipeline, AutoTokenizer, XLMRobertaForTokenClassification, BertForTokenClassification, ElectraForTokenClassification, RobertaForTokenClassification
 from cjk import cjk_detect
+from kenlm_manager import *
+from char_manager import *
 
 hf_ner_model_map = {
       "sn": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], 
@@ -38,20 +40,20 @@ hf_ner_model_map = {
       'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0],],
 
       # NOT PART OF OUR ORIGINAL LANGUAGE SET. 
-      "fon": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 0.8]], 
-      "lg": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
-      "rw": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
-      "wo": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
-      'gu': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'as': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'mr': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'ml': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'kn': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'ne': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'pa': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'or': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'ta': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'te': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
+      "fon": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 0.8]], 
+      "lg": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 0.8]], 
+      "rw": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 0.8]], 
+      "wo": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 0.8]], 
+      'gu': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'as': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'mr': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'ml': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'kn': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'ne': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'pa': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'or': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'ta': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
+      'te': [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 0.8 ]],
       
       }
 
@@ -87,7 +89,7 @@ def load_hf_ner_pipelines(target_lang, device="cpu", device_id=-1):
               pipelines.append({'pipeline': ner_pipeline, 'weight': hf_ner_weight2, 'name': model_name})
     return pipelines
 
-def chunkify(doc, src_lang, sep, num_words_per_chunk, strip_chars, punc_char,  text_key=None, ):
+def chunkify(doc, src_lang,  num_words_per_chunk=150,  text_key=None, ):
       """
       Do basic sentence splitting and limiting each chunk's number of words to prevent overflow. We assume the docs are long. 
       """
@@ -98,6 +100,10 @@ def chunkify(doc, src_lang, sep, num_words_per_chunk, strip_chars, punc_char,  t
         elif 'text' in doc:
           text_key = 'text'
       src_is_cjk = src_lang in ("zh", "ja", "ko", "th")
+      if src_is_cjk: 
+        sep = ""
+      else:
+        sep = " "
       if type(doc) is str:
         doc = {'text': doc}
       chunks = doc['chunks'] = doc.get('chunks', [])
@@ -157,7 +163,7 @@ def chunkify(doc, src_lang, sep, num_words_per_chunk, strip_chars, punc_char,  t
             text_str = sep.join(text)
             chunks.append({text_key: text_str, 'id': doc['id'], f'{src_lang}_offset': offset})
 
-def detect(sentence, src_lang,  tag_type={'PERSON', 'PUBLIC_FIGURE'},  chunks=None, hf_pipelines=None, sep=" ", strip_chars="", punc_char=".", num_words_per_chunk=150, stopwords=None, device="cpu", device_id=-1, weight=1., text_key=None, ner_key=None, offset_key=None, batch_size=20,):
+def detect_ner_with_hf_model(sentence, src_lang,  tag_type={'PERSON', 'PUBLIC_FIGURE'},  chunks=None, hf_pipelines=None, num_words_per_chunk=150, stopwords=None, device="cpu", device_id=-1, weight=1.0, text_key=None, ner_key=None, offset_key=None, batch_size=20,):
     """
     Output:
        - This function returns a list of 4 tuples, representing an NER detection for [(entity, start, end, tag), ...]
@@ -181,8 +187,13 @@ def detect(sentence, src_lang,  tag_type={'PERSON', 'PUBLIC_FIGURE'},  chunks=No
     if text_key is None:
       text_key = f'{src_lang}_text'
     doc = {'text': sentence}
+    src_is_cjk = src_lang in ("zh", "ja", "ko", "th")
+    if src_is_cjk: 
+        sep = ""
+    else:
+        sep = " "
     if chunks is None:
-      chunks = chunkify(doc, src_lang, sep, num_words_per_chunk, strip_chars, punc_char)
+      chunks = chunkify(doc, src_lang, num_words_per_chunk)
     if hf_pipelines is None:
       hf_pipelines = load_hf_ner_pipelines(src_lang, device=device, device_id=device_id)
     for hf_pipeline in hf_pipelines:    
@@ -308,5 +319,15 @@ def detect(sentence, src_lang,  tag_type={'PERSON', 'PUBLIC_FIGURE'},  chunks=No
                   aHash = ner.get(mention, {})
                   aHash[prev_label] = aHash.get(prev_label, 0) + weight * hf_pipeline['weight']
                   ner[mention] = aHash
+    
+    # now let's step through
+    models = load_kenlm_model(src_lang, pretrained_models=["wikipedia"] if src_lang not in  ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
+    for i, a_ner in enumerate(doc[ner_key]):
+      match, score = check_for_common_name(src_lang, pretrained_models=["wikipedia"] if src_lang not in  ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"], name=a_ner[0], kenlm_models=models, return_score=True)
+      if match:
+        a_ner = list(a_ner)
+        a_ner[-1] = 'PUBLIC_FIGURE'
+        doc[ner_key][i] = tuple(a_ner)
+
     return doc[ner_key]
 
