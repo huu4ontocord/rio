@@ -1889,7 +1889,7 @@ class TextAugment:
             if (target_is_cjk and len(ent2) <= 3):
               if kenlm_score > cutoff/2: continue
             elif " " not in ent2:
-              if score > cutoff/2: continue
+              if kenlm_score > cutoff/2: continue
             logger.info(("found public figure ", ent2, kenlm_score))
             public_figures.append(ent)
 
