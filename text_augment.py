@@ -61,13 +61,13 @@ try:
 except:
     pass
 from marian_mt import marian_mt
-from kenlm_model_extensions import *
+from kenlm_manager import *
 from fake_names import *
-from faker_extensions import *
-from hf_models import *
+from faker_manager import *
+from hf_ner_manager import *
 from banned_words import *
 from char_manager import *
-from pii_regexes import detect_ner_with_regex_and_context
+import pii_regexes
 from ontology.ontology_manager import OntologyManager
 try:
   if not stopwords:
@@ -773,7 +773,7 @@ class TextAugment:
     for doc in docs.values():
       ner = doc[ner_key] = doc.get(ner_key, {})
       sentence = doc[text_key]
-      all_ner = detect_ner_with_regex_and_context(sentence, src_lang, context_window=context_window, tag_type=None)
+      all_ner = pii_regexes.detect(sentence, src_lang, context_window=context_window, tag_type=None)
       for mention_tag in all_ner:
         ent, start, end, tag = mention_tag
         key = (ent, start, end)
