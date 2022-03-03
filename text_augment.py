@@ -63,7 +63,7 @@ from marian_mt import marian_mt
 from kenlm_manager import *
 from fake_names import *
 from faker_manager import *
-from hf_ner_manager import *
+from ner_manager import *
 from banned_words import *
 from char_manager import *
 import pii_regexes
