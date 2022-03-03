@@ -1627,7 +1627,8 @@ class TextAugment:
     if do_kenlm:
         if target_lang not in kenlm_models["wikipedia" if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else "mc4"]:
             load_kenlm_model(target_lang, cache_dir=self.cache_dir, pretrained_models=["wikipedia"] if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
-
+        public_figure_kenlm_data_list = public_figure_kenlm_cutoff_map.get(target_lang, public_figure_kenlm_cutoff_map.get('en'))
+    
     if target_lang != src_lang:
         if TextAugment.qg is None: TextAugment.qg = qg_pipeline.pipeline("multitask-qa-qg", TextAugment=self.device) # TODO make sure it's running in half mode
         if TextAugment.labse is None:
@@ -1698,7 +1699,6 @@ class TextAugment:
       target_offset_key = f'{target_lang}_offset'
       target_src_sim_key = f'{src_lang}_2_{target_lang}_sim'
 
-    public_figure_kenlm_data_list = public_figure_kenlm_cutoff_map.get(target_lang, [{'cutoff': 500, 'pattern': "{} (born"}])
     docs = self.collapse_ner(docs, ner_key = f'{src_lang}_signal_ner', collapse_ner_key = f'{src_lang}_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1)
 
     # do operations in the target_lang space
@@ -1853,7 +1853,7 @@ class TextAugment:
     if do_docs_trim_for_person:
       docs, chunks = self.trim_to_prefer_person(docs, chunks)
 
-    if do_kenlm and target_lang in kenlm_wiki_models:
+    if do_kenlm and target_lang in kenlm_models['wikipedia'] or target_lang in kenlm_models['mc4']:
       for doc in docs.values():
         ner = doc[target_ner_key]
         prev_public_figures = []
@@ -1883,7 +1883,8 @@ class TextAugment:
           ent2 = ent
           if not target_is_cjk and (ent == ent.upper() or ent == ent.lower()):
             ent2 = " ".join([(a[0].upper())+(a[1:].lower()) if len(a) > 1 else a for a in ent.split()])
-          for public_figure_kenlm_data in public_figure_kenlm_data_list:
+          print(public_figure_kenlm_data_list)
+          for public_figure_kenlm_data in public_figure_kenlm_data_list["wikipedia" if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else "mc4"]:
             public_figure_kenlm_cutoff = public_figure_kenlm_data['cutoff']
             public_figure_kenlm_pattern = public_figure_kenlm_data['pattern']
             kenlm_score = kenlm_wiki_models[target_lang].get_perplexity(public_figure_kenlm_pattern.format(ent2))
