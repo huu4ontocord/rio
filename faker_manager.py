@@ -10,6 +10,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
+# This file extends faker to more languages and includes tests based on kenlm statistics to lessen the liklihood a name is a real person's name.
+# This file also provides basic anonymization and context management so that names are swapped appropraitely.
+
 from faker import Faker
 from faker.providers import person, company, geo, address, ssn, internet
 from fake_names import *
@@ -17,6 +21,7 @@ from kenlm_manager import *
 from typing import List
 import random
 import time
+import copy
 
 faker_list = [
     'ar_AA',
@@ -187,7 +192,7 @@ class FakerExtensions:
       return check_for_common_name(
         src_lang = self.lang,
         pretrained_models = ['wikipedia'],
-        fake_name = fake_name,
+        name = fake_name,
         verbose = verbose, 
         kenlm_models = self.kenlm_models)
         
@@ -214,7 +219,7 @@ class FakerExtensions:
       else:
         fake_name = self.faker.name()
   
-  #TODO - create male and female versions of firstname and name
+  #TODO - create male and female versions of firstname and name similar to faker
 
   def first_name(self, ent=None, context=None, verbose=False,):
     return self.name(one_name=True, ent=ent, context=context, verbose=verbose)
@@ -306,6 +311,8 @@ class FakerExtensions:
           context[ent2] = context.get(ent2, val) 
     return context[ent] 
 
+  #TODO - call faker's phone, ssn (ID), user, email, url etc. to create psuedo data as opposed to just labels
+
   def ssn(self, ent=None, context=None):
     if ent is None or context is None: 
       return self.faker.ssn()
@@ -336,22 +343,91 @@ class FakerExtensions:
         context[ent] =  context.get(ent, self.faker.state())
     return context[ent]
 
-if __name__ == "__main__":
-  # TODO: do "as"
-  for lang in ["zh", "pa", "gu","as", "zh", "en", "yo","mr", "ny", "sn", "st", "xh", "zu", "ar", "bn", "ca",  "es", "eu", "fr", "hi", "id", "ig", "pt",  "sw", "ur","vi",  ]:
-    print (f'*** {lang}')
-    generator = FakerExtensions(lang=lang)
-    start_time=time.time()
-    for i in range(100):
-        fake_name = generator.name()
-        print ('found name', fake_name)
 
-    """
+def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID', 'PHONE', 'USER', 'EMAIL', 'LICENSE_PLATE', 'PERSON'} ):
+  faker = FakerExtensions(lang_id)
+  is_cjk = lang_id in ("zh", "ja", "ko", "th")
+  if True:
+    # we want to match the longest spans for anonymization
+    new_ner = copy.deepcopy(ner)
+    new_ner.sort(key=lambda a: len(a[0]), reverse=True)     
+    for idx, a_ner in enumerate(ner):
+      ent = a_ner[0]
+      tag = a_ner[-1]
+      sentence = sentence.replace(ent+" ", f"<{idx}> ")
+      sentence = sentence.replace(" "+ent, f" <{idx}>")
+      if len(ent) > 5:
+        sentence = sentence.replace(ent, f"<{idx}>") 
     context = {}
-    for i in range(100):
-        fake_name = generator.name(ent="周淑", context=context)
-        print ('found name', fake_name)
-        fake_name = generator.name(ent="周淑华", context=context)
-        print ('found name', fake_name)
-    """
-    print(f"Running time {time.time() - start_time}")
+    new_ner2 = []
+    for idx, a_ner in enumerate(ner):
+      ent = a_ner[0]
+      tag = a_ner[-1]
+      if tag == 'PERSON':
+        ent2 = faker.name(ent=ent, context=context)
+        if ent2 not in new_ner2:
+          new_ner2.append((ent2, tag))
+        sentence = sentence.replace(f"<{idx}>", f' {ent2} ' if not is_cjk else ent2)
+      elif tag == 'ORG':
+        ent2 = faker.company(ent=ent, context=context)
+        if ent2 not in new_ner2:
+          new_ner2.append((ent2, tag))
+        sentence = sentence.replace(f"<{idx}>", f' {ent2} ' if not is_cjk else ent2)
+      elif tag == 'LOC':
+        ent2 = faker.state(ent=ent, context=context)
+        if ent2 not in new_ner2:
+          new_ner2.append((ent2, tag))
+        sentence = sentence.replace(f"<{idx}>", f' {ent2} ' if not is_cjk else ent2)
+      elif tag == 'ADDRESS':
+        ent2 = faker.address(ent=ent, context=context)
+        if ent2 not in new_ner2:
+          new_ner2.append((ent2, tag))
+        sentence = sentence.replace(f"<{idx}>", f' {ent2} ' if not is_cjk else ent2)
+      elif tag != 'PUBLIC_FIGURE':
+        if f' <{tag}> ' not in new_ner2:
+          new_ner2.append((f' <{tag}> ', tag))
+        sentence = sentence.replace(f"<{idx}>", f' <{tag}> ')
+  
+      #TODO: NORP, AGE, DISEASE, URL, LICENSE_PLATE, GENDER, JOB, MEDICAL_THERAPY
+        
+    sentence = sentence.replace("  ", " ")
+    new_ner3 = []
+    sentence2 = copy.copy(sentence)
+    len_text = len(sentence2)
+    for a_ner in new_ner2:
+        ent, tag = a_ner
+        pos = 0
+        while pos < len_text and ent in sentence2[pos:]:
+          i = sentence2[pos:].index(ent)
+          start = pos + i
+          end = start + len(ent)
+          pos = end+1
+          mention2 = [ent, start, end, tag]
+          new_ner3.append(mention2)
+        sentence2.replace(ent, " "*len(ent))
+          
+
+  return sentence, new_ner3
+
+if __name__ == "__main__":
+  if True:
+    print (augment_anonymize('John Smith is nice. John says hi.', 'en', [['John Smith', 0, 9, 'PERSON'], ['John', 20, 24, 'PERSON']], ))
+  if False:
+    # TODO: do "as"
+    for lang in ["zh", "pa", "gu","as", "zh", "en", "yo","mr", "ny", "sn", "st", "xh", "zu", "ar", "bn", "ca",  "es", "eu", "fr", "hi", "id", "ig", "pt",  "sw", "ur","vi",  ]:
+      print (f'*** {lang}')
+      generator = FakerExtensions(lang=lang)
+      start_time=time.time()
+      for i in range(100):
+          fake_name = generator.name()
+          print ('found name', fake_name)
+
+      """
+      context = {}
+      for i in range(100):
+          fake_name = generator.name(ent="周淑", context=context)
+          print ('found name', fake_name)
+          fake_name = generator.name(ent="周淑华", context=context)
+          print ('found name', fake_name)
+      """
+      print(f"Running time {time.time() - start_time}")
