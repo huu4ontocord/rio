@@ -320,7 +320,7 @@ def detect_ner_with_hf_model(sentence, src_lang,  tag_type={'PERSON', 'PUBLIC_FI
                   aHash = ner.get(mention, {})
                   aHash[prev_label] = aHash.get(prev_label, 0) + weight * hf_pipeline['weight']
                   ner[mention] = aHash
-    
+    print ('**', doc)
     # now let's step through
     models = load_kenlm_model(src_lang, pretrained_models=["wikipedia"] if src_lang not in  ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
     for i, a_ner in enumerate(list(doc[ner_key])):
