@@ -1,92 +1,139 @@
-#from https://huggingface.co/edugp/kenlm/blob/main/model.py which is under the Apache 2 License
-#thank you edugp!!
+# from https://huggingface.co/edugp/kenlm/blob/main/model.py which is under the Apache 2 License
+# thank you edugp!!
 import os
 import re
 import unicodedata
 from typing import Dict
-
+import warnings
 import kenlm
 import sentencepiece
 from huggingface_hub import cached_download, hf_hub_url
+
 ## additional code to support kenlm entity querying
 
-kenlm_wiki_models = {}
-kenlm_oscar_models = {}
 
-#TODO - create a weighted average score between the two models
-def load_kenlm_model(src_lang="en", store_model=True, cache_dir=None):
-      """
-      Load a new one. Consider if we want to use an LRU.
-      TODO: Incorporate OSCAR kenlm models. They are quite big, and we still need patterns and cutoffs.
-      """
-      src_lang = src_lang if src_lang in public_figure_kenlm_cutoff_map else "en"
-      if kenlm_wiki_models and src_lang in kenlm_wiki_models:
-        return [kenlm_wiki_models[src_lang], ] # kenlm_oscar_models[src_lang]
-      if cache_dir == None:
-        cache_dir = os.path.expanduser ('~')+"/.cache"
-      all_models = []
-      for kenlm_models, model_type in ((kenlm_wiki_models, "wikipedia"), ): #(kenlm_oscar_models, "oscar")
-          os.system(f"mkdir -p {cache_dir}/{model_type}")
-          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.arpa.bin"):
-            try:
-              file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.arpa.bin")
-              file = cached_download(file_url)
-            except:
-              print (f'could not find model {src_lang}.arpa.bin. will stop searching...')
-              return all_models
-            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.arpa.bin")
-          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.model"):
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.model")
-            file = cached_download(file_url)
-            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.model")
-          if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.sp.vocab"):
-            file_url= hf_hub_url(repo_id="edugp/kenlm", filename=f"{model_type}/{src_lang}.sp.vocab")
-            file = cached_download(file_url)
-            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.sp.vocab")
-          model =  KenlmModel(f"{cache_dir}/{model_type}", src_lang)
-          all_models.append(model)
-          if store_model: kenlm_models[src_lang] = model
-      return all_models
+kenlm_models = {
+    'wikipedia': {},
+    'oscar': {}
+}
 
-#TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of gender, so we would have two patterns.
-public_figure_kenlm_cutoff_map = {'en': [{'cutoff': 500, 'pattern': "{} (born"}],
-                                    'yo': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
-                                    'zu': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
-                                    'sn': [{'cutoff': 500, 'pattern': "{} akazvarwa"}],
-                                    'st': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}],
-                                    'ny': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}],
-                                    'xh': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
-                                    'sw': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}],
-                                    'ig': [{'cutoff': 500, 'pattern': "{} amụrụ"}],
-                                    'ar': [{'cutoff': 600, 'pattern': "ولد {} من"}],
-                                    'zh': [{'cutoff': 500, 'pattern': "{}生於"}],
-                                    'vi': [{'cutoff': 500, 'pattern': "{} sinh ra"}, {'cutoff': 800, 'pattern': "{} sáng lập"}],
-                                    'hi': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}],
-                                    'ur': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}],
-                                    'id': [{'cutoff': 500, 'pattern': "{} lahir"}],
-                                    'bn': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
-                                    }
 
-#TODO: refactor code in the faker_extensions with this code
-def check_fakename(lang, fake_name, verbose=False):
-      """ Check fake name close to real name"""
-      kenlm_models = load_kenlm_model(lang)
-      patterns = public_figure_kenlm_cutoff_map.get(lang, [{'cutoff': 500, 'pattern': "{} (born"}])
-      for model in kenlm_models:
-          for pattern in patterns:
-              test_name = pattern['pattern'].format(fake_name)
-              if model.get_perplexity(test_name) < pattern['cutoff']:
-                  if verbose:
-                      print(fake_name, model.get_perplexity(test_name))
-                  return True
-      return False
-            
+def load_kenlm_model(
+        src_lang: str = "en",
+        pretrained_models: list = ['wikipedia'],
+        store_model: bool = True,
+        cache_dir: str = None,
+) -> dict:
+    """
+    Load all supported kenlm model for source language. Consider if we want to use an LRU.
+    TODO: Incorporate OSCAR kenlm models. They are quite big, and we still need patterns and cutoffs.
+    """
+    assert len(pretrained_models) <= len(
+        kenlm_models), 'Total of number kenlm models loads larger than supported kenlm models'
+    src_lang = src_lang if src_lang in public_figure_kenlm_cutoff_map else "en"
+    all_models = {}
+    model_files = ["arpa.bin", "sp.model", "sp.vocab"]
+    # cache to dir
+    if cache_dir is None:
+        cache_dir = os.path.expanduser('~') + "/.cache"
+
+    # check if pretrain model exist
+    for model_type in pretrained_models:
+        if model_type not in kenlm_models.keys():
+            warnings.warn(f"{model_type} pretrained model is not supported!")
+        else:
+            if src_lang in kenlm_models[model_type]:
+                all_models[model_type] = kenlm_models[model_type][src_lang]
+            else:
+                os.system(f"mkdir -p {cache_dir}/{model_type}")
+                for model_file in model_files:
+                    if not os.path.exists(f"{cache_dir}/{model_type}/{src_lang}.{model_file}"):
+                        try:
+                            file_url = hf_hub_url(repo_id="edugp/kenlm",
+                                                  filename=f"{model_type}/{src_lang}.{model_file}")
+                            file = cached_download(file_url)
+                            os.system(f"ln -s {file} {cache_dir}/{model_type}/{src_lang}.{model_file}")
+                        except:
+                            warnings.warn(f'could not find model {src_lang}.{model_file}. will stop searching...')
+                model = KenlmModel(f"{cache_dir}/{model_type}", src_lang)
+                all_models[model_type] = model
+                if store_model:
+                    kenlm_models[model_type][src_lang] = model
+    return all_models
+
+
+# TODO figure out actual numbers. Also, add languge specific kenlm models. Check if there are variations b/c of
+#  gender, so we would have two patterns.
+public_figure_kenlm_cutoff_map = {'en': {'wikipedia': [{'cutoff': 500, 'pattern': "{} (born"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} (born"}]},
+                                  'yo': {'wikipedia': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}]},
+                                  'zu': {'wikipedia': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}]},
+                                  'sn': {'wikipedia': [{'cutoff': 500, 'pattern': "{} akazvarwa"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} akazvarwa"}]},
+                                  'st': {'wikipedia': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} o hlahile ka"}]},
+                                  'ny': {'wikipedia': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} anabadwa pa"}]},
+                                  'xh': {'wikipedia': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} wazalwa ngo"}]},
+                                  'sw': {'wikipedia': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} alizaliwa tarehe"}]},
+                                  'ig': {'wikipedia': [{'cutoff': 500, 'pattern': "{} amụrụ"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} amụrụ"}]},
+                                  'ar': {'wikipedia': [{'cutoff': 600, 'pattern': "ولد {} من"}],
+                                         'oscar': [{'cutoff': 600, 'pattern': "ولد {} من"}]},
+                                  'zh': {'wikipedia': [{'cutoff': 500, 'pattern': "{}生於"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{}生於"}]},
+                                  'vi': {'wikipedia': [{'cutoff': 500, 'pattern': "{} sinh ra"},
+                                                       {'cutoff': 500, 'pattern': "{} sáng lập"}],
+                                         'oscar': [{'cutoff': 450, 'pattern': "{} sinh ra"},
+                                                   {'cutoff': 450, 'pattern': "{} sáng lập"}]},
+                                  'hi': {'wikipedia': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} का जन्म ए"}]},
+                                  'ur': {'wikipedia': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} پیدا ہوا"}]},
+                                  'id': {'wikipedia': [{'cutoff': 500, 'pattern': "{} lahir"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} lahir"}]},
+                                  'bn': {'wikipedia': [{'cutoff': 500, 'pattern': "{} জন্ম"}],
+                                         'oscar': [{'cutoff': 500, 'pattern': "{} জন্ম"}]}
+                                  }
+
+
+# TODO: refactor code in the faker_extensions with this code
+def check_fake_name(
+        src_lang: str = "en",
+        pretrained_models: list = ['wikipedia'],
+        fake_name: str = None,
+        verbose: bool = False
+) -> bool:
+    """
+    Check fake name in public figure
+    """
+    # load all kenlm models and cutoff patterns
+    kenlm_models = load_kenlm_model(src_lang, pretrained_models)
+    public_patterns = public_figure_kenlm_cutoff_map.get(src_lang, public_figure_kenlm_cutoff_map.get('en'))
+
+    # check fake name in public figure with specific cutoff
+    for model_type in pretrained_models:
+        model = kenlm_models[model_type]
+        patterns = public_patterns[model_type]
+        for pattern in patterns:
+            test_name = pattern['pattern'].format(fake_name)
+            if model.get_perplexity(test_name) < pattern['cutoff']:
+                if verbose:
+                    print(fake_name, model.get_perplexity(test_name))
+                return True
+    return False
+
+
 ### Edugp code
 
 class SentencePiece:
     def __init__(
-        self,
-        model: str,
+            self,
+            model: str,
     ):
         super().__init__()
         self.sp = sentencepiece.SentencePieceProcessor()
@@ -137,19 +184,19 @@ class KenlmModel:
     }
     unicode_punct_re = re.compile(f"[{''.join(unicode_punct.keys())}]")
     non_printing_chars_re = re.compile(
-        f"[{''.join(map(chr, list(range(0,32)) + list(range(127,160))))}]"
+        f"[{''.join(map(chr, list(range(0, 32)) + list(range(127, 160))))}]"
     )
     kenlm_model_dir = None
     sentence_piece_model_dir = None
 
     def __init__(
-        self,
-        model_dataset: str,
-        language: str,
-        lower_case: bool = False,
-        remove_accents: bool = False,
-        normalize_numbers: bool = True,
-        punctuation: int = 1,
+            self,
+            model_dataset: str,
+            language: str,
+            lower_case: bool = False,
+            remove_accents: bool = False,
+            normalize_numbers: bool = True,
+            punctuation: int = 1,
     ):
         self.model = kenlm.Model(os.path.join(model_dataset, f"{language}.arpa.bin"))
         self.tokenizer = SentencePiece(os.path.join(model_dataset, f"{language}.sp.model"))
@@ -161,9 +208,9 @@ class KenlmModel:
 
     @classmethod
     def from_pretrained(
-        cls,
-        model_dataset: str,
-        language: str,
+            cls,
+            model_dataset: str,
+            language: str,
     ):
         return cls(
             model_dataset,
@@ -197,12 +244,12 @@ class KenlmModel:
         return round(self.pp(doc_log_score, doc_length), 1)
 
     def normalize(
-        self,
-        line: str,
-        accent: bool = True,
-        case: bool = True,
-        numbers: bool = True,
-        punct: int = 1,
+            self,
+            line: str,
+            accent: bool = True,
+            case: bool = True,
+            numbers: bool = True,
+            punct: int = 1,
     ) -> str:
         line = line.strip()
         if not line:
