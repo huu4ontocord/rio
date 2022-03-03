@@ -10,7 +10,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-# from https://huggingface.co/edugp/kenlm/blob/main/model.py which is under the Apache 2 License
+# from Eduardo Gonzalez Ponferrada/edugp's repo: https://huggingface.co/edugp/kenlm/blob/main/model.py which is under the Apache 2 License
 # thank you edugp!!
 import os
 import re
