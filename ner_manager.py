@@ -10,337 +10,450 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import torch
-from transformers import pipeline, AutoTokenizer, XLMRobertaForTokenClassification, BertForTokenClassification, ElectraForTokenClassification, RobertaForTokenClassification
-from cjk import cjk_detect
+
+# This file extends faker to more languages and includes tests based on kenlm statistics to lessen the liklihood a name is a real person's name.
+# This file also provides basic anonymization and context management so that names are swapped appropraitely.
+
+from faker import Faker
+from faker.providers import person, company, geo, address, ssn, internet
+from fake_names import *
 from kenlm_manager import *
-from char_manager import *
-try:
-  if not stopwords:
-    from stopwords import stopwords
-except:
-  try:
-    from stopwords import stopwords
-  except:
-    stopwords = {}
-hf_ner_model_map = {
-      "sn": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], 
-      "st": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], 
-      "ny": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], 
-      "xh": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], 
-      "zu": [["Davlan/xlm-roberta-base-sadilar-ner", XLMRobertaForTokenClassification, 1.0]], 
-      "sw": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
-      "yo": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0 ]],
-      "ig": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0 ]],
-      "ar": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0],],
-      "en": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0],], 
-      "es": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ], ],
-      "eu": [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0], ],
-      "ca": [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0], ],
-      "pt": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ], ],
-      "fr": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ], ],
-      "zh": [["Davlan/xlm-roberta-base-ner-hrl", XLMRobertaForTokenClassification, 1.0 ], ],
-      'vi': [["lhkhiem28/COVID-19-Named-Entity-Recognition-for-Vietnamese", RobertaForTokenClassification, 1.0], ],
-      'hi': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]],
-      'bn': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]], 
-      'ur': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 1.0]], 
-      'id': [["cahya/bert-base-indonesian-NER", BertForTokenClassification, 1.0],],
+from typing import List
+import random
+import time
+import copy
 
-      # NOT PART OF OUR ORIGINAL LANGUAGE SET. 
-      "fon": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 0.8]], 
-      "lg": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
-      "rw": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
-      "wo": [["Davlan/xlm-roberta-base-masakhaner", XLMRobertaForTokenClassification, 1.0]], 
-      'gu': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'as': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'mr': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'ml': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'kn': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'ne': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'pa': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'or': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'ta': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      'te': [["Davlan/xlm-roberta-base-wikiann-ner", XLMRobertaForTokenClassification, 0.8 ]],
-      }
+faker_list = [
+    'ar_AA',
+    'ar_PS',
+    'ar_SA',
+    'bg_BG',
+    'cs_CZ',
+    'de_AT',
+    'de_CH',
+    'de_DE',
+    'dk_DK',
+    'el_GR',
+    'en_GB',
+    'en_IE',
+    'en_IN',
+    'en_NZ',
+    'en_TH',
+    'en_US',
+    'es_CA',
+    'es_ES',
+    'es_MX',
+    'et_EE',
+    'fa_IR',
+    'fi_FI',
+    'fr_CA',
+    'fr_CH',
+    'fr_FR',
+    'fr_QC',
+    'ga_IE',
+    'he_IL',
+    'hi_IN',
+    'hr_HR',
+    'hu_HU',
+    'hy_AM',
+    'id_ID',
+    'it_IT',
+    'ja_JP',
+    'ka_GE',
+    'ko_KR',
+    'lt_LT',
+    'lv_LV',
+    'ne_NP',
+    'nl_NL',
+    'no_NO',
+    'or_IN',
+    'pl_PL',
+    'pt_BR',
+    'pt_PT',
+    'ro_RO',
+    'ru_RU',
+    'sl_SI',
+    'sv_SE',
+    'ta_IN',
+    'th_TH',
+    'tr_TR',
+    'tw_GH',
+    'uk_UA',
+    'zh_CN',
+    'zh_TW']
 
-_id = 0
-ner_model_name2pipelines = {}
+faker_map = {}
 
-def load_hf_ner_pipelines(target_lang, device="cpu", device_id=-1):
-    """ Loads and stores a set of NER pipelines in a cache"""
-    if device != "cpu" and device_id == -1:
-      device_id = 0
-    pipelines = []
-    for model_name, model_cls, hf_ner_weight2 in hf_ner_model_map.get(target_lang, []):
-          if model_name not in ner_model_name2pipelines:
-              model = model_cls.from_pretrained(model_name).eval().to(device)
-              tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512, truncation=True)
-              if device == "cpu":
-                model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
-                ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer)
-              else:
-                model = model.half()
-                ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=device_id)
-              ner_model_name2pipelines[model_name] = ner_pipeline
-              pipelines.append({'pipeline': ner_pipeline, 'weight': hf_ner_weight2, 'name': model_name})
-    return pipelines
+for faker_lang in faker_list:
+  lang, _ = faker_lang.split("_")
+  faker_map[lang] = faker_map.get(lang, []) + [faker_lang]
 
-def chunkify(doc, src_lang,  num_words_per_chunk=150,  text_key=None, offset_key=None):
-      """
-      Do basic sentence splitting and limiting each chunk's number of words to prevent overflow. We assume the docs are long. 
-      """
-      global _id
-      if text_key is None:
-        if f'{src_lang}_text' in doc:
-          text_key = f'{src_lang}_text'
+class FakerExtensions:
+  def __init__(
+      self,
+      lang: str = "vi",
+      trials: int = 1000,
+      faker=None,
+      
+  ):
+      self.lang = lang
+      self.trials = trials
+      self.num_genders = 2
+      if faker is None:
+        if lang in ("gu", "pa", "mr", "vi", "bn", "ur", "ca", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu", "st"):
+          faker = self.faker = Faker("en_GB")
         else:
-          text_key = 'text'
-      if text_key is None:
-        if f'{src_lang}_offset' in doc:
-          offset_key = f'{src_lang}_offset'
-        else:
-          offset_key = 'offset'
-      src_is_cjk = src_lang in ("zh", "ja", "ko", "th")
-      if src_is_cjk: 
-        sep = ""
+          faker = self.faker = Faker(random.choice(faker_map["es" if lang in ("eu", "ca") else "hi" if lang in ("as", ) else lang]))
+        faker.add_provider(person)
+        faker.add_provider(ssn)
+        faker.add_provider(address)
+        faker.add_provider(geo)
+        faker.add_provider(internet)
+        faker.add_provider(company)
       else:
-        sep = " "
-      if type(doc) is str:
-        doc = {'text': doc}
-      chunks = doc['chunks'] = doc.get('chunks', [])
-      if 'id' not in doc or int(doc['id']) < 0:
-            doc['id'] = str(_id)
-            _id += 1
-      if text_key in doc: 
-        #simple multi-lingual tokenizer and sentence splitter
-        offset = 0
-        if src_is_cjk:
-          text = list(doc[text_key].replace("。", "。 ").replace("  ", " "))
-        else:
-          textarr = doc[text_key].replace("  ", " ").split()
-          text = []
-          for t in textarr:
-            len_t = len(t)
-            if len_t == 1:
-              text.append(t)
-              continue
-            punc_found = [punc for punc in t if punc in punc_char]
-            word1, word2 = "", ""
-            if punc_found:
-              tarr = t.split(punc_found[0])
-              word1 = tarr[-2]
-              word2 = tarr[-1]
-            if punc_found and t[-1] not in punc_char and \
-                              ((punc_found[0] not in ".。") or \
-                               (t[0] not in "0123456789" and t[0] == t[0].lower()) or \
-                               (word1 and word1[-1] in strip_chars) or \
-                               (word2 and word2[0] in strip_chars)):
-              w = t[t.index(punc_found[0])+1]
-              if w == w.upper():
-                t, t1 = t.split(punc_found[0],1)
-                t = t+punc_found[0]
-                text.append(t)
-                text.append(t1)
-                continue
-            text.append(t)
-        text[0] = text[0].lstrip()
-        text[-1] = text[-1].rstrip()
-        doc[text_key] = sep.join(text)
-        len_text = len(text)
-        src_text = ""
-        while len_text > num_words_per_chunk:
-            for j in range(num_words_per_chunk-1, len_text):
-              if j > num_words_per_chunk * 2: break
-              if (src_is_cjk and text[j] in punc_char+' ') or \
-                  (not src_is_cjk and text[j][-1] in punc_char):
-                break
-            text_str = sep.join(text[:j+1])
-            chunks.append({text_key: text_str, 'id': doc['id'], 'offset': offset})
-            doc['chunks'].append(chunks[-1])
-            offset += len(text_str) + (0 if src_is_cjk else 1)
-            text = text[j+1:]
-            len_text = len(text)
-        if text:
-            text_str = sep.join(text)
-            chunks.append({text_key: text_str, 'id': doc['id'], 'offset': offset})
-      return chunks
-
-def detect_ner_with_hf_model(sentence, src_lang,  tag_type={'PERSON', 'PUBLIC_FIGURE'},  chunks=None, hf_pipelines=None, num_words_per_chunk=150,  device="cpu", device_id=-1, weight=1.0, text_key=None, ner_key=None, offset_key=None, batch_size=20,):
-    """
-    Output:
-       - This function returns a list of 4 tuples, representing an NER detection for [(entity, start, end, tag), ...]
-    Input:
-       :sentence: the sentence to tag
-       :src_lang: the language of the sentence
-       :tag_type: the type of NER tags we are detecting. If None, then detect everything.
-    Algortithm:
-    run the sentence through a Huggingface ner pipeline.
-    any tags found by this method will be weighted by the weight param
-    TODO: use the predicted value of the logits to further weight prediction
-    NOTE: we don't use results_arr = hf_pipeline([chunk[text_key] for chunk in chunks], grouped_entities=True)
-    because grouped_entities does not properly group all entities as we do it below.
-    """
-    sw = set(stopwords.get(src_lang, []))
-    if offset_key is None:
-      offset_key = 'offset'
-    if ner_key is None:
-      ner_key = 'ner'
-    if text_key is None:
-      text_key = 'text'
-    doc = {'text': sentence}
-    src_is_cjk = src_lang in ("zh", "ja", "ko", "th")
-    if src_is_cjk: 
-        sep = ""
-    else:
-        sep = " "
-    if chunks is None:
-      chunks = chunkify(doc, src_lang, num_words_per_chunk)
-    if hf_pipelines is None:
-      hf_pipelines = load_hf_ner_pipelines(src_lang, device=device, device_id=device_id)
-    for hf_pipeline in hf_pipelines: 
-      results_arr = hf_pipeline['pipeline']([chunk[text_key] for chunk in chunks], batch_size=min(batch_size, len(chunks)))
-      results_arr2 = []
-      offset = 0
-      for chunk, results in zip(chunks, results_arr):
-        text = chunk[text_key]
-        _id = chunk['id']
-        ner = doc[ner_key] = doc.get(ner_key,{})
-        offset = chunk[offset_key]
-        len_text= len(text)
-        results = [ner_result for ner_result in results if ner_result['word'] not in ("[UNK]", "<unk>")]
-        if not results:
-          results_arr2.append([])
-          continue
-        results2 = []
-        if results[0]['start'] is not None: #TODO, test for the case where all the 'start' are '0'.
-          results.sort(key=lambda a: a['start'])
-        else:
-          results.sort(key=lambda a: a['index'])
-          i = 0
-          for ner_result in results:
-            ner_result['word'] = word = ner_result['word'].rstrip('@@')
-            ner_result['start'] = text.index(word, i)
-            i = ner_result['start'] + 1
-            ner_result['end'] = ner_result['start'] + len(word)
-
-        for ner_result in results:
-          start = ner_result['start']
-          if start >= len_text: continue
-          if not cjk_detect(text[ner_result['start']:ner_result['end']]) and src_lang not in ("zh", "ja", "ko", "th"):
-                #strip the strip_chars
-                if text[start] not in strip_chars:
-                  for j in range(1, start):
-                    if start - j == -1 or text[start-j] in strip_chars:
-                      start = max(start -j, 0)
-                      break
-                end = ner_result['end']
-                if end < len_text and text[end] != ' ':
-                  end += len(text[end:].split(' ', 1)[0])
-          else:
-                start = ner_result['start']
-                end = ner_result['end']
-          #strip the strip_chars
-          while text[start] in strip_chars and start < len_text:
-            start += 1
-            if start >= end: break
-          #save away the ner result with the proper offset for this chunk
-          if start < len_text and start < end:
-              end = start + len(text[start:end].strip(strip_chars))
-              ner_result['word'] = text[start:end]
-              ner_result['start'] = start+offset
-              ner_result['end'] = end+offset
-          if results2 and results2[-1]['end'] > ner_result['start']:
-            continue
-          if start < len_text and start < end:
-              results2.append(ner_result)
-        results_arr2.append(results2)
-      results_arr = results_arr2
-      for chunk, results in zip(chunks, results_arr):
-          _id = chunk['id']
-          ner = doc[ner_key]
-          text = doc[text_key]
-          len_text = len(text)
-          results = [ner_result for ner_result in results if ner_result['word'] not in ("[UNK]", "<unk>")]
-          if not results: continue
-          prev_word = [0,0]
-          prev_label = None
-          prev_word2 = ""
-          for ner_result in results:
-            start = ner_result['start']
-            if start is None:
-              prev_word2 = ""
-              continue
-            end = ner_result['end']
-            if text[start:end] != ner_result['word']:
-              logger.info ('offset mismatch', text[start:end], ner_result['word'])
-            if "-" in ner_result['entity']:
-              _, label = ner_result['entity'].split('-')
+        self.faker = faker
+      self.kenlm_models = load_kenlm_model(self.lang, pretrained_models=["wikipedia"] if lang not in ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
+      self.patterns = public_figure_kenlm_cutoff_map.get(self.lang, [{'cutoff': 500, 'pattern': "{} (born"}])
+      if self.lang == "vi":
+          surname_list_of_lists: List[List[str]] = [vietnamese_surnames]
+          first_middle_name_list_of_lists: List[List[str]] = [vietnamese_first_middlenames_male, vietnamese_first_middlenames_female]
+          second_middle_name_list_of_lists: List[List[str]] = [vietnamese_second_middlenames_male, vietnamese_second_middlenames_female]
+          first_name_list_of_lists: List[List[str]] = [vietnamese_firstnames_male, vietnamese_firstnames_female]
+          self.name_lists: List[List[List[str]]] = [surname_list_of_lists, first_middle_name_list_of_lists, second_middle_name_list_of_lists, first_name_list_of_lists]
+          self.name_lists_probabilities = [1.0, 0.5, 0.5, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
+      elif self.lang == "bn":
+          surname_list_of_lists: List[List[str]] = [bengali_surnames]
+          first_name_list_of_lists: List[List[str]] = [bengali_firstnames_male, bengali_firstnames_female]
+          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+          self.name_lists_probabilities = [1.0, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
+      elif self.lang == "pa":
+          surname_list_of_lists: List[List[str]] = [punjabi_surnames]
+          first_name_list_of_lists: List[List[str]] = [punjabi_firstnames_male, punjabi_firstnames_female]
+          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+          self.name_lists_probabilities = [1.0, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
+      elif self.lang == "gu":
+          surname_list_of_lists: List[List[str]] = [gujurati_surnames]
+          first_name_list_of_lists: List[List[str]] = [gujurati_firstnames_male, gujurati_firstnames_female]
+          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+          self.name_lists_probabilities = [1.0, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
+      elif self.lang == "ur":
+          self.num_genders = 1
+          surname_list_of_lists: List[List[str]] = [urdu_surnames]
+          first_name_list_of_lists: List[List[str]] = [urdu_firstnames]
+          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+          self.name_lists_probabilities = [1.0, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
+      elif self.lang == "ca":
+          surname_list_of_lists: List[List[str]] = [catalan_surnames]
+          first_name_list_of_lists: List[List[str]] = [catalan_firstnames_male, catalan_firstnames_female]
+          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+          self.name_lists_probabilities = [1.0, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
+      elif self.lang in ("mr", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu"):
+          first_name_list_of_lists: List[List[str]] = [bantu_firstnames_male, bantu_firstnames_female]
+          surname_list_of_lists: List[List[str]] =  [bantu_surnames]
+          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+          self.name_lists_probabilities = [1.0, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
+      else:
+          self.name_lists = [[]]
+          self.name_lists_probabilities = [1.0]
+	
+  def generate_fakename(self, one_name=False, gender: int = None):
+      """ Generate fake name.  Use gender to generate a gender-specific name. Use 0 for male and 1 for female   """
+      if gender is None:
+          gender = random.choice(range(self.num_genders))
+      elif gender < 0 or gender >= self.num_genders:
+          raise Exception(f"Unknown gender type {gender}")
+      output_name = []
+      for i, name_list_of_lists in enumerate(self.name_lists):
+          # Sometimes, we might have a single list for all genders,
+          # thus we take the minimun to avoid out of index
+          if not name_list_of_lists:
+            if gender==1:
+              output_name.append(self.faker.first_name_female())
             else:
-              label = ner_result['entity']
-            label = label.upper()
-            if label in ('ADDRESS', 'STREET_ADDRESS'): label = 'ADDRESS'
-            elif label in ('PUBLIC_FIGURE',): label = 'PUBLIC_FIGURE'
-            elif label in ('NAME', 'PER', 'PERSON'): label = 'PERSON'
-            elif label in ('LOCATION', 'LOC', 'GPE'): label = 'LOC'
-            elif label in ('ORGANIZATION', 'ORG'): label = 'ORG'
-            elif label in ('AGE',): label = 'AGE'
-            elif label in ('NORP',): label = 'NORP'
-            elif label in ('BIO', 'SYMPTOM_AND_DISEASE', 'DISEASE' ): label = 'DISEASE'
-            elif label in ('PATIENT_ID', 'GOVT_ID', 'ID' ): label = 'ID'
-            elif label in ('USER', ): label = 'USER'
-            elif label in ('EMAIL', ): label = 'EMAIL'
-            else: label = 'MISC'
-            if tag_type and label not in tag_type: continue
-            if prev_label is not None:
-                if not ner_result['entity'].startswith('B-') and label == prev_label and (prev_word[1] >= start - 5):
-                  prev_word[1] =  max(prev_word[1], end)
-                  prev_word2 = prev_word2 + " " + ner_result['word']
-                else:
-                  if ner_result['entity'].startswith('B-'):
-                    if prev_word[1] > start:
-                      prev_word[1] = start
-                  if prev_word[0] != prev_word[1]:
-                    ner_word = text[prev_word[0]:prev_word[1]]
-                    mention = (ner_word, prev_word[0], prev_word[1])
-                    if ner_word and ner_word.lower() not in sw:
-                      aHash = ner.get(mention, {})
-                      aHash[prev_label] = aHash.get(prev_label, 0) + weight * hf_pipeline['weight']
-                      ner[mention] = aHash
-                    prev_word = [start, end]
-                    prev_word2 = ner_result['word']
-            elif prev_label is None:
-              prev_word = [start, end]
-              prev_word2 = ner_result['word']
-            prev_label = label
+              output_name.append(self.faker.first_name_male())
+          else:
+            name_list = name_list_of_lists[min(len(name_list_of_lists) - 1, gender)]
+            if random.random() <= self.name_lists_probabilities[i]:
+              output_name.append(random.choice(name_list))
+          if one_name and output_name:
+            return " ".join(output_name)
+      return " ".join(output_name)
 
-          if prev_label is not None and prev_word[0] != prev_word[1]:
-              ner_word = text[prev_word[0]:prev_word[1]]
-              mention = (ner_word, prev_word[0], prev_word[1])
-              if ner_word and ner_word.lower() not in sw:
-                  aHash = ner.get(mention, {})
-                  aHash[prev_label] = aHash.get(prev_label, 0) + weight * hf_pipeline['weight']
-                  ner[mention] = aHash
-    
-    # now let's step through
-    models = load_kenlm_model(src_lang, pretrained_models=["wikipedia"] if src_lang not in  ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
-    for i, a_ner in enumerate(list(doc[ner_key])):
+  def check_like_known_name(self, fake_name, verbose=False):
+      """ Check fake name close to real common name."""
+      if not self.kenlm_models: return False
+      return check_for_common_name(
+        src_lang = self.lang,
+        pretrained_models = ['wikipedia'],
+        name = fake_name,
+        verbose = verbose, 
+        kenlm_models = self.kenlm_models)
+        
+
+  def create_name(self, one_name=False, verbose=False):
+      """ Create fake name and varify by kelnm models """
+      success = False
+      for _ in range(self.trials):
+        if self.lang in ("pa", "gu","as", "mr", "vi", "bn", "ur", "ca", "yo", "sw", "sn", "st", "ig", "ny", "xh", "ca", "zu"): 
+          fake_name = self.generate_fakename(one_name=one_name)
+        else:
+          if one_name:
+            fake_name = self.faker.first_name()
+          else:
+            if self.lang in ("zh", "ja", "ko", "th"):
+              fake_name = self.faker.first_name()+self.faker.last_name()
+            else:
+              fake_name = self.faker.first_name()+" "+self.faker.last_name()
+        # we want our fake names to not be too close to a famous name
+        if not self.check_like_known_name(fake_name, verbose):
+            success = True
+            return fake_name
+      if not success and verbose:
+          print('Could not find any fake name. Try reducing perplexity_cutoff')
+      if one_name:
+        fake_anme = self.faker.firstname()
+      else:
+        fake_name = self.faker.name()
+  
+  #TODO - create male and female versions of firstname and name similar to faker
+
+  def first_name(self, ent=None, context=None, verbose=False,):
+    return self.name(one_name=True, ent=ent, context=context, verbose=verbose)
+
+  def name(self, one_name=False, ent=None, context=None, match_first_name=True, match_last_name=True, verbose=False,):
+    """ Provides an extension for faker's name method. Also manages the context when anonyimzing ent. 
+    Can match first and last names in the context.
+    Sentence: John Doe went to the store. John bought milk. => Jack Smith went to the store. Jack bought milk. 
+    """
+    is_cjk = self.lang in ("zh", "ko", "ja", "th")
+    if ent is None or context is None:   
+      return self.create_name(one_name=one_name, verbose=verbose)
+    if ent in context: return context[ent]
+    if not is_cjk and " " not in ent: one_name = True
+    na = self.create_name(one_name=one_name, verbose=verbose)
+    na  = context[ent] = context.get(ent, na)
+    if " " in ent:
+        if is_cjk:
+          ent_arr = ent
+        else:
+          #strip out prefixes and suffixes
+          ent_arr = ent.split(" ")
+          if ent_arr[0][-1] == ".":
+            ent_arr = ent_arr[1:]
+          if ent_arr[-1][-1] == ".":
+            ent_arr = ent_arr[:-1]
+        if match_first_name:
+          ent1 = ent_arr[0] if not is_cjk else (ent[:2] if len(ent) > 2 else ent[:1])
+          if ent1 in context:
+            na1 = context[ent1]
+            if is_cjk:
+              na = "".join([na1]+na.split()[1:])
+            elif " " in na:
+              na = " ".join([na1]+na.split()[1:])
+            else:
+              na = na1 + " " + na
+            context[ent] = na
+          elif is_cjk:
+            val = context[ent][:2] if len(context[ent]) > 2 else context[ent][:1] 
+            context[ent1] = context.get(ent1, val) 
+          elif " " in context[ent]:
+            val_arr = context[ent].split()
+            if val_arr[0][-1] == ".":
+              val_arr = val_arr[1:]
+            val = val_arr[0]
+            context[ent1] = context.get(ent1, val) 
+
+        if match_last_name:
+          ent2 = ent_arr[-1] if not is_cjk else (ent[-2:] if len(ent) > 3 else ent[-1:])
+          if ent2 in context:
+            na2 = context[ent2]
+            if is_cjk:
+              na = "".join(na.split()[:-1] + [na2])
+            elif " " in na:
+              na = " ".join(na.split()[:-1] + [na2])
+            else:
+              na = na + " " + na2
+            context[ent] = na
+          elif is_cjk:
+            val = context[ent][-2:] if len(context[ent]) > 3 else context[ent][-1:] 
+            context[ent2] = context.get(ent2, val) 
+          elif " " in context[ent]:
+            val_arr = context[ent].split()
+            if val_arr[-1][-1] == ".":
+              val_arr = val_arr[:-1]
+            val = val_arr[-1]
+            context[ent2] = context.get(ent2, val) 
+    return context[ent] 
+
+  def company(self, ent=None, context=None):
+    if ent is None or context is None: 
+      try: 
+        return self.faker.company()
+      except:
+        return "COMPANY"
+    try:
+      co = self.faker.company()
+    except:
+      co = "COMPANY"
+    co = context[ent] = context.get(ent, co)
+    if " " in ent:
+        ent2 = ent.split(" ")[0]
+        if len(ent2) > 4:
+          if ent2 in context:
+            co2 = context[ent2]
+            if " " in co:
+              co = " ".join([co2]+co.split()[1:])
+            else:
+              co = co2 + " " + co
+            context[ent] = co
+          elif " " in context[ent]:
+            val = context[ent].split()[0]
+          else:
+            val = context[ent]
+          context[ent2] = context.get(ent2, val) 
+    return context[ent] 
+
+  #TODO - call faker's phone, ssn (ID), user, email, url etc. to create psuedo data as opposed to just labels
+
+  def ssn(self, ent=None, context=None):
+    if ent is None or context is None: 
+      return self.faker.ssn()
+    context[ent] =  context.get(ent, self.faker.ssn())
+    return context[ent]
+
+  def address(self, ent=None, context=None):
+    if ent is None or context is None: 
+      return self.faker.address()
+    context[ent] =  context.get(ent, self.faker.address())
+    return context[ent]
+
+  def country(self, ent=None, context=None):
+    if ent is None or context is None: 
+      return self.faker.country()
+    context[ent] =  context.get(ent, self.faker.country())
+    return context[ent]
+
+  def state(self, ent=None, context=None):
+    if ent is None or context is None: 
+      if self.lang == 'zh': 
+          return self.faker.province()
+      else: 
+          return self.faker.state()
+    if self.lang == 'zh': 
+        context[ent] =  context.get(ent, self.faker.province())
+    else: 
+        context[ent] =  context.get(ent, self.faker.state())
+    return context[ent]
+
+
+def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID', 'PHONE', 'USER', 'EMAIL', 'LICENSE_PLATE', 'PERSON'} ):
+  faker = FakerExtensions(lang_id)
+  is_cjk = lang_id in ("zh", "ja", "ko", "th")
+  if True:
+    # we want to match the longest spans for anonymization
+    new_ner = copy.deepcopy(ner)
+    new_ner.sort(key=lambda a: len(a[0]), reverse=True)     
+    for idx, a_ner in enumerate(new_ner):
       ent = a_ner[0]
-      match, score, cutoff = check_for_common_name(src_lang, pretrained_models=["wikipedia"] if src_lang not in  ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"], name=ent, kenlm_models=models, return_score=True)
-      if match:
-        #single word or short names may require an even lower cutoff
-        if src_is_cjk and len(ent) <= 3:
-          if score > cutoff/2: continue
-        elif sep not in ent:
-          if score > cutoff/2: continue
-        a_ner = list(a_ner)
-        a_ner[-1] = 'PUBLIC_FIGURE'
-        doc[ner_key][i] = tuple(a_ner)
-
-    return doc[ner_key]
+      if a_ner[-1] == 'PERSON' and not is_cjk:
+          #strip out prefixes and suffixes
+          ent_arr = ent.split(" ")
+          if ent_arr[0][-1] == ".":
+            ent_arr = ent_arr[1:]
+          if ent_arr[-1][-1] == ".":
+            ent_arr = ent_arr[:-1]
+          ent = " ".join(ent_arr)
+      tag = a_ner[-1]
+      sentence = sentence.replace(ent+" ", f"<{idx}> ")
+      sentence = sentence.replace(" "+ent, f" <{idx}>")
+      if len(ent) > 5:
+        sentence = sentence.replace(ent, f"<{idx}>") 
+    context = {}
+    new_ner2 = []
+    for idx, a_ner in enumerate(new_ner):
+      ent = a_ner[0]
+      tag = a_ner[-1]
+      if tag == 'PERSON':
+        ent2 = faker.name(ent=ent, context=context)
+        if ent2 not in new_ner2:
+          new_ner2.append((ent2, tag))
+        sentence = sentence.replace(f"<{idx}>", f' {ent2} ' if not is_cjk else ent2)
+      elif tag == 'ORG':
+        ent2 = faker.company(ent=ent, context=context)
+        if ent2 not in new_ner2:
+          new_ner2.append((ent2, tag))
+        sentence = sentence.replace(f"<{idx}>", f' {ent2} ' if not is_cjk else ent2)
+      elif tag == 'LOC':
+        ent2 = faker.state(ent=ent, context=context)
+        if ent2 not in new_ner2:
+          new_ner2.append((ent2, tag))
+        sentence = sentence.replace(f"<{idx}>", f' {ent2} ' if not is_cjk else ent2)
+      elif tag == 'ADDRESS':
+        ent2 = faker.address(ent=ent, context=context)
+        if ent2 not in new_ner2:
+          new_ner2.append((ent2, tag))
+        sentence = sentence.replace(f"<{idx}>", f' {ent2} ' if not is_cjk else ent2)
+      elif tag != 'PUBLIC_FIGURE':
+        if f' <{tag}> ' not in new_ner2:
+          new_ner2.append((f' <{tag}> ', tag))
+        sentence = sentence.replace(f"<{idx}>", f' <{tag}> ')
+  
+      #TODO: NORP, AGE, DISEASE, URL, LICENSE_PLATE, GENDER, JOB, MEDICAL_THERAPY
+        
+    sentence = sentence.replace("  ", " ").strip()
+    new_ner3 = []
+    sentence2 = copy.copy(sentence)
+    len_text = len(sentence2)
+    new_ner2.sort(key=lambda a: len(a[0]), reverse=True)
+    for a_ner in new_ner2:
+        ent, tag = a_ner
+        pos = 0
+        while pos < len_text and ent in sentence2[pos:]:
+          i = sentence2[pos:].index(ent)
+          start = pos + i
+          end = start + len(ent)
+          pos = end+1
+          mention2 = [ent, start, end, tag]
+          new_ner3.append(mention2)
+        sentence2 = sentence2.replace(ent, " "*len(ent))
+          
+  new_ner3.sort(key=lambda a: a[1])
+  return sentence, new_ner3
 
 if __name__ == "__main__":
-  sentence = """ '\ufeff Nje ipase Kristi wa ninu Bibeli? Nje ipase Kristi wa ninu Bibeli?Ibeere: "Nje ipase Kristi wa ninu Bibeli?"Idahun: Nipa ohun ti Jesu so nipa ara, awon omo leyin re si gba gbo nipa ipase re. Won ni agbara lati dari ji ese wa- nkan ti o je pe Oluwa nikan lo le se, eyi ti o fi je wipe a dese si (ise awon Aposteli 5:13; Kolosse 3:13; Orin Dafidi 130:4; Jeremiah 31:14). Pelu ohun ti a n jinyan re yi, Jesu naa ni won ni yio dajo awon ti o wa “laye tabi ti o ti ku” (2 Timoteu 4:1). Tomasi ki gbe pe Jesu, “Oluwa mi ati Olorun mi! ” (Johannu 20;28). Paulu pe Jesu “Oba nla Olugbala” ( Titus 2: 13), gege bi o ti wa si aye, o si “da bi Olorun” (Filemoni 2:5-8). Eni ti o ko si Heberu nipa Jesu wipe, Ite re, Olorun, lai ati lailai ni” (Heberu 1:8). Johannu wipe, Li atetekose li Oro wa, Oro si wa pelu Olorun, Olorun si li Oro (Jesu) na” (Johannu 1;1). Eyi ti o wa ninu iwe mimo ti o ko wa nipa ipase Kristi le di pipo (wo Ifihan 1: 17; 2: 8;22;13 1 Korinti 10:4; 1 Peteru 2:6-8. Orin Dafidi 18:2; 95:1; 1 Peteru 5:4; Heberu 13: 20), sugbon e yi ye ki o je ki awon enia fi mon nipa ipase re pelu awon omo leyin re. Jesu si awon Oruro miran bi Yahweh (Oruro ti Olorun n je tele) ninu iwe majemu lailai. Majemu lailai wipe “Oludande” (Orin Dafidi 130; 7, Hosea 13: 14) ni won lo fun Jesu ninu majemu Titán ( Titu 2: 13; Ifihan 5;9). Wo pe Jesu ni Emmanueli (“Oluwa wa pelu wa” ninu Matteu 1). Ninu iwe Sekariah 12: 10, yahweh ni o so be, “ Nwon o ma wo eniti a gun li oko. ” Sugbon iwe majemu titán li o so eyi nipa kikan mo agbelebu re (Johannu 19;37; Ifihan 1:7). Ti o b a je wipe yahweh ni won gun ni oko, ti won si wo, ti o si je wipe Jesu ni won gun ni oko ti won si wo, Jesu si ni Yahweh naa. Paulu so ninu Isaiah 45: 22-23 nipa Jesu ninu Filippi 2;10-11. Leyin naa, a lo oruko Jesu pelu yahweh ninu adura “Ore-ofe si nyin ati alafia lati odo Olorun Baba wa, ati Jesu Kristi Oluwa wa’ (Galatia 1; 3, Efesu 1:2). Eyi a je oro odi ti ipase Kristi o ba wa. Oruko Jesu je gege bi Yahweh ti Jesu ti pase wipe ki a se irubomi ni oruko (le kan soso) ti Baba ati Omo ati Emi Mimo” ( Matteu 28: 19 wo 2 Korinti 13: 14).Ohun ti Oluwa le se ni amo si ise re. Jesu ko ji oku dide nikan (Johannu 5: 21; 11: 38-44), o si dariji ese wa (Ise Awon Aposteli 5;31; 13: 38), od gbogbo aye ati ohun kohun (Johannu 1:2; Kolosse 1:16-17)! Eyi je ki amo gidi gan wipe ti a ba wo oro Yahweh wipe o si ti wa latetekose (Isaiah 44:24). Kristi ni awa ohun iwa ti o je wipe eni ti o ni iru ipase yi ni o le ni. Ayeraye (Johannu 8: 58), o wa pelu wa ni igbagbogbo (Matteu 18: 20, 28: 20), o mo ohun gbogbo (Matteu 16: 21), O le se ohun gbogbo (Johannu 11: 38-44).Ni isin yi, ki awon kan so wipe Olorun ni awon tabi ki a paro fun awon kan wipe otito ni, ki a si wa ohun ti a fi ma jiyan re. Kristi fihan wa wipe ohun ni ipase oro gege bi ise iyanu re, ati ajinde re. O si se ise iyanu bi o si ti yi omi si oti wini (Johannu 2: 7), o rin lori omi (Matteu 2: 3), ati awon alaisan (Matteu 9:35; Maku 1: 40-42), ti o si ji oku dide (Johannu 11:43-44; Luku 7:11-15; Maku 5:35). Jesu si jinde. Eyi ti a mon ti o si yao si awon olorun miran ti won le jinde- ko si si wipe a gbo nipa re. Bi Dokito Gary Haberlas se so, awon bi ohun mejila lo fi han si awon keferi nipa ajinde re:1. Jesu ku nitori a kan mo agbelebu2. A si sin3. Iku re je ki awon omo leyin re wa ninu ironu ati irota.4. Isa oku Jesu wo si ri wipe o sofo lyin ojo die.5. Awon omo leyin re si mo wipe awon ti ri ajinde Jesu.6. Leyin eyi, awon omo leyin re si ni okun ati agbara lati sise.7. Eyi ni iwasu larin awon ijo nigbati won bere8. won si wasu oro yi ni Jerusalemu.9. Nitori iwasu yi, a si kede ibere ile ijosin ti o si gboro.10. Ojo Ajinde, Sunday, ti o yato si Sabati (satiday) ti a mo si ojo ijosin11. Jakobu, ti ko ni igbagbo, si di atunbi ni igba ti o ri ajinde Jesu.12. Paulu, ota Kristiani, si gbagbo nipa ohun ti o mon nigbati o pade ajinde Jesu.Nje ti enikeni ba wi pe iro ni gbogbo ohun ti mo ti so yi, awon die ni a le fihan lati le je ki won mon bi, ajinde re ati iroyin ayo: Iku Jesu, sisin re, ajinde ati riri re (1 Korinti 15:1-5). A si mon wipe orisirisi ni a le fi han nipa ohun ti mo ko yi, sugbon ajinde re ni o dahun gbogbo ibere naa. Awon enia so wipe awon omo leyin re wipe won ri ajinde Jesu. Bi o ba je iro tabi a n ro, ko si ohun ti o le yi oj okan pada gege bi ajinde re. Ikini, ki ni ere won? Kristianiti o je ki won ni ola ati owo. Ekeji, awon oniro o le jinyan fun ohun ti a ba ti wa tele. Ko si ohun miran sugbon ajinde re ti awon omo leyin Jesu gbagbo ti won si le ku sibe. Beni, orisirisi awon enia ni o ti ku nipa iro ti won pa ti won si ro wipe otito ni sugbon ko si eni ti yio ku fun ohun ti won gbagbo. Ni soki, Kristi so wipe Yahweh ni ohun, ohun ni ipase (lai se “olorun” nikan- sugbon Olorun otito), awon omo leyin re (awon Ju ti o ye ki won beru irubo) gbagbo, won si tele. Kristi fi han wa wipe ohun ni ipase ise iyanu nipaajinde re. Ko si enikeni ti o le fi eyi han.
-  """
-  src_lang = "yo"
+  if True:
+    print (augment_anonymize('Mr. John Smith Esq. is nice. John says hi.', 'en', [['Mr. John Smith Esq.', 0, 19, 'PERSON'], ['John', 25, 28, 'PERSON']], ))
+    print (augment_anonymize('John is nice. John Smith says hi.', 'en', [['John', 0, 4, 'PERSON'], ['John Smith', 14, 24, 'PERSON']], ))
 
-  print (detect_ner_with_hf_model(sentence, src_lang))
+  if False:
+    # TODO: do "as"
+    generator = FakerExtensions(lang='zh')
+    fake_name = generator.name(ent="周淑", context=context)
+    print ('found name', fake_name)
+    fake_name = generator.name(ent="周淑华", context=context)
+    print ('found name', fake_name)
+  if False:
+    for lang in ["zh", "pa", "gu","as", "zh", "en", "yo","mr", "ny", "sn", "st", "xh", "zu", "ar", "bn", "ca",  "es", "eu", "fr", "hi", "id", "ig", "pt",  "sw", "ur","vi",  ]:
+      print (f'*** {lang}')
+      generator = FakerExtensions(lang=lang)
+      start_time=time.time()
+      for i in range(100):
+          fake_name = generator.name()
+          print ('found name', fake_name)
+
+      """
+      context = {}
+      for i in range(100):
+          fake_name = generator.name(ent="周淑", context=context)
+          print ('found name', fake_name)
+          fake_name = generator.name(ent="周淑华", context=context)
+          print ('found name', fake_name)
+      """
+      print(f"Running time {time.time() - start_time}")
