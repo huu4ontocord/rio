@@ -34,8 +34,8 @@ public_figure_kenlm_cutoff_map = {
     'en': {'wikipedia': [{'cutoff': 500, 'pattern': "{} (born"}],  # in wikipedia, you often have: Lincoln (born .... )
            'oscar': [{'cutoff': 500, 'pattern': "{} was born"}],
            },
-    'yo': {'wikipedia': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
-           'oscar': [{'cutoff': 500, 'pattern': "{} ni a bi lori"}],
+    'yo': {'wikipedia': [{'cutoff': 400, 'pattern': "{} ni a bi lori"}],
+           'oscar': [{'cutoff': 400, 'pattern': "{} ni a bi lori"}],
            },
     'zu': {'wikipedia': [{'cutoff': 400, 'pattern': "{} wazalwa ngo"}],
            'oscar': [{'cutoff': 400, 'pattern': "{} wazalwa ngo"}],

@@ -153,7 +153,13 @@ class FakerExtensions:
           self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
           self.name_lists_probabilities = [1.0, 1.0]
           assert len(self.name_lists) == len(self.name_lists_probabilities)
-      elif self.lang in ("mr", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu"):
+      elif self.lang == "yo":
+          surname_list_of_lists: List[List[str]] = [yoruba_surnames]
+          first_name_list_of_lists: List[List[str]] = [yoruba_firstnames_male, yoruba_firstnames_female]
+          self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
+          self.name_lists_probabilities = [1.0, 1.0]
+          assert len(self.name_lists) == len(self.name_lists_probabilities)
+      elif self.lang in ("mr", "sw", "sn", "st", "ig", "ny", "xh", "zu"):
           first_name_list_of_lists: List[List[str]] = [bantu_firstnames_male, bantu_firstnames_female]
           surname_list_of_lists: List[List[str]] =  [bantu_surnames]
           self.name_lists = [first_name_list_of_lists, surname_list_of_lists]
