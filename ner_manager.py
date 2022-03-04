@@ -11,10 +11,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import torch
+from collections import Counter
 from transformers import pipeline, AutoTokenizer, XLMRobertaForTokenClassification, BertForTokenClassification, ElectraForTokenClassification, RobertaForTokenClassification
 from cjk import cjk_detect
 from kenlm_manager import *
 from char_manager import *
+import logging
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(
+    format='%(asctime)s : %(processName)s : %(levelname)s : %(message)s',
+    level=logging.INFO)
+
 try:
   if not stopwords:
     from stopwords import stopwords
@@ -64,15 +72,15 @@ hf_ner_model_map = {
       }
 
 _id = 0
-ner_model_name2pipelines = {}
+ner_model2pipelines = {}
 
 def load_hf_ner_pipelines(target_lang, device="cpu", device_id=-1):
     """ Loads and stores a set of NER pipelines in a cache"""
-    if device != "cpu" and device_id == -1:
-      device_id = 0
+    if device != "cpu" and device_id == -1 and ":" in device:
+      device_id = int(device.split(":")[-1])
     pipelines = []
     for model_name, model_cls, hf_ner_weight2 in hf_ner_model_map.get(target_lang, []):
-          if model_name not in ner_model_name2pipelines:
+          if (model_name, device) not in ner_model2pipelines:
               model = model_cls.from_pretrained(model_name).eval().to(device)
               tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512, truncation=True)
               if device == "cpu":
@@ -81,8 +89,10 @@ def load_hf_ner_pipelines(target_lang, device="cpu", device_id=-1):
               else:
                 model = model.half()
                 ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, device=device_id)
-              ner_model_name2pipelines[model_name] = ner_pipeline
-              pipelines.append({'pipeline': ner_pipeline, 'weight': hf_ner_weight2, 'name': model_name})
+              ner_model2pipelines[(model_name, device)] = ner_pipeline
+          else:
+              ner_pipeline = ner_model2pipelines[(model_name, device)]
+          pipelines.append({'pipeline': ner_pipeline, 'weight': hf_ner_weight2, 'name': model_name})
     return pipelines
 
 def chunkify(doc, src_lang,  num_words_per_chunk=150,  text_key=None, offset_key=None):
@@ -163,6 +173,7 @@ def chunkify(doc, src_lang,  num_words_per_chunk=150,  text_key=None, offset_key
         if text:
             text_str = sep.join(text)
             chunks.append({text_key: text_str, 'id': doc['id'], 'offset': offset})
+            doc['chunks'].append(chunks[-1])
       return chunks
 
 def detect_ner_with_hf_model(sentence, src_lang,  tag_type={'PERSON', 'PUBLIC_FIGURE'},  chunks=None, hf_pipelines=None, num_words_per_chunk=150,  device="cpu", device_id=-1, weight=1.0, text_key=None, ner_key=None, offset_key=None, batch_size=20,):
@@ -174,12 +185,13 @@ def detect_ner_with_hf_model(sentence, src_lang,  tag_type={'PERSON', 'PUBLIC_FI
        :src_lang: the language of the sentence
        :tag_type: the type of NER tags we are detecting. If None, then detect everything.
     Algortithm:
-    run the sentence through a Huggingface ner pipeline.
-    any tags found by this method will be weighted by the weight param
-    TODO: use the predicted value of the logits to further weight prediction
-    NOTE: we don't use results_arr = hf_pipeline([chunk[text_key] for chunk in chunks], grouped_entities=True)
-    because grouped_entities does not properly group all entities as we do it below.
+      run the sentence through a Huggingface ner pipeline.
+      any tags found by this method will be weighted by the weight param
+      NOTE: we don't use results_arr = hf_pipeline([chunk[text_key] for chunk in chunks], grouped_entities=True)
+      because grouped_entities does not properly group all entities as we do it below.
     """
+    if device_id < 0 and device != "cpu" and ":" in device:
+      device_id = int(device.split(":")[-1])
     sw = set(stopwords.get(src_lang, []))
     if offset_key is None:
       offset_key = 'offset'
@@ -262,68 +274,73 @@ def detect_ner_with_hf_model(sentence, src_lang,  tag_type={'PERSON', 'PUBLIC_FI
           len_text = len(text)
           results = [ner_result for ner_result in results if ner_result['word'] not in ("[UNK]", "<unk>")]
           if not results: continue
-          prev_word = [0,0]
-          prev_label = None
-          prev_word2 = ""
+          prev_span = [0,0]
+          prev_tag_and_score = None
+          prev_word = ""
           for ner_result in results:
             start = ner_result['start']
             if start is None:
-              prev_word2 = ""
+              prev_word = ""
               continue
             end = ner_result['end']
             if text[start:end] != ner_result['word']:
               logger.info ('offset mismatch', text[start:end], ner_result['word'])
             if "-" in ner_result['entity']:
-              _, label = ner_result['entity'].split('-')
+              _, tag = ner_result['entity'].split('-')
             else:
-              label = ner_result['entity']
-            label = label.upper()
-            if label in ('ADDRESS', 'STREET_ADDRESS'): label = 'ADDRESS'
-            elif label in ('PUBLIC_FIGURE',): label = 'PUBLIC_FIGURE'
-            elif label in ('NAME', 'PER', 'PERSON'): label = 'PERSON'
-            elif label in ('LOCATION', 'LOC', 'GPE'): label = 'LOC'
-            elif label in ('ORGANIZATION', 'ORG'): label = 'ORG'
-            elif label in ('AGE',): label = 'AGE'
-            elif label in ('NORP',): label = 'NORP'
-            elif label in ('BIO', 'SYMPTOM_AND_DISEASE', 'DISEASE' ): label = 'DISEASE'
-            elif label in ('PATIENT_ID', 'GOVT_ID', 'ID' ): label = 'ID'
-            elif label in ('USER', ): label = 'USER'
-            elif label in ('EMAIL', ): label = 'EMAIL'
-            else: label = 'MISC'
-            if tag_type and label not in tag_type: continue
-            if prev_label is not None:
-                if not ner_result['entity'].startswith('B-') and label == prev_label and (prev_word[1] >= start - 5):
-                  prev_word[1] =  max(prev_word[1], end)
-                  prev_word2 = prev_word2 + " " + ner_result['word']
+              tag = ner_result['entity']
+            tag = tag.upper()
+            if tag in ('ADDRESS', 'STREET_ADDRESS'): tag = 'ADDRESS'
+            elif tag in ('PUBLIC_FIGURE',): tag = 'PUBLIC_FIGURE'
+            elif tag in ('NAME', 'PER', 'PERSON'): tag = 'PERSON'
+            elif tag in ('LOCATION', 'LOC', 'GPE'): tag = 'LOC'
+            elif tag in ('ORGANIZATION', 'ORG'): tag = 'ORG'
+            elif tag in ('AGE',): tag = 'AGE'
+            elif tag in ('NORP',): tag = 'NORP'
+            elif tag in ('BIO', 'SYMPTOM_AND_DISEASE', 'DISEASE' ): tag = 'DISEASE'
+            elif tag in ('PATIENT_ID', 'GOVT_ID', 'ID' ): tag = 'ID'
+            elif tag in ('USER', ): tag = 'USER'
+            elif tag in ('EMAIL', ): tag = 'EMAIL'
+            else: tag = 'MISC'
+            if tag_type and tag not in tag_type: continue
+            if prev_tag_and_score is not None:
+                if not ner_result['entity'].startswith('B-') and tag == prev_tag_and_score[0] and (prev_span[1] >= start - 5):
+                  #keep expanding this span and matched word and create a min score
+                  prev_span[1] =  max(prev_span[1], end)
+                  prev_word = prev_word + " " + ner_result['word']
+                  prev_tag_and_score[1] = min(prev_tag_and_score[1], ner_result['score']) 
+                  continue
                 else:
                   if ner_result['entity'].startswith('B-'):
-                    if prev_word[1] > start:
-                      prev_word[1] = start
-                  if prev_word[0] != prev_word[1]:
-                    ner_word = text[prev_word[0]:prev_word[1]]
-                    mention = (ner_word, prev_word[0], prev_word[1])
+                    if prev_span[1] > start:
+                      prev_span[1] = start
+                  if prev_span[0] != prev_span[1]:
+                    ner_word = text[prev_span[0]:prev_span[1]]
+                    mention = (ner_word, prev_span[0], prev_span[1])
                     if ner_word and ner_word.lower() not in sw:
                       aHash = ner.get(mention, {})
-                      aHash[prev_label] = aHash.get(prev_label, 0) + weight * hf_pipeline['weight']
+                      aHash[prev_tag_and_score[0]] = aHash.get(prev_tag_and_score[0], 0) + weight * hf_pipeline['weight'] * prev_tag_and_score[1]
                       ner[mention] = aHash
-                    prev_word = [start, end]
-                    prev_word2 = ner_result['word']
-            elif prev_label is None:
-              prev_word = [start, end]
-              prev_word2 = ner_result['word']
-            prev_label = label
+                    prev_span = [start, end]
+                    prev_word = ner_result['word']
+            elif prev_tag_and_score is None:
+              prev_span = [start, end]
+              prev_word = ner_result['word']
+              
+            prev_tag_and_score = [tag, ner_result['score']]
 
-          if prev_label is not None and prev_word[0] != prev_word[1]:
-              ner_word = text[prev_word[0]:prev_word[1]]
-              mention = (ner_word, prev_word[0], prev_word[1])
+          if prev_tag_and_score is not None and prev_span[0] != prev_span[1]:
+              ner_word = text[prev_span[0]:prev_span[1]]
+              mention = (ner_word, prev_span[0], prev_span[1])
               if ner_word and ner_word.lower() not in sw:
                   aHash = ner.get(mention, {})
-                  aHash[prev_label] = aHash.get(prev_label, 0) + weight * hf_pipeline['weight']
+                  aHash[prev_tag_and_score[0]] = aHash.get(prev_tag_and_score[0], 0) + weight * hf_pipeline['weight'] * prev_tag_and_score[1]
                   ner[mention] = aHash
-    print ('**', doc)
-    # now let's step through
+
+    # now let's flatten into a 4 tuple which is expected by other functions. For the tag, we take the winning tag.
+    ners = [list(a) +  [max(Counter(b))] for a, b in doc[ner_key].items()]
     models = load_kenlm_model(src_lang, pretrained_models=["wikipedia"] if src_lang not in  ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
-    for i, a_ner in enumerate(list(doc[ner_key])):
+    for i, a_ner in enumerate(ners):
       ent = a_ner[0]
       match, score, cutoff = check_for_common_name(src_lang, pretrained_models=["wikipedia"] if src_lang not in  ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"], name=ent, kenlm_models=models, return_score=True)
       if match:
@@ -334,9 +351,9 @@ def detect_ner_with_hf_model(sentence, src_lang,  tag_type={'PERSON', 'PUBLIC_FI
           if score > cutoff/2: continue
         a_ner = list(a_ner)
         a_ner[-1] = 'PUBLIC_FIGURE'
-        doc[ner_key][i] = tuple(a_ner)
-    print (doc[ner_key])
-    return list(doc[ner_key].items())
+        ners[i] = tuple(a_ner)
+    return ners
+
 
 if __name__ == "__main__":
   sentence = """ '\ufeff Nje ipase Kristi wa ninu Bibeli? Nje ipase Kristi wa ninu Bibeli?Ibeere: "Nje ipase Kristi wa ninu Bibeli?"Idahun: Nipa ohun ti Jesu so nipa ara, awon omo leyin re si gba gbo nipa ipase re. Won ni agbara lati dari ji ese wa- nkan ti o je pe Oluwa nikan lo le se, eyi ti o fi je wipe a dese si (ise awon Aposteli 5:13; Kolosse 3:13; Orin Dafidi 130:4; Jeremiah 31:14). Pelu ohun ti a n jinyan re yi, Jesu naa ni won ni yio dajo awon ti o wa “laye tabi ti o ti ku” (2 Timoteu 4:1). Tomasi ki gbe pe Jesu, “Oluwa mi ati Olorun mi! ” (Johannu 20;28). Paulu pe Jesu “Oba nla Olugbala” ( Titus 2: 13), gege bi o ti wa si aye, o si “da bi Olorun” (Filemoni 2:5-8). Eni ti o ko si Heberu nipa Jesu wipe, Ite re, Olorun, lai ati lailai ni” (Heberu 1:8). Johannu wipe, Li atetekose li Oro wa, Oro si wa pelu Olorun, Olorun si li Oro (Jesu) na” (Johannu 1;1). Eyi ti o wa ninu iwe mimo ti o ko wa nipa ipase Kristi le di pipo (wo Ifihan 1: 17; 2: 8;22;13 1 Korinti 10:4; 1 Peteru 2:6-8. Orin Dafidi 18:2; 95:1; 1 Peteru 5:4; Heberu 13: 20), sugbon e yi ye ki o je ki awon enia fi mon nipa ipase re pelu awon omo leyin re. Jesu si awon Oruro miran bi Yahweh (Oruro ti Olorun n je tele) ninu iwe majemu lailai. Majemu lailai wipe “Oludande” (Orin Dafidi 130; 7, Hosea 13: 14) ni won lo fun Jesu ninu majemu Titán ( Titu 2: 13; Ifihan 5;9). Wo pe Jesu ni Emmanueli (“Oluwa wa pelu wa” ninu Matteu 1). Ninu iwe Sekariah 12: 10, yahweh ni o so be, “ Nwon o ma wo eniti a gun li oko. ” Sugbon iwe majemu titán li o so eyi nipa kikan mo agbelebu re (Johannu 19;37; Ifihan 1:7). Ti o b a je wipe yahweh ni won gun ni oko, ti won si wo, ti o si je wipe Jesu ni won gun ni oko ti won si wo, Jesu si ni Yahweh naa. Paulu so ninu Isaiah 45: 22-23 nipa Jesu ninu Filippi 2;10-11. Leyin naa, a lo oruko Jesu pelu yahweh ninu adura “Ore-ofe si nyin ati alafia lati odo Olorun Baba wa, ati Jesu Kristi Oluwa wa’ (Galatia 1; 3, Efesu 1:2). Eyi a je oro odi ti ipase Kristi o ba wa. Oruko Jesu je gege bi Yahweh ti Jesu ti pase wipe ki a se irubomi ni oruko (le kan soso) ti Baba ati Omo ati Emi Mimo” ( Matteu 28: 19 wo 2 Korinti 13: 14).Ohun ti Oluwa le se ni amo si ise re. Jesu ko ji oku dide nikan (Johannu 5: 21; 11: 38-44), o si dariji ese wa (Ise Awon Aposteli 5;31; 13: 38), od gbogbo aye ati ohun kohun (Johannu 1:2; Kolosse 1:16-17)! Eyi je ki amo gidi gan wipe ti a ba wo oro Yahweh wipe o si ti wa latetekose (Isaiah 44:24). Kristi ni awa ohun iwa ti o je wipe eni ti o ni iru ipase yi ni o le ni. Ayeraye (Johannu 8: 58), o wa pelu wa ni igbagbogbo (Matteu 18: 20, 28: 20), o mo ohun gbogbo (Matteu 16: 21), O le se ohun gbogbo (Johannu 11: 38-44).Ni isin yi, ki awon kan so wipe Olorun ni awon tabi ki a paro fun awon kan wipe otito ni, ki a si wa ohun ti a fi ma jiyan re. Kristi fihan wa wipe ohun ni ipase oro gege bi ise iyanu re, ati ajinde re. O si se ise iyanu bi o si ti yi omi si oti wini (Johannu 2: 7), o rin lori omi (Matteu 2: 3), ati awon alaisan (Matteu 9:35; Maku 1: 40-42), ti o si ji oku dide (Johannu 11:43-44; Luku 7:11-15; Maku 5:35). Jesu si jinde. Eyi ti a mon ti o si yao si awon olorun miran ti won le jinde- ko si si wipe a gbo nipa re. Bi Dokito Gary Haberlas se so, awon bi ohun mejila lo fi han si awon keferi nipa ajinde re:1. Jesu ku nitori a kan mo agbelebu2. A si sin3. Iku re je ki awon omo leyin re wa ninu ironu ati irota.4. Isa oku Jesu wo si ri wipe o sofo lyin ojo die.5. Awon omo leyin re si mo wipe awon ti ri ajinde Jesu.6. Leyin eyi, awon omo leyin re si ni okun ati agbara lati sise.7. Eyi ni iwasu larin awon ijo nigbati won bere8. won si wasu oro yi ni Jerusalemu.9. Nitori iwasu yi, a si kede ibere ile ijosin ti o si gboro.10. Ojo Ajinde, Sunday, ti o yato si Sabati (satiday) ti a mo si ojo ijosin11. Jakobu, ti ko ni igbagbo, si di atunbi ni igba ti o ri ajinde Jesu.12. Paulu, ota Kristiani, si gbagbo nipa ohun ti o mon nigbati o pade ajinde Jesu.Nje ti enikeni ba wi pe iro ni gbogbo ohun ti mo ti so yi, awon die ni a le fihan lati le je ki won mon bi, ajinde re ati iroyin ayo: Iku Jesu, sisin re, ajinde ati riri re (1 Korinti 15:1-5). A si mon wipe orisirisi ni a le fi han nipa ohun ti mo ko yi, sugbon ajinde re ni o dahun gbogbo ibere naa. Awon enia so wipe awon omo leyin re wipe won ri ajinde Jesu. Bi o ba je iro tabi a n ro, ko si ohun ti o le yi oj okan pada gege bi ajinde re. Ikini, ki ni ere won? Kristianiti o je ki won ni ola ati owo. Ekeji, awon oniro o le jinyan fun ohun ti a ba ti wa tele. Ko si ohun miran sugbon ajinde re ti awon omo leyin Jesu gbagbo ti won si le ku sibe. Beni, orisirisi awon enia ni o ti ku nipa iro ti won pa ti won si ro wipe otito ni sugbon ko si eni ti yio ku fun ohun ti won gbagbo. Ni soki, Kristi so wipe Yahweh ni ohun, ohun ni ipase (lai se “olorun” nikan- sugbon Olorun otito), awon omo leyin re (awon Ju ti o ye ki won beru irubo) gbagbo, won si tele. Kristi fi han wa wipe ohun ni ipase ise iyanu nipaajinde re. Ko si enikeni ti o le fi eyi han.
