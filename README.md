@@ -215,4 +215,20 @@ Open Multilingual WordNet Open Multilingual WordNet was compiled by Francis Bond
 
 The code for wikiann/mmner is under Apache 2, and the underlying data is wikipedia data which is CC-BY-SA.
 
-See https://github.com/afshinrahimi/mmner and https://huggingface.co/datasets/wikiann.  
+See https://github.com/afshinrahimi/mmner and https://huggingface.co/datasets/wikiann. 
+
+## Contributors
+
+We welcome all contributions. Please feel free to send a PR. Please follow the code of conduct.
+Special thanks to these people not just for code contributions but for comments and reviews (in no particular order): 
+- @edugp 
+- @vumichien
+- @ianyu93
+- @j-chim
+- @justinphan3110
+- @mapama247
+- @paulovn
+- @PierreColombo
+- @piesauce
+- @shamikbose
+
