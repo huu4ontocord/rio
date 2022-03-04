@@ -13,6 +13,9 @@ regex_rulebase = {
       ],
        "zh": [(regex.compile(r"([一二三四五六七八九十百\d]{1,3}歲|[一二三四五六七八九十百\d]{1,3}岁)"), None, None)],
     },
+    "EMAIL": {
+      "default": [(regex.Regex('(?:^|[\\s\\b\\\'\\"@,?!;:)(.\\p{Han}])([^\\s@,?!;:)(]+@[^,\\s!?;,]+[^\\s\\b\\\'\\"@,?!;:)(.])(?:$|[\\s\\b@,?!;:)(.\\p{Han}])', flags=regex.M | regex.V0), None, None)]
+    },
     "DATE": {
         #TODO - separate all the languages out. Do pt, fr, es
         "id": [(re.compile('\d{4}|[0-3]?\d[-\./][0-3]?\d[-\./]\d{2,4}'), None, [('lahir', 'AGE'),])], 
@@ -65,28 +68,20 @@ regex_rulebase = {
       # we can probably remove one of the below
       "default": [
               # https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py phone with exts
-              (
-                  re.compile('((?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*(?:[2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|(?:[2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?(?:[2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?(?:[0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(?:\d+)?))', re.IGNORECASE),
-                  None, None
-              ),
-              # common regex phone
-              (
-                  re.compile('((?:(?<![\d-])(?:\+?\d{1,3}[-.\s*]?)?(?:\(?\d{3}\)?[-.\s*]?)?\d{3}[-.\s*]?\d{4}(?![\d-]))|(?:(?<![\d-])(?:(?:\(\+?\d{2}\))|(?:\+?\d{2}))\s*\d{2}\s*\d{3}\s*\d{4}(?![\d-])))'),
-                  None, None
-              ), 
-              ( re.compile('[\+\d]?(\d{2,3}[-\.\s]??\d{2,3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})'), None, None)     
+              (regex.Regex(
+                '(?:^|[\\s\\\'\\"(\\p{Han}])((?:\\+\\p{Nd}+[ \\/.\\p{Pd}]*)?(?:(?:\\(\\+?\\p{Nd}+\\))?(?:[ \\/.\\p{Pd}]*\\p{Nd})){7,}(?:[\\t\\f #]*\\p{Nd}+)?)(?:$|[\\s@,?!;:\\\'\\"(.\\p{Han}])',
+                           flags=regex.M | regex.V0), None, None)
       ]      
     },
     "IP_ADDRESS": {
-        "default": [(re.compile('(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)', re.IGNORECASE), None, None),]
+        "default": [(regex.Regex('(?:^|[\\b\\s@?,!;:\\\'\\")(.\\p{Han}])((?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}|(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?:(?::[0-9a-fA-F]{1,4}){1,6})|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(?::[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(?:ffff(?::0{1,4}){0,1}:){0,1}(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])|(?:[0-9a-fA-F]{1,4}:){1,4}:(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(?:$|[\\s@,?!;:\'"(.\\p{Han}])', 
+                                 flags=regex.M | regex.V0), None, None)]
               
         },
     "USER": {
       "default": [
               #generic user id
-              (re.compile(r"\s@[a-z][0-9a-z]{4-8}", re.IGNORECASE), None, None),
-              #email
-              (re.compile("(\w+[a-z0-9!#$%&'*+\/=?^_`{|.}~-]*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)", re.IGNORECASE), None, None),
+              (regex.Regex('(?:^|[\\s@,?!;:\\\'\\")(\\p{Han}])(@[^\\s@,?!;:\\\'\\")(]{3,})', flags=regex.M | regex.V0), None, None),
       ]    
     },
     #need a global license plate regex
@@ -101,6 +96,9 @@ regex_rulebase = {
               (regex.compile('^(?:[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领 A-Z]{1}[A-HJ-NP-Z]{1}(?:(?:[0-9]{5}[DF])|(?:[DF](?:[A-HJ-NP-Z0-9])[0-9]{4})))|(?:[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领 A-Z]{1}[A-Z]{1}[A-HJ-NP-Z0-9]{4}[A-HJ-NP-Z0-9 挂学警港澳]{1})$'), None, None),
       ],
     },
+    "KEY": {
+      "default": [(regex.Regex('(?:^|[\\b\\s@?,!:;\\\'\\")(.\\p{Han}])((?:(?:[A-Za-z]+[\\p{Nd}\\p{Pd}\\/\\+\\=:_]+|[\\p{Nd}\\p{Pd}\\/\\+\\=:]+[A-Za-z]+)){4,}|(?:(?:\\p{Nd}{3,}|[A-Z]+\\p{Nd}+[A-Z]*|\\p{Nd}+[A-Z]+\\p{Nd}*)[ \\p{Pd}]?){3,})(?:$|[\\b\\s\\p{Han}@?,!;:\\\'\\")(.])', flags=regex.M | regex.V0), None, None)]
+    },
     "ID": {
       "zh": [ #from https://github.com/Aggregate-Intellect/bigscience_aisc_pii_detection/blob/main/language/zh/rules.py which is under Apache 2
               #since we can't capture some of the zh rules under the general rules
@@ -113,8 +111,7 @@ regex_rulebase = {
               #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
               (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None, None),
               # generic id with dashes - this sometimes catches a - or a / at the beginning of a number which might not be what we want.
-              # note, we are not catching a "." which could be inside a ID b/c this could be very close to math numbers and money. TBD
-              (re.compile('[A-Z#]{0,3}(?:[-\/ ]*\d){6,13}'), None, ('pp', 'pp.', )), #adding cap chars at end, see Tw # ? ...[A-Z]{0,2}
+              (regex.Regex('(?:^|[\\b\\s@?,!;:\\\'\\")(.\\p{Han}])([A-Za-z]*(?:[\\p{Pd}]*\\p{Nd}){6,})(?:$|[\\b\\s@?,!;:\\\'\\")(.\\p{Han}])', flags=regex.M | regex.V0), None, None),
               # IBAN
               (re.compile('[A-Z]{2}\d+\d+[A-Z]{0,4}(?:[- ]*\d){10,32}[A-Z]{0,3}'), None, None),
       ],
