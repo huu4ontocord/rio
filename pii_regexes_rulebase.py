@@ -113,7 +113,7 @@ regex_rulebase = {
               # generic id with dashes - this sometimes catches a - or a / at the beginning of a number which might not be what we want.
               (re.compile('[A-Z#]{0,3}(?:[-\/ ]*\d){6,13}'), None, ('pp', 'pp.', )),
               # Meg's regex
-              (regex.Regex('(?:^|[\\b\\s@?,!;:\\\'\\")(.\\p{Han}])([A-Za-z]*(?:[\\p{Pd}]*\\p{Nd}){6,})(?:$|[\\b\\s@?,!;:\\\'\\")(.\\p{Han}])', flags=regex.M | regex.V0), None, , ('pp', 'pp.', )),
+              (regex.Regex('(?:^|[\\b\\s@?,!;:\\\'\\")(.\\p{Han}])([A-Za-z]*(?:[\\p{Pd}]*\\p{Nd}){6,})(?:$|[\\b\\s@?,!;:\\\'\\")(.\\p{Han}])', flags=regex.M | regex.V0), None, ('pp', 'pp.', )),
               # IBAN
               (re.compile('[A-Z]{2}\d+\d+[A-Z]{0,4}(?:[- ]*\d){10,32}[A-Z]{0,3}'), None, None),
       ],
