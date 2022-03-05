@@ -12,5 +12,7 @@
 
 set -x -e
 
+module load pytorch-gpu/py3/1.7.0
+
 # to debug - add echo (it exits and prints what it would have launched)
 clear; srun --jobid $SLURM_JOBID bash -c "python process.py -src_lang zh -num_workers=$GPU_NUMBERS -cutoff 30"
