@@ -11,6 +11,9 @@
 #SBATCH --error=%x-%j.err          # output file name
 set -x -e
 
+export HF_DATASETS_OFFLINE=0
+export TRANSFORMERS_OFFLINE=0
+
 module load pytorch-gpu/py3/1.7.0
 
 # to debug - add echo (it exits and prints what it would have launched)
