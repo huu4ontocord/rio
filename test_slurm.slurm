@@ -13,8 +13,8 @@ set -x -e
 
 export HF_DATASETS_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
-
+export GPU_NUMBERS=8
 module load pytorch-gpu/py3/1.7.0
 
 # to debug - add echo (it exits and prints what it would have launched)
-srun bash -c "python process.py -src_lang zh -num_workers=$GPU_NUMBERS -cutoff 30"
+srun bash -c "time python process.py -src_lang zh -num_workers=4 -cutoff 30"
