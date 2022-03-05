@@ -1,3 +1,9 @@
+import sys, os
+try:
+  sys.path.append(os.path.abspath(os.path.dirname(__file__)))    
+except:
+  pass
+
 import regex_manager
 import pii_regexes_rulebase
 
