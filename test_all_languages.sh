@@ -8,7 +8,7 @@ for LANG in ar bn ca en es eu fr hi id ig ny pt sn st sw ur vi xh yo zh zu;do
         --account=six@gpu \
         --gres=gpu:1 \
         --no-requeue \
-        --nodes=${nodes} \
+        --nodes=${NODES} \
         --cpus-per-task=10 \
         --hint=nomultithread \
         --time=20:00:00 \
