@@ -2115,9 +2115,9 @@ class TextAugment:
       docs = self.collapse_ner(docs, ner_key = f'{src_lang}_signal_ner', collapse_ner_key = f'{src_lang}_ner',  text_key = f'{src_lang}_text', stopwords=stopwords1)
 
     if do_anonymization:
-      logger.info(("anonymization set", faker_src_lang, faker_en))
+      #logger.info(("anonymization set", faker_src_lang, faker_en))
       if faker_src_lang is not None:
-        logger.info("doing anonymization")
+        #logger.info("doing anonymization")
         docs, chunks = self.anonymize(docs, chunks, src_lang, faker_src_lang, anon_scope=anon_scope, \
                                   context_key=f'{src_lang}_aug_context', ner_key=f'{src_lang}_ner', text_key=f'{src_lang}_text')
 
@@ -2385,7 +2385,7 @@ class TextAugment:
       return list(docs.values()) #this is not guaranteed to be ordered
 
   @staticmethod
-  def get_docs(src_langs=None, infiles=None, docs=None, max_chunk_size=25, num_workers=1, shard_range=None, max_docs=None, cutoff=-1, hfdataset="", filter_out_no_registry=True):
+  def get_docs(src_langs=None, infiles=None, docs=None, max_chunk_size=25, num_workers=1, shard_range=None, max_docs=-1, cutoff=-1, hfdataset="", filter_out_no_registry=True):
       """
       NOTE: We filter the TurkuNLP registry docs if there are no registry label for a doc. This might not be the ideal behaviour.
       """
@@ -2424,7 +2424,13 @@ class TextAugment:
             infiles.append(_file)
       
       if hfdataset:
-          d = load_dataset(*hfdataset.split(","))['train']
+          if hfdataset.startswith("TurkuNLP/"):
+            hfdataset, src_lang = hfdataset.split(",")
+            d = load_dataset(hfdataset, data_files=f"{src_lang}/{src_lang}_*.jsonl.gz")
+            d = d["train"]
+          else:
+            d = load_dataset(*hfdataset.split(","))
+            d = d["train"]
           len_docs = len(d)
           if total_shards == -1:
             if cutoff > 0:
@@ -2442,10 +2448,10 @@ class TextAugment:
           for i in range(start, end, chunk_size):
               j = min(i + chunk_size, end)
               curr_recs += j - i
-              if cutoff > 0 and curr_recs >= cutoff:
+              if shard_num != total_shards and cutoff > 0 and curr_recs >= cutoff:
                 j -= curr_recs - cutoff
-              if i <= j: yield [d['train'][k] for k in range(i,j)]
-              if cutoff > 0 and curr_recs >= cutoff: break
+              if i <= j: yield [d[k] for k in range(i,j)]
+              if shard_num != total_shards and cutoff > 0 and curr_recs >= cutoff: break
       elif not docs and infiles is not None:
         if type(src_langs) is str: src_langs = [src_langs]
         for _file in infiles:
@@ -2593,7 +2599,7 @@ class TextAugment:
         AutoConfig.from_pretrained(model_name)
     seen = {}
     for src_lang, target_lang in zip(src_langs, target_langs):
-        print ((src_lang, target_lang))
+        #print ((src_lang, target_lang))
         if (src_lang, target_lang) not in seen:
           model_name = marian_mt.get((src_lang, target_lang))
           seen[(src_lang, target_lang)] = 1
@@ -2641,23 +2647,34 @@ class TextAugment:
                     do_qg_rel=False,
                     do_kenlm = True,
                     cutoff=None,
-                    shard_range=None):
+                    shard_range=None,
+                    max_docs = -1):
         processor = TextAugment(single_process=True)
-        
-        if hfdataset:
-            all_docs = [(processor.get_docs(src_langs[0], hfdataset=hfdataset, cutoff=cutoff, shard_range=shard_range), src_langs[0], target_langs[0])]
-        elif infile:
-            all_docs = [(processor.get_docs(src_langs[0], infiles=[infile], cutoff=cutoff, shard_range=shard_range), src_langs[0], target_langs[0])]
+        if shard_range and "/" in shard_range:
+          shard_num, total_shards = [int(a) for a in shard_range.split("/")]
         else:
-            all_docs = [(processor.get_docs(sl, cutoff=cutoff, shard_range=shard_range), sl, tl) for sl, tl in zip(src_langs, target_langs)]
+          shard_num = 1 
+          total_shards = -1        
+        if hfdataset:
+            all_docs = [(processor.get_docs(src_langs[0], hfdataset=hfdataset, cutoff=cutoff, shard_range=shard_range, max_docs=max_docs), src_langs[0], target_langs[0])]
+        elif infile:
+            all_docs = [(processor.get_docs(src_langs[0], infiles=[infile], cutoff=cutoff, shard_range=shard_range, max_docs=max_docs), src_langs[0], target_langs[0])]
+        else:
+            all_docs = [(processor.get_docs(sl, cutoff=cutoff, shard_range=shard_range, max_docs=max_docs), sl, tl) for sl, tl in zip(src_langs, target_langs)]
         if outfile is not None:
+            if total_shards > 0:
+              outfile = outfile.repalce(".jsonl", f"{shard_num}_of_{total_shards}.jsonl")
             _file =  open(outfile, 'w', encoding='utf-8')
         else:
             _file = None
+
         for docs_iter, src_lang, target_lang in tqdm(all_docs):
             if outfile is None:
                 if _file is not None: _file.close()
-                _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
+                if total_shards > 0:
+                  _file = open(f"{src_lang}_out_{shard_num}_of_{total_shards}.jsonl", 'w', encoding='utf-8')
+                else:
+                  _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
             #print(docs_iter)
             for docs in tqdm(docs_iter):
                 if not docs: continue
@@ -2722,9 +2739,15 @@ class TextAugment:
                     do_kenlm = True,
                     cutoff=None,
                     shard_range=None,
+                    max_docs=-1,
                     num_workers=2):
 
     logger.info( ("multiprocess_ner ", outfile, src_langs))
+    if shard_range and "/" in shard_range:
+      shard_num, total_shards = [int(a) for a in shard_range.split("/")]
+    else:
+      shard_num = 1 
+      total_shards = -1   
     assert num_workers >= 2, "Can't do multiprocessing with less than 2 workers"
     multiprocessing.set_start_method('spawn', force=True)
     if type(src_langs) is str: src_langs = [src_langs]
@@ -2738,14 +2761,19 @@ class TextAugment:
     logger.info(("creating multiprocessing pool for num_workers ", num_workers, TextAugmentDeviceModel.available_device_models))
     pool = multiprocessing.Pool(processes=num_workers, initializer= partial(processor.initializer, all_available_device_model=TextAugmentDeviceModel.available_device_models  ))
     if outfile is not None:
+      if total_shards > 0:
+          outfile = outfile.repalce(".jsonl", f"{shard_num}_of_{total_shards}.jsonl")
       _file =  open(outfile, 'w', encoding='utf-8')
     else:
       _file = None
     for src_lang, target_lang in tqdm(zip(src_langs, target_langs)):
       if outfile is None:
         if _file is not None: _file.close()
-        _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
-      docs = TextAugment.get_docs(src_langs=src_lang, infiles=[infile] if infile else None, hfdataset=hfdataset, cutoff=cutoff, shard_range=shard_range, num_workers=num_workers)
+        if total_shards > 0:
+          _file = open(f"{src_lang}_out_{shard_num}_of_{total_shards}.jsonl", 'w', encoding='utf-8')
+        else:        
+          _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
+      docs = TextAugment.get_docs(src_langs=src_lang, infiles=[infile] if infile else None, hfdataset=hfdataset, cutoff=cutoff, shard_range=shard_range, max_docs=max_docs, num_workers=num_workers)
       processed_docs = pool.imap_unordered(partial(processor.process_ner,
                                                       src_lang=src_lang,
                                                       target_lang=target_lang,
