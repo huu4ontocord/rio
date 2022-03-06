@@ -155,8 +155,8 @@ def check_for_common_name(
             test_name = pattern['pattern'].format(name)
             score = model.get_perplexity(test_name)
             if score < pattern['cutoff']:
-                if verbose:
-                    print(name, score)
+                #if verbose:
+                #    print(name, score)
                 if return_score:
                     return True, score, pattern['cutoff']
                 return True
