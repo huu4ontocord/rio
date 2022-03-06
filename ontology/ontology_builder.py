@@ -69,6 +69,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              os.path.pardir, os.path.pardir, os.path.pardir)))
 from ontology_manager import OntologyManager
 from ontology_builder_data import OntologyBuilderData
+from cjk import *
 
 class OntologyBuilder (OntologyManager, OntologyBuilderData):
 
@@ -318,10 +319,10 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
             tmp = b
             b = a
             a = tmp
-          if lang1 in ('zh', 'ja', 'ko') and self.cjk_detect(a):
+          if lang_is_cjk(lang1) and cjk_detect(a):
             a = "_".join(mt5_tok.tokenize(a)).replace(mt5_underscore,"_").replace("__", "_").replace("__", "_").strip("_")
             #print (a)
-          if lang2 in ('zh', 'ja', 'ko') and self.cjk_detect(b):
+          if lang_is_cjk(lang2) and cjk_detect(b):
             b = "_".join(mt5_tok.tokenize(b)).replace(mt5_underscore,"_").replace("__", "_").replace("__", "_").strip("_")
           val = [a,b]
           if lang1 != 'en' and lang2 != 'en': continue
@@ -350,18 +351,6 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
       json.dump(self.word2en, open(f"{tmp_dir}/conceptnet_word2en.json", "w", encoding="utf8"), indent=1)
       json.dump(self.word2lang, open(f"{tmp_dir}/conceptnet_word2lang.json", "w", encoding="utf8"), indent=1)
 
-
-  def cjk_detect(self, texts):
-    # korean
-    if re.search("[\uac00-\ud7a3]", texts):
-        return "ko"
-    # japanese
-    if re.search("[\u3040-\u30ff]", texts):
-        return "ja"
-    # chinese
-    if re.search("[\u4e00-\u9FFF]", texts):
-        return "zh"
-    return None
 
   def yago_step0(self):
     tmp_dir = self.tmp_dir
@@ -504,7 +493,7 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
     mt5_tok = transformers.AutoTokenizer.from_pretrained("google/mt5-small")
     yago_dict = dict([a.split("\t") for a in open(f"{tmp_dir}/yago_ontology.tsv", "rb").read().decode().split("\n") if len(a.split("\t"))== 2 ])
     for word, label in yago_dict.items():
-      if self.cjk_detect(word):
+      if cjk_detect(word):
         word = word.replace("_","")
         word = "_".join(mt5_tok.tokenize(word)).replace(mt5_underscore,"_").replace("__", "_").replace("__", "_").strip("_")
       if label == 'MEDICAL_CONDITION':
@@ -513,7 +502,7 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
         if ":" in word or word.count("_") > 1:
           new_yago_ontology[word] = label
         continue
-      if self.cjk_detect(word):
+      if cjk_detect(word):
         if len(word) > 1:
           new_yago_ontology[word] = label
         continue
@@ -636,7 +625,7 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
       label = cat2ner_map.get(cat)
       if label:
         for word in words:
-          if self.cjk_detect(word):
+          if cjk_detect(word):
             word = "_".join(mt5_tok.tokenize(word.replace("_", ""))).replace(mt5_underscore,"_").replace("__", "_").replace("__", "_").strip("_")   
             #if len(word) <= 1:
             #  continue
@@ -1224,7 +1213,7 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
     all_wikiann_ents = {}
 
     for lang in wikiann.keys():
-      is_cjk = lang in ('zh', 'ja', 'ko')
+      is_cjk = lang_is_cjk(lang)
       for ent_type, ent in wikiann[lang]:
         #print (ent_type, ent)
         ent = ent.replace(" , ", ", ")
@@ -1254,7 +1243,7 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
           ent_type = "UNION"
         all_wikiann_ents[ent.lower()] = [ent_type]
 
-    aHash = OrderedDict([(self.canonical_word(a[0], do_lower=True)[0], a[1:]) for a in word2ner if  (self.cjk_detect(a[0]) or len(a[0])> 1) and not r.match(a[0])])
+    aHash = OrderedDict([(self.canonical_word(a[0], do_lower=True)[0], a[1:]) for a in word2ner if  (cjk_detect(a[0]) or len(a[0])> 1) and not r.match(a[0])])
     del_words = []
     for word, val in aHash.items():
       word_arr = word.split("_")
@@ -1266,7 +1255,7 @@ class OntologyBuilder (OntologyManager, OntologyBuilderData):
         continue
       if 'PERSON' in val:
         if word in builder.word2lang:
-          if self.cjk_detect(word) or len(word) > 10 or word.count("_") > 0:
+          if cjk_detect(word) or len(word) > 10 or word.count("_") > 0:
             #print ('changing', word)
             aHash[word] = ['PUBLIC_FIGURE']
     for word in del_words: del aHash[word]
