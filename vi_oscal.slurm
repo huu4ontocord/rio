@@ -16,4 +16,4 @@ export TRANSFORMERS_OFFLINE=1
 module load pytorch-gpu/py3/1.7.0
 
 # to debug - add echo (it exits and prints what it would have launched)
-srun bash -c "time  -hfdataset TurkuNLP/register_oscar,vi -src_lang vi -do_trans 0  -do_hf_ner 1 -do_spacy 1 -do_regex 1 -do_kenlm 1 -do_anonymization 1 -num_workers 4"
+srun bash -c "time  -hfdataset TurkuNLP/register_oscar,vi -src_lang vi -do_trans 0 -outfile=vi_oscar_all  -do_hf_ner 1 -do_spacy 1 -do_regex 1 -do_kenlm 1 -do_anonymization 1 -num_workers 4"
