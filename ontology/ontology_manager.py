@@ -379,7 +379,6 @@ class OntologyManager:
         Each lexicon corrects the previous lexicon's mistakes by make the prefix based patterns more precise.
         e.g., each lexicon will use a longer word_shingle_cutoff than the previous for higher precision (lower recall).
 
-        Returns word2ner items that have not been matched by the ontology.
         """
         
         if weight_factors is None:
