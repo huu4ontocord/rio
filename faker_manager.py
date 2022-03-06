@@ -376,9 +376,9 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
     # we want to match the longest spans first for anonymization
     # replace entities with anchors
     new_ner = copy.deepcopy(ner)
-    #if type(ner) is dict:
-    #  for key, val in ner.items():
-    #    new_ner.append(Counter())
+    if type(ner) is dict:
+      for key, val in ner.items():
+        new_ner.append(Counter())
     new_ner.sort(key=lambda a: len(a[0]), reverse=True)     
     for idx, a_ner in enumerate(new_ner):
       ent = a_ner[0]
