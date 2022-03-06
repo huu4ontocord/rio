@@ -14,5 +14,5 @@ def cjk_detect(texts):
         return "th"
     return None
 
-def is_lang_cjk(lang):
+def lang_is_cjk(lang):
     return lang in {'zh', 'zh-classical', 'zh-min-nan', 'zh-yue', 'ko', 'ja', 'th'}
