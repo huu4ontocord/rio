@@ -60,7 +60,7 @@ regex_rulebase = {
             ],
     },
     "PHONE": {
-      "zh" : [(regex.compile(r"\d{4}-\d{8}"), None, None),
+      "zh" : [(regex.compile(r"\d{4}-\d{8}"), None, ('pp', 'pp.', )),
               
               #from https://github.com/Aggregate-Intellect/bigscience_aisc_pii_detection/blob/main/language/zh/rules.py which is under Apache 2
               (regex.compile('(0?\d{2,4}-[1-9]\d{6,7})|({\+86|086}-| ?1[3-9]\d{9} , ([\+0]?86)?[\-\s]?1[3-9]\d{9})'), None, None),
@@ -70,7 +70,7 @@ regex_rulebase = {
               # https://github.com/madisonmay/CommonRegex/blob/master/commonregex.py phone with exts
               (regex.Regex(
                 '(?:^|[\\s\\\'\\"(\\p{Han}])((?:\\+\\p{Nd}+[ \\/.\\p{Pd}]*)?(?:(?:\\(\\+?\\p{Nd}+\\))?(?:[ \\/.\\p{Pd}]*\\p{Nd})){7,}(?:[\\t\\f #]*\\p{Nd}+)?)(?:$|[\\s@,?!;:\\\'\\"(.\\p{Han}])',
-                           flags=regex.M | regex.V0), None, None)
+                           flags=regex.M | regex.V0), None, ('pp', 'pp.', ))
       ]      
     },
     "IP_ADDRESS": {
@@ -107,15 +107,15 @@ regex_rulebase = {
           ],
       "default": [
               #credit card from common regex
-              (re.compile('((?:(?:\\d{4}[- ]?){3}\\d{4}|\\d{15,16}))(?![\\d])'), None, None),
+              (re.compile('((?:(?:\\d{4}[- ]?){3}\\d{4}|\\d{15,16}))(?![\\d])'), None, ('pp', 'pp.', )),
               #icd code - see https://stackoverflow.com/questions/5590862/icd9-regex-pattern
-              (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None, None),
+              (re.compile('[A-TV-Z][0-9][A-Z0-9](\.[A-Z0-9]{1,4})'), None, ('pp', 'pp.', )),
               # generic id with dashes - this sometimes catches a - or a / at the beginning of a number which might not be what we want.
               (re.compile('[A-Z#]{0,3}(?:[-\/ ]*\d){6,13}'), None, ('pp', 'pp.', )),
               # Meg's regex
               (regex.Regex('(?:^|[\\b\\s@?,!;:\\\'\\")(.\\p{Han}])([A-Za-z]*(?:[\\p{Pd}]*\\p{Nd}){6,})(?:$|[\\b\\s@?,!;:\\\'\\")(.\\p{Han}])', flags=regex.M | regex.V0), None, ('pp', 'pp.', )),
               # IBAN
-              (re.compile('[A-Z]{2}\d+\d+[A-Z]{0,4}(?:[- ]*\d){10,32}[A-Z]{0,3}'), None, None),
+              (re.compile('[A-Z]{2}\d+\d+[A-Z]{0,4}(?:[- ]*\d){10,32}[A-Z]{0,3}'), None, ('pp', 'pp.', )),
       ],
     },
  }
