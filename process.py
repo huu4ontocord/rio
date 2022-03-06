@@ -95,7 +95,7 @@ if __name__ == "__main__":
     parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
     parser.add_argument('-hfdataset', dest='hfdataset', type=str, help='dataset to load, comma separated for different subsets', default=None)
     parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
-    parser.add_argument('-shard_range', dest='shard_range', type=str, help='portion of file to load', default=None)
+    parser.add_argument('-shard_range', dest='shard_range', type=str, help='portion of file to load, e.g., 1/4, 2/4, etc.', default=None)
     parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default=None)
     parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
     parser.add_argument('-do_spacy_only', dest='do_spacy_only', type=int, help='Wether to only apply a spacy model', default = 0)
@@ -250,7 +250,7 @@ if __name__ == "__main__":
                     do_qg_rel=args.do_qg_rel,
                     do_kenlm = args.do_kenlm,
                     cutoff=cutoff,
-                    shard_range = [int(a) for a in args.shard_range.split(",")] if args.shard_range else None,
+                    shard_range = args.shard_range,
                     batch_size=batch_size,
                     num_workers=num_workers)
       else:
@@ -281,5 +281,5 @@ if __name__ == "__main__":
                     do_qg_rel=args.do_qg_rel,
                     do_kenlm = args.do_kenlm,
                     cutoff=cutoff,
-                    shard_range = [int(a) for a in args.shard_range.split(",")] if args.shard_range else None,
+                    shard_range = args.shard_range,
                     batch_size=batch_size)
