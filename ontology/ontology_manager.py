@@ -65,7 +65,7 @@ except:
                                            os.path.pardir)))
 import default_onto_tags
 from stopwords import stopwords
-
+from cjk import *
 mt5_underscore = "▁"
 trannum = str.maketrans("0123456789", "1111111111")
 
@@ -104,7 +104,7 @@ class OntologyManager:
         """
         if OntologyManager.mt5_tokenizer  is None:
            OntologyManager.mt5_tokenizer = AutoTokenizer.from_pretrained("google/mt5-small", use_fast=True)
-        self.is_cjk = -1 if target_lang == "" else 1 if target_lang in ("zh", "ja", "ko") else 0
+        self.is_cjk = -1 if target_lang == "" else 1 if lang_is_cjk(target_lang) else 0
         self.tag_type = tag_type
         self.target_lang_lexicon = {}
         self.target_lang = target_lang
@@ -335,7 +335,7 @@ class OntologyManager:
       if connector is None:
         connector = self.connector
       if self.is_cjk < 0:
-        is_cjk = self.cjk_detect(word)
+        is_cjk = cjk_detect(word)
       else:
         is_cjk = self.is_cjk   
       if not supress_cjk_tokenize and is_cjk:
@@ -559,7 +559,7 @@ class OntologyManager:
         if connector is None:
             connector = self.connector
         if self.is_cjk < 0:
-          is_cjk = self.cjk_detect(word)
+          is_cjk = cjk_detect(word)
         else:
           is_cjk = self.is_cjk   
         word, wordArr = self.canonical_word(word, connector, supress_cjk_tokenize, do_lower=False, do_trannum=False)
@@ -641,8 +641,8 @@ class OntologyManager:
             if not words2:
                 words2.append(word)
                 continue
-            if not self.cjk_detect(word):
-                if not self.cjk_detect(words2[-1]):
+            if not cjk_detect(word):
+                if not cjk_detect(words2[-1]):
                     if words2[-1] in self.strip_chars_set:
                         words2[-1] += " " + word
                     else:
@@ -677,7 +677,7 @@ class OntologyManager:
         labels = []
         if connector is None:
             connector = self.connector
-        if not supress_cjk_tokenize and self.cjk_detect(text):
+        if not supress_cjk_tokenize and cjk_detect(text):
             text = self.cjk_tokenize_text(text, connector)
         sent = text.strip().split()
         len_sent = len(sent)
@@ -777,20 +777,6 @@ class OntologyManager:
         return {'text': text, 'chunk2ner': ner}
       else:
         return text
-
-    def cjk_detect(self, texts):
-        # chinese
-        if re.search("[\u4e00-\u9FFF]", texts):
-            return "zh"
-        # korean
-        if re.search("[\uac00-\ud7a3]", texts):
-            return "ko"
-        # japanese
-        if re.search("[\u3040-\u30ff]", texts):
-            return "ja"
-
-        return None
-
 
 if __name__ == "__main__":
     data_dir = tmp_dir = None
