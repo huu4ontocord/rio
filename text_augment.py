@@ -1670,14 +1670,9 @@ class TextAugment:
 
 
         if do_augment:
-          self.create_augment_anon_context(docs, chunks, src_lang, faker_target_lang, faker_en, aug_scope=aug_scope, target_lang=target_lang, \
-                                          items_key=f'{src_lang}_items', context_key=f'{src_lang}_aug_context', ner_key=f'{src_lang}_ner')
-        docs, chunks = self.replace_items_in_chunks(docs, chunks,  src_lang, lbracket=lbracket, rbracket=rbracket, \
-                                                                         replace_with_bracket=True, do_augment=do_augment, \
-                                                                         context_key=f'{src_lang}_aug_context', \
-                                                                         ner_key=f'{src_lang}_ner',  items_key=f'{src_lang}_items', \
-                                                                         text_key=f'{src_lang}_text', replace_text_key=f'{src_lang}_tmp_text', \
-                                                                         offset_key=f'{src_lang}_offset')
+          self.augment(docs, chunks, src_lang, faker_target_lang, aug_scope=aug_scope, target_lang=target_lang, \
+                                  context_key=f'{src_lang}_aug_context', ner_key=f'{src_lang}_ner', text_key=f'{src_lang}_text')
+
         chunks2 = [chunk[f'{src_lang}_tmp_text'] for chunk in chunks]
         text2 = self.do_translations(chunks2, src_lang=src_lang, target_lang=target_lang, batch_size=batch_size, do_marian_mt=do_marian_mt)
         for chunk, trans_text in zip(chunks, text2):
@@ -2121,9 +2116,10 @@ class TextAugment:
 
     if do_anonymization:
       logger.info(("anonymization set", faker_src_lang, faker_en))
-      if faker_src_lang is not None and faker_en is not None:
+      if faker_src_lang is not None:
         logger.info("doing anonymization")
-        docs, chunks = self.anonymize(docs, chunks, src_lang, faker_src_lang, faker_en, anon_scope=anon_scope)
+        docs, chunks = self.anonymize(docs, chunks, src_lang, faker_src_lang, anon_scope=anon_scope, \
+                                  context_key=f'{src_lang}_aug_context', ner_key=f'{src_lang}_ner', text_key=f'{src_lang}_text')
 
     #TODO: remove all _tmp fields
 
