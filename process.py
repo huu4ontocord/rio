@@ -95,6 +95,7 @@ if __name__ == "__main__":
     parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
     parser.add_argument('-hfdataset', dest='hfdataset', type=str, help='dataset to load, comma separated for different subsets', default=None)
     parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
+    parser.add_argument('-shard_range', dest='shard_range', type=str, help='portion of file to load', default=None)
     parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default=None)
     parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
     parser.add_argument('-do_spacy_only', dest='do_spacy_only', type=int, help='Wether to only apply a spacy model', default = 0)
@@ -216,13 +217,13 @@ if __name__ == "__main__":
     if outfile is None:
       if infile is not None:
         outfile = "out.jsonl"
-    docs = TextAugment.deserialize_ner_items(infile=infile) if infile else None
     if args.preload_cache: 
-      TextAugment.preload_cache(src_lang or ["en"], target_lang)
+      TextAugment.preload_cache(src_lang or ["en"], target_lang, \
+                    hfdataset=args.hfdataset,)
     #TODO - do multiprocessing
     elif src_lang is not None:
       if num_workers > 1:
-        TextAugment.multiprocess_ner(docs,
+        TextAugment.multiprocess_ner(infile,
                     outfile,
                     src_langs=src_lang,
                     target_langs=target_lang,
@@ -249,31 +250,15 @@ if __name__ == "__main__":
                     do_qg_rel=args.do_qg_rel,
                     do_kenlm = args.do_kenlm,
                     cutoff=cutoff,
+                    shard_range = [int(a) for a in args.shard_range.split(",")] if args.shard_range else None,
                     batch_size=batch_size,
                     num_workers=num_workers)
       else:
-        processor = TextAugment(single_process=True)
-        if args.hfdataset:
-            all_docs = [(processor.get_docs(src_lang[0], hfdataset=args.hfdataset, cutoff=cutoff), src_lang[0], target_lang[0])]
-        elif not docs:
-            all_docs = [(processor.get_docs(sl, cutoff=cutoff), sl, tl) for sl, tl in zip(src_lang, target_lang)]
-        else:
-            all_docs = [([docs], src_lang[0], target_lang[0])]
-
-        if outfile is not None:
-            _file =  open(outfile, 'w', encoding='utf-8')
-        else:
-            _file = None
-        for docs_iter, src_lang, target_lang in all_docs:
-            if outfile is None:
-                if _file is not None: _file.close()
-                _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
-            #print(docs_iter)
-            for docs in tqdm(docs_iter):
-                #print(docs)
-                docs =  processor.process_ner(docs=docs, 
-                    src_lang=src_lang,
-                    target_lang=target_lang,
+        TextAugment.singleprocess_ner(infile,
+                    outfile,
+                    src_langs=src_lang,
+                    target_langs=target_lang,
+                    hfdataset=args.hfdataset,
                     do_spacy = args.do_spacy ,
                     do_hf_ner = args.do_hf_ner ,
                     do_ontology = args.do_ontology,
@@ -296,8 +281,5 @@ if __name__ == "__main__":
                     do_qg_rel=args.do_qg_rel,
                     do_kenlm = args.do_kenlm,
                     cutoff=cutoff,
+                    shard_range = [int(a) for a in args.shard_range.split(",")] if args.shard_range else None,
                     batch_size=batch_size)
-                for doc in processor.serialize_ner_items(docs):
-                    doc = json.dumps(doc)
-                    _file.write(f'{doc}\n')
-        if _file is not None: _file.close()
