@@ -338,7 +338,7 @@ def detect_ner_with_hf_model(sentence, src_lang,  tag_type={'PERSON', 'PUBLIC_FI
                   ner[mention] = aHash
 
     # now let's flatten into a 4 tuple which is expected by other functions. For the tag, we take the winning tag.
-    ners = [list(a) +  [max(Counter(b))] for a, b in doc[ner_key].items()]
+    ners = [tuple(list(a) +  [max(Counter(b))]) for a, b in doc[ner_key].items()]
     models = load_kenlm_model(src_lang, pretrained_models=["wikipedia"] if src_lang not in  ('ig', 'zu', 'ny', 'sn', "st") else ["mc4"])
     for i, a_ner in enumerate(ners):
       ent = a_ner[0]
