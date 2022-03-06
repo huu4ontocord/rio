@@ -2385,7 +2385,7 @@ class TextAugment:
       return list(docs.values()) #this is not guaranteed to be ordered
 
   @staticmethod
-  def get_docs(src_langs=None, infiles=None, docs=None, max_chunk_size=25, num_workers=1, shard_range=[], cutoff=-1, hfdataset="", filter_out_no_registry=True):
+  def get_docs(src_langs=None, infiles=None, docs=None, max_chunk_size=25, num_workers=1, shard_range=None, max_docs=None, cutoff=-1, hfdataset="", filter_out_no_registry=True):
       """
       NOTE: We filter the TurkuNLP registry docs if there are no registry label for a doc. This might not be the ideal behaviour.
       """
@@ -2405,13 +2405,14 @@ class TextAugment:
         exec("__ret= "+s, ret)
         return ret['__ret']
 
-      if shard_range:
-        cutoff = shard_range[-1] - shard_range[0]
-      elif cutoff and cutoff > 0:
-        shard_range = [0, cutoff]
+      if shard_range and "/" in shard_range:
+        shard_num, total_shards = [int(a) for a in shard_range.split("/")]
       else:
-        shard_range = [0, -1]
-        cutoff = -1
+        shard_num = 1 
+        tota_shards = -1
+      
+      if cutoff is None: cutoff = -1
+      
       if not infiles and src_langs is not None:
         infiles = []
         if type(src_langs) is str: src_langs = [src_langs]
@@ -2423,12 +2424,23 @@ class TextAugment:
             infiles.append(_file)
       
       if hfdataset:
-          d = load_dataset(*hfdataset.split(","))
+          d = load_dataset(*hfdataset.split(","))['train']
           len_docs = len(d)
+          if total_shards == -1:
+            if cutoff > 0:
+                start = 0
+                end = cutoff
+            else:
+                start = 0
+                end = len_docs
+          else:
+            cutoff = int(len_docs/total_shards)
+            start = int((shard_num-1)*(cutoff))
+            end = (start + cutoff) if shard_num < total_shards else len_docs
           chunk_size = get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size)
           curr_recs = 0
-          for i in range(shard_range[0], len_docs, chunk_size):
-              j = min(i + chunk_size, len_docs)
+          for i in range(start, end, chunk_size):
+              j = min(i + chunk_size, end)
               curr_recs += j - i
               if cutoff > 0 and curr_recs >= cutoff:
                 j -= curr_recs - cutoff
@@ -2439,6 +2451,16 @@ class TextAugment:
         for _file in infiles:
           use_load_py_from_str=False
           if os.path.exists(_file):
+                if total_shards > 0 and max_docs is None:
+                    raise RuntimeError("we need the maximum documents for sharding a file")
+                len_docs = max_docs
+                if total_shards > 0:
+                    cutoff = int(len_docs/total_shards)
+                    start = int((shard_num-1)*(cutoff))
+                    end = (start + cutoff) if shard_num < total_shards else len_docs
+                else:
+                    start = 0
+                    end = -1
                 chunk_size = get_chunk_size(cutoff, 1000000, num_workers, max_chunk_size)
                 cnt = 0
                 ret = []
@@ -2446,7 +2468,7 @@ class TextAugment:
                 infile = gzip.open(_file, "rb") if is_gz else open(_file, "rb")
                 with infile as f:
                   for _idx, t in enumerate(f):
-                    if _idx < shard_range[0]: continue
+                    if _idx < start: continue
                     if is_gz: 
                       t = t.decode()
                     dat = None
@@ -2478,15 +2500,37 @@ class TextAugment:
       elif isinstance(docs, list):
           if isinstance(docs[0], dict):
             len_docs=len(docs)
+            if total_shards == -1:
+              if cutoff > 0:
+                start = 0
+                end = cutoff
+              else:
+                start = 0
+                end = len_docs
+            else:
+              cutoff = int(len_docs/total_shards)
+              start = int((shard_num-1)*(cutoff))
+              end = (start + cutoff) if shard_num < total_shards else len_docs
             chunk_size = get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size)
-            for i in range(0, len_docs, chunk_size):
-                j = min(i + chunk_size, len_docs)
+            for i in range(start, end, chunk_size):
+                j = min(i + chunk_size, end)
                 yield docs[i:j]
           else:
             len_docs=len(docs)
+            if total_shards == -1:
+              if cutoff > 0:
+                start = 0
+                end = cutoff
+              else:
+                start = 0
+                end = len_docs
+            else:
+              cutoff = int(len_docs/total_shards)
+              start = int((shard_num-1)*(cutoff))
+              end = (start + cutoff) if shard_num < total_shards else len_docs
             chunk_size = get_chunk_size(cutoff, len_docs, num_workers, max_chunk_size)
-            for i in range(0, len_docs, chunk_size):
-                j = min(i + chunk_size, len_docs)
+            for i in range(0, end, chunk_size):
+                j = min(i + chunk_size, end)
                 yield [{'text': t} for t in docs[i:j]]
       elif not docs:
         yield []
