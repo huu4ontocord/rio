@@ -2407,10 +2407,11 @@ class TextAugment:
 
       if shard_range:
         cutoff = shard_range[-1] - shard_range[0]
-      elif cutoff:
+      elif cutoff and cutoff > 0:
         shard_range = [0, cutoff]
       else:
         shard_range = [0, -1]
+        cutoff = -1
       if not infiles and src_langs is not None:
         infiles = []
         if type(src_langs) is str: src_langs = [src_langs]
