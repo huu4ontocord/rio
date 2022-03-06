@@ -1,5 +1,5 @@
 
-export CUTOFF=150
+export CUTOFF=-1
 export GPU_NUMBERS=4
 export NODES=2
 for LANG in ar bn ca en es eu fr hi id ig ny pt sn st sw ur vi xh yo zh zu;do
