@@ -100,10 +100,10 @@ class FakerExtensions:
       self.trials = trials
       self.num_genders = 2
       if faker is None:
-        if lang in ("gu", "pa", "mr", "vi", "bn", "ur", "ca", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu", "st"):
+        if lang in ("vi",  "mr",  "yo", "sw","sn", "st", "ig", "ny", "xh", "zu", "st"):
           faker = self.faker = Faker("en_GB")
         else:
-          faker = self.faker = Faker(random.choice(faker_map["es" if lang in ("eu", "ca") else "hi" if lang in ("as", ) else lang]))
+          faker = self.faker = Faker(random.choice(faker_map["es" if lang in ("eu", "ca") else "hi" if lang in ("as", "gu", "pa","bn", "ur", ) else lang]))
         faker.add_provider(person)
         faker.add_provider(ssn)
         faker.add_provider(address)
