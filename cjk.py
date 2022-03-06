@@ -13,3 +13,6 @@ def cjk_detect(texts):
     if re.search("[\u0E01-\u0E5B]", texts):
         return "th"
     return None
+
+def is_lang_cjk(lang):
+    return lang in {'zh', 'zh-classical', 'zh-min-nan', 'zh-yue', 'ko', 'ja', 'th'}
