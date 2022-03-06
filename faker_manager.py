@@ -100,10 +100,10 @@ class FakerExtensions:
       self.trials = trials
       self.num_genders = 2
       if faker is None:
-        if lang in ("vi",  "mr",  "yo", "sw","sn", "st", "ig", "ny", "xh", "zu", "st"):
+        if lang in ("gu", "pa", "mr", "vi", "bn", "ur", "ca", "yo", "sw","sn", "st", "ig", "ny", "xh", "zu", "st"):
           faker = self.faker = Faker("en_GB")
         else:
-          faker = self.faker = Faker(random.choice(faker_map["es" if lang in ("eu", "ca") else "hi" if lang in ("as", "gu", "pa","bn", "ur", ) else lang]))
+          faker = self.faker = Faker(random.choice(faker_map["es" if lang in ("eu", "ca") else "hi" if lang in ("as", ) else lang]))
         faker.add_provider(person)
         faker.add_provider(ssn)
         faker.add_provider(address)
@@ -334,6 +334,12 @@ class FakerExtensions:
     context[ent] =  context.get(ent, self.faker.ssn())
     return context[ent]
 
+  def email(self, ent=None, context=None):
+    if ent is None or context is None: 
+      return self.faker.email()
+    context[ent] =  context.get(ent, self.faker.email())
+    return context[ent]
+
   def address(self, ent=None, context=None):
     if ent is None or context is None: 
       return self.faker.address()
@@ -358,12 +364,17 @@ class FakerExtensions:
         context[ent] =  context.get(ent, self.faker.state())
     return context[ent]
 
+trannum = str.maketrans("0123456789", "1111111111")
 
-def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID', 'PHONE', 'USER', 'EMAIL', 'LICENSE_PLATE', 'PERSON'} ):
-  faker = FakerExtensions(lang_id)
+def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID', 'PHONE', 'USER', 'EMAIL', 'LICENSE_PLATE', 'PERSON'}, faker=None, context=None, do_augment=False):
+  if faker is None:
+    faker = FakerExtensions(lang_id)
+  if context is None:
+    context = {}
   is_cjk = lang_id in ("zh", "ja", "ko", "th")
   if True:
-    # we want to match the longest spans for anonymization
+    # we want to match the longest spans first for anonymization
+    # replace entities with anchors
     new_ner = copy.deepcopy(ner)
     new_ner.sort(key=lambda a: len(a[0]), reverse=True)     
     for idx, a_ner in enumerate(new_ner):
@@ -377,41 +388,58 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
             ent_arr = ent_arr[:-1]
           ent = " ".join(ent_arr)
       tag = a_ner[-1]
+      if tag not in tag_type: continue
       sentence = sentence.replace(ent+" ", f"<{idx}> ")
       sentence = sentence.replace(" "+ent, f" <{idx}>")
       if len(ent) > 5:
         sentence = sentence.replace(ent, f"<{idx}>") 
-    context = {}
+    #now actually do the aug/anon
     new_ner2 = []
     for idx, a_ner in enumerate(new_ner):
       ent = a_ner[0]
       tag = a_ner[-1]
-      if tag == 'PERSON':
+      if tag not in tag_type:
+        new_ner2.append((ent, tag))
+        continue
+      if tag == 'PERSON': #TODO, tied to URL and USER 
         ent2 = faker.name(ent=ent, context=context)
-        if ent2 not in new_ner2:
+        if (ent2, tag) not in new_ner2:
           new_ner2.append((ent2, tag))
         sentence = sentence.replace(f"<{idx}>", f' {ent2} ' if not is_cjk else ent2)
       elif tag == 'ORG':
         ent2 = faker.company(ent=ent, context=context)
-        if ent2 not in new_ner2:
+        if (ent2, tag) not in new_ner2:
           new_ner2.append((ent2, tag))
         sentence = sentence.replace(f"<{idx}>", f' {ent2} ' if not is_cjk else ent2)
       elif tag == 'LOC':
         ent2 = faker.state(ent=ent, context=context)
-        if ent2 not in new_ner2:
+        if (ent2, tag) not in new_ner2:
           new_ner2.append((ent2, tag))
         sentence = sentence.replace(f"<{idx}>", f' {ent2} ' if not is_cjk else ent2)
       elif tag == 'ADDRESS':
         ent2 = faker.address(ent=ent, context=context)
-        if ent2 not in new_ner2:
+        if (ent2, tag) not in new_ner2:
           new_ner2.append((ent2, tag))
         sentence = sentence.replace(f"<{idx}>", f' {ent2} ' if not is_cjk else ent2)
       elif tag != 'PUBLIC_FIGURE':
-        if f' <{tag}> ' not in new_ner2:
+        if (f' <{tag}> ', tag) not in new_ner2:
           new_ner2.append((f' <{tag}> ', tag))
         sentence = sentence.replace(f"<{idx}>", f' <{tag}> ')
+      elif do_augment:
+        if tag in ('IP_ADDRESS', 'ID', 'PHONE',):
+          ent2 = ent.translate(trannum)
+        elif tag in ('KEY',):
+          ent2 = 'KEY-11111'
+        elif tag in ('LP',):
+          ent2 = 'LP-11111' 
+        elif tag in ('USER',):
+          ent2 = "@"+faker.email().split("@")
+        elif tag in ('EMAIL',):
+          ent2 = faker.email().split("@")
+      else:
+        new_ner2.append((ent, tag))
   
-      #TODO: NORP, AGE, DISEASE, URL, LICENSE_PLATE, GENDER, JOB, MEDICAL_THERAPY
+      #TODO: NORP, AGE, DISEASE, URL, GENDER, JOB, MEDICAL_THERAPY
         
     sentence = sentence.replace("  ", " ").strip()
     new_ner3 = []
@@ -431,7 +459,7 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
         sentence2 = sentence2.replace(ent, " "*len(ent))
           
   new_ner3.sort(key=lambda a: a[1])
-  return sentence, new_ner3
+  return sentence, new_ner3, context
 
 if __name__ == "__main__":
   if True:
