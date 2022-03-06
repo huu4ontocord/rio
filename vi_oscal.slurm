@@ -1,7 +1,8 @@
 #!/bin/bash
 #SBATCH --account=six@gpu
 #SBATCH --job-name=vi_oscar_all
-#SBATCH --nodes=10
+#SBATCH --nodes=1
+#SBATCH --partition=prepost
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=10           # number of cores per tasks
 #SBATCH --hint=nomultithread         # we get physical cores not logical
