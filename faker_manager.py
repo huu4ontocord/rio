@@ -466,7 +466,7 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
         sentence2 = sentence2.replace(ent, " "*len(ent))
           
   new_ner3.sort(key=lambda a: a[1])
-  return sentence, new_ner3, context
+  return sentence, [tuple(a) for a in new_ner3], context
 
 if __name__ == "__main__":
   if True:
