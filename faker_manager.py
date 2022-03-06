@@ -366,6 +366,7 @@ class FakerExtensions:
 
 trannum = str.maketrans("0123456789", "1111111111")
 from collections import Counter
+
 def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID', 'PHONE', 'USER', 'EMAIL', 'LICENSE_PLATE', 'PERSON'}, faker=None, context=None, do_augment=False):
   if faker is None:
     faker = FakerExtensions(lang_id)
@@ -376,9 +377,10 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
     # we want to match the longest spans first for anonymization
     # replace entities with anchors
     new_ner = copy.deepcopy(ner)
-    #if type(ner) is dict:
-    #  for key, val in ner.items():
-    #    new_ner.append(Counter())
+    if type(new_ner) is dict:
+      new_ner = [list(a) +  [max(Counter(b))] for a, b in new_ner.items()]
+      #for key, val in ner.items():
+      #  new_ner.append(Counter())
     new_ner.sort(key=lambda a: len(a[0]), reverse=True)     
     for idx, a_ner in enumerate(new_ner):
       ent = a_ner[0]
@@ -387,9 +389,10 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
           ent_arr = ent.split(" ")
           if ent_arr[0][-1] == ".":
             ent_arr = ent_arr[1:]
-          if ent_arr[-1][-1] == ".":
+          if ent_arr and ent_arr[-1][-1] == ".":
             ent_arr = ent_arr[:-1]
-          ent = " ".join(ent_arr)
+          if ent_arr:
+            ent = " ".join(ent_arr)
       tag = a_ner[-1]
       if tag not in tag_type: continue
       sentence = sentence.replace(ent+" ", f"<{idx}> ")
@@ -436,9 +439,9 @@ def augment_anonymize(sentence, lang_id, ner, tag_type={'IP_ADDRESS', 'KEY', 'ID
         elif tag in ('LP',):
           ent2 = 'LP-11111' 
         elif tag in ('USER',):
-          ent2 = "@"+faker.email().split("@")
+          ent2 = "@"+faker.email().split("@")[0]
         elif tag in ('EMAIL',):
-          ent2 = faker.email().split("@")
+          ent2 = faker.email()
       else:
         new_ner2.append((ent, tag))
   
