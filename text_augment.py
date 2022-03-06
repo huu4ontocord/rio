@@ -2700,7 +2700,7 @@ class TextAugment:
       if outfile is None:
         if _file is not None: _file.close()
         _file = open(f"{src_lang}_out.jsonl", 'w', encoding='utf-8')
-      docs = TextAugment.get_docs(src_lang=src_lang, infiles=[infile] if infile else None, hfdataset=hfdataset, cutoff=cutoff, shard_range=shard_range, num_workers=num_workers)
+      docs = TextAugment.get_docs(src_langs=src_lang, infiles=[infile] if infile else None, hfdataset=hfdataset, cutoff=cutoff, shard_range=shard_range, num_workers=num_workers)
       processed_docs = pool.imap_unordered(partial(processor.process_ner,
                                                       src_lang=src_lang,
                                                       target_lang=target_lang,
