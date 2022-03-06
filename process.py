@@ -95,7 +95,8 @@ if __name__ == "__main__":
     parser.add_argument('-batch_size', dest='batch_size', type=int, help='batch size', default=5)
     parser.add_argument('-hfdataset', dest='hfdataset', type=str, help='dataset to load, comma separated for different subsets', default=None)
     parser.add_argument('-infile', dest='infile', type=str, help='file to load', default=None)
-    parser.add_argument('-shard_range', dest='shard_range', type=str, help='portion of file to load, e.g., 1/4, 2/4, etc.', default=None)
+    parser.add_argument('-shard_range', dest='shard_range', type=str, help='portion of file to load, e.g., 1/4, 2/4, etc. unless the dataset is a hf dataset, max_docs must also be set', default=None)
+    parser.add_argument('-max_docs', dest='max_docs', type=int, help='the maximum number of documents in this dataset', default=-1)
     parser.add_argument('-outfile', dest='outfile', type=str, help='file to save', default=None)
     parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
     parser.add_argument('-do_spacy_only', dest='do_spacy_only', type=int, help='Wether to only apply a spacy model', default = 0)
@@ -252,6 +253,7 @@ if __name__ == "__main__":
                     cutoff=cutoff,
                     shard_range = args.shard_range,
                     batch_size=batch_size,
+                    max_docs=args.max_docs,                 
                     num_workers=num_workers)
       else:
         TextAugment.singleprocess_ner(infile,
@@ -282,4 +284,5 @@ if __name__ == "__main__":
                     do_kenlm = args.do_kenlm,
                     cutoff=cutoff,
                     shard_range = args.shard_range,
+                    max_docs=args.max_docs,
                     batch_size=batch_size)
