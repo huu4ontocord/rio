@@ -255,7 +255,7 @@ class FakerExtensions:
             ent_arr = ent_arr[1:]
           if ent_arr and ent_arr[-1][-1] == ".":
             ent_arr = ent_arr[:-1]
-	  if not ent_arr: ent_arr = orig_ent_arr
+          if not ent_arr: ent_arr = orig_ent_arr
         if match_first_name:
           ent1 = ent_arr[0] if not is_cjk else (ent[:2] if len(ent) > 2 else ent[:1])
           if ent1 in context:
