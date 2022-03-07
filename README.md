@@ -314,6 +314,7 @@ See https://github.com/afshinrahimi/mmner and https://huggingface.co/datasets/wi
 
 We welcome all contributions. Please feel free to send a PR. Please follow the code of conduct: https://github.com/ontocord/muliwai/blob/main/CODE_OF_CONDUCT.md 
 Special thanks to these people not just for code contributions but for comments and reviews (in no particular order): 
+- @dadelani
 - @edugp 
 - @vumichien
 - @ianyu93
@@ -325,3 +326,6 @@ Special thanks to these people not just for code contributions but for comments 
 - @piesauce
 - @shamikbose
 
+# Acknowledgements
+
+We heavily use the models trained by @dadelani and the excelent work by https://github.com/masakhane-io.
