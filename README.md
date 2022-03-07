@@ -52,13 +52,17 @@ python process.py -src_lang zh -num_workers=2 -cutoff 30
 ```
 usage: process.py [-h] [-src_lang SRC_LANG] [-target_lang TARGET_LANG]
                   [-augment_lang AUGMENT_LANG] [-cutoff CUTOFF]
-                  [-batch_size BATCH_SIZE] [-infile INFILE] [-outfile OUTFILE]
+                  [-batch_size BATCH_SIZE] [-hfdataset HFDATASET]
+                  [-infile INFILE] [-shard_range SHARD_RANGE]
+                  [-max_docs MAX_DOCS] [-outfile OUTFILE]
                   [-num_workers NUM_WORKERS] [-do_spacy_only DO_SPACY_ONLY]
                   [-do_hf_ner_only DO_HF_NER_ONLY]
+                  [-do_dictionary_only DO_ONTOLOGY_ONLY]
                   [-do_regex_only DO_REGEX_ONLY]
                   [-do_qg_rel_only DO_QG_REL_ONLY] [-do_spacy DO_SPACY]
                   [-do_skip_src_lang_processing DO_SKIP_SRC_LANG_PROCESSING]
-                  [-do_hf_ner DO_HF_NER] [-do_backtrans DO_BACKTRANS]
+                  [-do_hf_ner DO_HF_NER] [-do_dictionary DO_ONTOLOGY]
+                  [-do_trans DO_TRANS] [-do_backtrans DO_BACKTRANS]
                   [-do_augment DO_AUGMENT]
                   [-do_anonymization DO_ANONYMIZATION] [-do_regex DO_REGEX]
                   [-do_cleanup DO_CLEANUP] [-do_marian_mt DO_MARIAN_MT]
@@ -66,6 +70,7 @@ usage: process.py [-h] [-src_lang SRC_LANG] [-target_lang TARGET_LANG]
                   [-do_docs_filter DO_DOCS_FILTER] [-do_kenlm DO_KENLM]
                   [-do_qg_rel DO_QG_REL]
                   [-num_words_per_chunk NUM_WORDS_PER_CHUNK]
+                  [-dictionary_weight ONTOLOGY_WEIGHT]
                   [-spacy_weight SPACY_WEIGHT] [-hf_ner_weight HF_NER_WEIGHT]
                   [-regex_weight REGEX_WEIGHT]
                   [-backtrans_weight BACKTRANS_WEIGHT] [-aug_scope AUG_SCOPE]
@@ -84,7 +89,12 @@ optional arguments:
   -cutoff CUTOFF        Cutoff documents, -1 is none
   -batch_size BATCH_SIZE
                         batch size
+  -hfdataset HFDATASET  dataset to load, comma separated for different subsets
   -infile INFILE        file to load
+  -shard_range SHARD_RANGE
+                        portion of file to load, e.g., 1/4, 2/4, etc. unless
+                        the dataset is a hf dataset, max_docs must also be set
+  -max_docs MAX_DOCS    the maximum number of documents in this dataset
   -outfile OUTFILE      file to save
   -num_workers NUM_WORKERS
                         Num of Workers
@@ -92,6 +102,8 @@ optional arguments:
                         Wether to only apply a spacy model
   -do_hf_ner_only DO_HF_NER_ONLY
                         Wether to only apply a huggingface NER model
+  -do_dictionary_only DO_ONTOLOGY_ONLY
+                        Wether to only use an dictionary
   -do_regex_only DO_REGEX_ONLY
                         Wether to only apply regex models
   -do_qg_rel_only DO_QG_REL_ONLY
@@ -102,6 +114,10 @@ optional arguments:
                         Wether or not to skip NER for src_lang (assumes NER is
                         already perfored in the data provided)
   -do_hf_ner DO_HF_NER  Wether or not to apply a huggingface NER model
+  -do_dictionary DO_ONTOLOGY
+                        Wether or not to use a dictionary
+  -do_trans DO_TRANS    Wether or not to do translation (setting to 0 will
+                        make src_lang == target_lang)
   -do_backtrans DO_BACKTRANS
                         Wether or not to do back translation
   -do_augment DO_AUGMENT
@@ -127,6 +143,8 @@ optional arguments:
                         entities based an question generation (EXPERIMENTAL)
   -num_words_per_chunk NUM_WORDS_PER_CHUNK
                         number of words per chunk
+  -dictionary_weight ONTOLOGY_WEIGHT
+                        Weight given to the dictionary model
   -spacy_weight SPACY_WEIGHT
                         weight given to a spacy decision
   -hf_ner_weight HF_NER_WEIGHT
@@ -140,9 +158,66 @@ optional arguments:
                         tag types for anonymization
   -force_gpu FORCE_GPU  Force usage of GPU
   -force_cpu FORCE_CPU  Force usage of CPU
-  -preload_cache        Preload the cache of models and data
-  ```
+  -preload_cache        Preload the cache of models and data  ```
 
+# Using the API
+
+You can use the functions in regex_manager.py, ner_manager.py, and faker_manager.py to detect and anonymize PII types in text.
+
+You can modify the regex_rulebase or pass in your own to *detect_ner_with_regex_and_context* to customize your detection. 
+
+The following *apply_anonymization* for example will annonymize a given text in a target language. 
+
+```
+from muliwai.regex_manager import detect_ner_with_regex_and_context
+from muliwai.pii_regexes_rulebase import regex_rulebase
+from muliwai.ner_manager import detect_ner_with_hf_model
+from muliwai.faker_manager import augment_anonymize
+def apply_anonymization(
+    sentence: str,
+    lang_id: str,
+    context_window: int = 20,
+    anonymize_condition=None,
+    tag_type={'IP_ADDRESS', 'KEY', 'ID', 'PHONE', 'USER', 'EMAIL', 'LICENSE_PLATE', 'PERSON'} ,
+    device: str = "cpu",
+) -> str:
+    """
+    Params:
+    ==================
+    sentence: str, the sentence to be anonymized
+    lang_id: str, the language id of the sentence
+    context_window: int, the context window size
+    anonymize_condition: function, the anonymization condition
+    tag_type: iterable, the tag types of the anonymization. By default: {'IP_ADDRESS', 'KEY', 'ID', 'PHONE', 'USER', 'EMAIL', 'LICENSE_PLATE', 'PERSON'} 
+    device: cpu or cuda:{device_id}
+
+    """
+    if tag_type == None:
+        tag_type = regex_rulebase.keys()
+    lang_id = lang_id.split("_")[0]
+    ner_ids = detect_ner_with_regex_and_context(
+        sentence=sentence,
+        src_lang=lang_id,
+        context_window=context_window,
+        tag_type=tag_type,
+    )
+    ner_persons = detect_ner_with_hf_model(
+        sentence=sentence,
+        src_lang=lang_id,
+        device=device,
+    )
+    ner = list(set(ner_ids + ner_persons))
+    ner.sort(key=lambda a: a[1])
+    if anonymize_condition:
+        new_sentence, new_ner, _ = augment_anonymize(sentence, lang_id, ner, )
+        doc = {'text': new_sentence, 'ner': new_ner, 'orig_text': sentence, 'orig_ner': ner}
+    else:
+        new_sentence = sentence
+        doc = {'text': new_sentence, 'ner': ner}
+    return new_sentence, doc
+    
+ ```
+ 
 # Preloading the cache
 - For systems where there is limited access to the Internet, such as the JZ supercomptuers, you will want to preload the models.
 - The below command will load the various models needed to run the code for the specific language. 
