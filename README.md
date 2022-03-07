@@ -223,6 +223,7 @@ def apply_anonymization(
         sentence=sentence,
         src_lang=lang_id,
         device=device,
+        tag_type=tag_type,
     )
     ner = list(set(ner_ids + ner_persons))
     ner.sort(key=lambda a: a[1])
