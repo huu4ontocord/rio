@@ -2,7 +2,7 @@
 Muliwai (pronounced: mu-lee-why, meaning river in Hawaiian) is a library for text pre-processing, augmentation, anonymization, and synthesis. It is intended to be used to process text datasets for training NLP models. 
 
 # Disclaimer
-While we have code to detect and anonymize PII in this library, the intention of the library is to create better text training datasets, and NOT to generally protect PII, and this library is NOTE intended as a genearl PII protection engine. 
+While we have code to detect and anonymize PII in this library, the intention of the library is to create better text training datasets, and NOT to generally protect PII, and this library is NOT intended as a genearl PII protection engine. 
 
 # What is it
 Muliwai was written in part to support the privacy data-tooling efforts of the BigScience workshop(https://github.com/bigscience-workshop/data_tooling) and the PII hackathon conducted by the AISC community (https://github.com/Aggregate-Intellect/bigscience_aisc_pii_detection), but has grown beyond this. There are several utilities for performing NER and assocaited augmentation and anonymization. In theory, Muliwai can do NER in most of the languages supported by XLMRoberta & M2M100 (100+ languages). However, we have not tested various languages beyond: ar, ur, bn, hi, eu, ca, vi, zh, fr, id, es, pt,  sw, yo. 
