@@ -158,7 +158,9 @@ optional arguments:
                         tag types for anonymization
   -force_gpu FORCE_GPU  Force usage of GPU
   -force_cpu FORCE_CPU  Force usage of CPU
-  -preload_cache        Preload the cache of models and data  ```
+  -preload_cache        Preload the cache of models and data  
+  
+  ```
 
 # Using the API
 
