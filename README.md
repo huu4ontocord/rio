@@ -324,6 +324,7 @@ Special thanks to these people not just for code contributions but for comments 
 - @paulovn
 - @PierreColombo
 - @piesauce
+- @mmitchellai
 - @shamikbose
 
 # Acknowledgements
