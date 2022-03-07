@@ -37,6 +37,22 @@ python -m spacy download pt_core_news_sm
 python -m spacy download zh_core_web_sm
 
 ```
+
+To experimental with adress detection, you should also insall libpostal:
+
+```
+sudo apt-get install curl autoconf automake libtool pkg-config
+git clone https://github.com/openvenues/libpostal
+cd libpostal
+make distclean
+./bootstrap.sh
+./configure --datadir=/content/libpostal_data
+make -j4
+sudo make install
+pip install postal
+cp /usr/local/lib/libpostal.so /usr/lib/libpostal.so.1
+```
+ 
 # Running
 If no filenames are passed, the sample data from turkunlp_data/{src_lang}.jsonl.gz will be loaded. The below runs on a sample of 30 documents only.
 ```
