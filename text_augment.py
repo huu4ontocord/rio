@@ -2409,7 +2409,7 @@ class TextAugment:
         shard_num, total_shards = [int(a) for a in shard_range.split("/")]
       else:
         shard_num = 1 
-        tota_shards = -1
+        total_shards = -1
       
       if cutoff is None: cutoff = -1
       
