@@ -116,10 +116,15 @@ def detect_in_dictionary(text, src_lang="en", stopwords=None, tag_type={'PERSON'
         Returns the tokenized text along with word to ner label mapping
         for words in this text.
         """
-        global lexicon
+        global lexicon, default_data_dir
+        
         if dictionary is None:
           if lexicon is None:
-             lexicon = json.load(open(default_data_dir+"/lexicon.json"))
+             if os.path.exists(default_data_dir+"/lexicon.json.gz"):
+                 with gzip.open(default_data_dir+"/lexicon.json.gz", 'r') as fin:
+                    lexicon = json.loads(fin.read().decode('utf-8'))
+                else:
+                    lexicon = json.load(open(default_data_dir+"/lexicon.json", "rb"))
           dictionary = lexicon
         if stopwords is None:
           stopwords = all_stopwords.get(src_lang, {})
