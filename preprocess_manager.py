@@ -15,6 +15,7 @@ def check_good_sentence(s, src_lang, stopwords, show_err=False, lang_groups=[], 
     s = s.lower().strip()
     good_sentence = True
     if not s:
+      good_sentence = False
       if ret_score: return good_sentence, junk_score, flagged_score, banned_score, stopword_score
       return good_sentence
     junk_score = len([s2 for s2 in s if s2 in junk])/len(s)
@@ -26,6 +27,7 @@ def check_good_sentence(s, src_lang, stopwords, show_err=False, lang_groups=[], 
       s_arr = [s2.strip(special_char) for s2 in s.lower().split() if s2.strip(special_char)]
     len_s = len(s_arr)
     if len_s == 0:
+      good_sentence = False
       if ret_score: return good_sentence, junk_score, flagged_score, banned_score, stopword_score
       return good_sentence
     if flagged_words:
