@@ -1747,9 +1747,9 @@ class TextAugment:
         for doc in docs.values():
           doc[target_ner_key] = ner = doc.get(target_ner_key, {})
           if True:
-            chunk2ner = detect_in_dictionary(doc[target_text_key])
+            ner_tuples = detect_in_dictionary(doc[target_text_key])
             onto_items = []
-            for c, label in chunk2ner.items():
+            for c, start, end, label in ner_tuples:
               if label not in ("PUBLIC_FIGURE",): continue # hard coded to only do famous people for now. we will depend on the other models to detect other NERs
               ner_word  = c[0].replace(" ", "").replace("_", "").replace("_", "") if cjk_detect(c[0]) else c[0].replace("_", " ").replace("_", " ").rstrip(strip_chars)
               if ner_word.lower() not in stopwords2:
@@ -1757,7 +1757,7 @@ class TextAugment:
                 onto_items.append(((ner_word, c[1], c[1] + len(ner_word)), label))
             for ner_mention, label in list(set(onto_items)):
                 aHash = ner.get(ner_mention, {})
-                aHash[(label, 'dict')] = aHash.get((label, 'dict'), 0) + dictionary_weight * TextAugment.onto_weights.get(target_lang, 0.5) * backtrans_weight
+                aHash[(label, 'dict')] = aHash.get((label, 'dict'), 0) + dictionary_weight * backtrans_weight
                 ner[ner_mention] = aHash
 
     if do_spacy:
