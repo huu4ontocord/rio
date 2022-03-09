@@ -68,7 +68,7 @@ from banned_words import *
 from char_manager import *
 import regex_manager
 from cjk import cjk_detect
-from ontology.ontology_manager import OntologyManager
+from dictionary_manager import detect_in_dictionary
 try:
   if not stopwords:
     from stopwords import stopwords
@@ -211,27 +211,6 @@ class TextAugment:
   max_stoword_len_ja = max([0]+[len(a) for a in stopwords.get('ja', [])])
   stopwords_en = set(stopwords.get('en',[]))
   cache_dir = None
-  #currently the ontology is better in some languages than others. let's use this to weigh its decisions
-  onto_weights = {'ar': 0.7,
-     'as': 0.4608695652173913,
-     'bn': 0.8617210682492582,
-     'ca': 0.828310502283105,
-     'en': 0.7486245641224332,
-     'es': 0.7927480471027166,
-     'eu': 0.7512268618166165,
-     'fr': 0.906392199349946,
-     'gu': 0.5492063492063493,
-     'hi': 0.9072243346007605,
-     'id': 0.8701458901672401,
-     'ig': 0.9733333333333334,
-     'mr': 0.7801952580195257,
-     'pa': 0.3739130434782609,
-     'pt': 0.8598342782381161,
-     'sw': 0.7892857142857144,
-     'ur': 0.9623066104078761,
-     'vi': 0.8259711431742509,
-     'yo': 0.8341463414634145,
-     'zh': 0.5014218009478673}
 
   def __init__(self, device=None, single_process=1, available_device_model=None, labse=None,  translation_pipelines=None, ner_model_name2pipelines=None, en_spacy_nlp=None, faker_en_list=None, qg=None, cache_dir=None):
     if cache_dir is None:
@@ -1485,7 +1464,7 @@ class TextAugment:
                           target_lang=None,
                           do_spacy = True,
                           do_hf_ner = True,
-                          do_ontology = True,
+                          do_dictionary = True,
                           do_backtrans=False,
                           do_augment=False,
                           do_anonymization=False,
@@ -1494,7 +1473,7 @@ class TextAugment:
                           do_marian_mt=True,
                           batch_size = 5,
                           num_words_per_chunk=70,
-                          ontology_weight=0.85,
+                          dictionary_weight=0.85,
                           spacy_weight=1.00,
                           hf_ner_weight=1.25,
                           regex_weight=1.5,
@@ -1575,11 +1554,7 @@ class TextAugment:
           pass
     model = None
     ner_pipelines = []
-    
-    ontology_manager = None
-    if do_ontology:
-       ontology_manager = OntologyManager(target_lang) 
-    
+
     # init the kenlm pipeline
     if do_kenlm:
         if target_lang not in kenlm_models["wikipedia" if target_lang not in ('ig', 'zu', 'ny', 'sn', "st") else "mc4"]:
@@ -1767,12 +1742,12 @@ class TextAugment:
     if do_regex:
       docs = self.apply_regex_ner(target_lang, docs=docs, weight=regex_weight, text_key=target_text_key, ner_key=target_ner_key)
 
-    if do_ontology and ontology_manager is not None:
+    if do_dictionary:
         # dictionary matching context independent so has lower accuracies
         for doc in docs.values():
           doc[target_ner_key] = ner = doc.get(target_ner_key, {})
           if True:
-            chunk2ner = ontology_manager.detect(doc[target_text_key])
+            chunk2ner = detect_in_dictionary(doc[target_text_key])
             onto_items = []
             for c, label in chunk2ner.items():
               if label not in ("PUBLIC_FIGURE",): continue # hard coded to only do famous people for now. we will depend on the other models to detect other NERs
@@ -1782,7 +1757,7 @@ class TextAugment:
                 onto_items.append(((ner_word, c[1], c[1] + len(ner_word)), label))
             for ner_mention, label in list(set(onto_items)):
                 aHash = ner.get(ner_mention, {})
-                aHash[(label, 'onto')] = aHash.get((label, 'onto'), 0) + ontology_weight * TextAugment.onto_weights.get(target_lang, 0.5) * backtrans_weight
+                aHash[(label, 'dict')] = aHash.get((label, 'dict'), 0) + dictionary_weight * TextAugment.onto_weights.get(target_lang, 0.5) * backtrans_weight
                 ner[ner_mention] = aHash
 
     if do_spacy:
@@ -2130,7 +2105,7 @@ class TextAugment:
               src_lang = None,
               do_spacy = True,
               do_hf_ner = True,
-              do_ontology = True,
+              do_dictionary = True,
               do_skip_src_lang_processing=False,
               do_backtrans=False,
               do_augment=False,
@@ -2142,7 +2117,7 @@ class TextAugment:
               do_regex = True,
               batch_size = 5,
               num_words_per_chunk=70,
-              ontology_weight=0.85,
+              dictionary_weight=0.85,
               spacy_weight=1.00,
               hf_ner_weight=1.25,
               regex_weight=1.5,
@@ -2297,7 +2272,7 @@ class TextAugment:
                           target_lang=src_lang,
                           do_spacy = do_spacy,
                           do_hf_ner = do_hf_ner,
-                          do_ontology = do_ontology,
+                          do_dictionary = do_dictionary,
                           do_backtrans=False,
                           do_augment=False,
                           do_anonymization=do_anonymization if target_lang == src_lang else False,
@@ -2306,7 +2281,7 @@ class TextAugment:
                           do_regex = do_regex,
                           do_cleanup=do_cleanup,
                           batch_size = batch_size,
-                          ontology_weight=ontology_weight,
+                          dictionary_weight=dictionary_weight,
                           spacy_weight=spacy_weight,
                           hf_ner_weight=hf_ner_weight,
                           regex_weight=regex_weight,
@@ -2326,7 +2301,7 @@ class TextAugment:
                             target_lang = target_lang,
                             do_spacy = do_spacy,
                             do_hf_ner = do_hf_ner,
-                            do_ontology = do_ontology,
+                            do_dictionary = do_dictionary,
                             do_backtrans=do_backtrans,
                             do_augment=False,
                             do_anonymization=do_anonymization,
@@ -2336,7 +2311,7 @@ class TextAugment:
                             do_kenlm = do_kenlm,
                             do_marian_mt=do_marian_mt,
                             batch_size = batch_size,
-                            ontology_weight=ontology_weight,
+                            dictionary_weight=dictionary_weight,
                             spacy_weight=spacy_weight,
                             hf_ner_weight=hf_ner_weight,
                             regex_weight=regex_weight,
@@ -2364,7 +2339,7 @@ class TextAugment:
                             target_lang = augment_lang,
                             do_spacy = do_spacy,
                             do_hf_ner = do_hf_ner,
-                            do_ontology = do_ontology,
+                            do_dictionary = do_dictionary,
                             do_backtrans=False,
                             do_augment=do_augment,
                             do_marian_mt=do_marian_mt,
@@ -2374,7 +2349,7 @@ class TextAugment:
                             do_qg_rel=do_qg_rel and augment_lang == 'en',
                             do_kenlm = do_kenlm,
                             batch_size = batch_size,
-                            ontology_weight=ontology_weight,
+                            dictionary_weight=dictionary_weight,
                             spacy_weight=spacy_weight,
                             hf_ner_weight=hf_ner_weight,
                             regex_weight=regex_weight,
@@ -2626,7 +2601,7 @@ class TextAugment:
                     hfdataset=None,
                     do_spacy = True,
                     do_hf_ner = True,
-                    do_ontology = True,
+                    do_dictionary = True,
                     do_skip_src_lang_processing=False,
                     do_backtrans=False,
                     do_augment=False,
@@ -2637,7 +2612,7 @@ class TextAugment:
                     do_marian_mt = True,
                     batch_size = 5,
                     num_words_per_chunk=70,
-                    ontology_weight=0.85,
+                    dictionary_weight=0.85,
                     spacy_weight=1.00,
                     hf_ner_weight=1.25,
                     regex_weight=1.5,
@@ -2683,7 +2658,7 @@ class TextAugment:
                     target_lang=target_lang,
                     do_spacy = do_spacy ,
                     do_hf_ner = do_hf_ner ,
-                    do_ontology = do_ontology,
+                    do_dictionary = do_dictionary,
                     do_skip_src_lang_processing=do_skip_src_lang_processing,
                     do_backtrans=do_backtrans,
                     do_augment=do_augment,
@@ -2693,7 +2668,7 @@ class TextAugment:
                     do_regex = do_regex ,
                     do_marian_mt = do_marian_mt,
                     num_words_per_chunk=num_words_per_chunk,
-                    ontology_weight=ontology_weight,
+                    dictionary_weight=dictionary_weight,
                     spacy_weight=spacy_weight,
                     hf_ner_weight=hf_ner_weight,
                     regex_weight=regex_weight,
@@ -2717,7 +2692,7 @@ class TextAugment:
                     hfdataset=None,
                     do_spacy = True,
                     do_hf_ner = True,
-                    do_ontology = True,
+                    do_dictionary = True,
                     do_skip_src_lang_processing=False,
                     do_backtrans=False,
                     do_augment=False,
@@ -2728,7 +2703,7 @@ class TextAugment:
                     do_marian_mt = True,
                     batch_size = 5,
                     num_words_per_chunk=70,
-                    ontology_weight=0.85,
+                    dictionary_weight=0.85,
                     spacy_weight=1.00,
                     hf_ner_weight=1.25,
                     regex_weight=1.5,
@@ -2779,7 +2754,7 @@ class TextAugment:
                                                       target_lang=target_lang,
                                                       do_spacy = do_spacy ,
                                                       do_hf_ner = do_hf_ner ,
-                                                      do_ontology = do_ontology,
+                                                      do_dictionary = do_dictionary,
                                                       do_skip_src_lang_processing=do_skip_src_lang_processing,
                                                       do_backtrans=do_backtrans,
                                                       do_augment=do_augment,
@@ -2789,7 +2764,7 @@ class TextAugment:
                                                       do_regex = do_regex ,
                                                       do_marian_mt = do_marian_mt,
                                                       num_words_per_chunk=num_words_per_chunk,
-                                                      ontology_weight=ontology_weight,
+                                                      dictionary_weight=dictionary_weight,
                                                       spacy_weight=spacy_weight,
                                                       hf_ner_weight=hf_ner_weight,
                                                       regex_weight=regex_weight,
