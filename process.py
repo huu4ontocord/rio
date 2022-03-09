@@ -65,20 +65,31 @@ except:
  
 from text_augment import *
 
-
-print('__Python VERSION:', sys.version)
-print('__pyTorch VERSION:', torch.__version__)
-print('__CUDA VERSION')
 from subprocess import call
-print('__CUDNN VERSION:', torch.backends.cudnn.version())
-print('__Number CUDA Devices:', torch.cuda.device_count())
-print('__Devices')
-call(["nvidia-smi", "--format=csv", "--query-gpu=index,name,driver_version,memory.total,memory.used,memory.free"])
-print('Active CUDA Device: GPU', torch.cuda.current_device())
 
-print ('Available devices ', torch.cuda.device_count())
-print ('Current cuda device ', torch.cuda.current_device())
+logger.info(('__Python VERSION:', sys.version))
 
+logger.info(('__pyTorch VERSION:', torch.__version__))
+try:
+  
+  logger.info('__CUDA VERSION')
+    
+  logger.info(('__CUDNN VERSION:', torch.backends.cudnn.version()))
+    
+  logger.info(('__Number CUDA Devices:', torch.cuda.device_count()))
+    
+  logger.info('__Devices')
+    
+  call(["nvidia-smi", "--format=csv", "--query-gpu=index,name,driver_version,memory.total,memory.used,memory.free"])
+    
+  logger.info(('Active CUDA Device: GPU', torch.cuda.current_device()))
+
+    
+  logger.info(('Available devices ', torch.cuda.device_count()))
+    
+  logger.info(('Current cuda device ', torch.cuda.current_device()))
+except:
+  pass
 if __name__ == "__main__":
   in_notebook = 'google.colab' in sys.modules
   if not in_notebook:
@@ -101,13 +112,13 @@ if __name__ == "__main__":
     parser.add_argument('-num_workers', dest='num_workers', type=int, help='Num of Workers', default = 1)
     parser.add_argument('-do_spacy_only', dest='do_spacy_only', type=int, help='Wether to only apply a spacy model', default = 0)
     parser.add_argument('-do_hf_ner_only', dest='do_hf_ner_only', type=int, help='Wether to only apply a huggingface NER model', default = 0)
-    parser.add_argument('-do_dictionary_only', dest='do_ontology_only', type=int, help='Wether to only use an dictionary', default = 0)
+    parser.add_argument('-do_dictionary_only', dest='do_dictionary_only', type=int, help='Wether to only use an dictionary', default = 0)
     parser.add_argument('-do_regex_only', dest='do_regex_only', type=int, help='Wether to only  apply regex models', default = 0)
     parser.add_argument('-do_qg_rel_only', dest='do_qg_rel_only', type=int, help='Wether to only infer a relationship between PII entities based an question generation (EXPERIMENTAL)', default = 0)
     parser.add_argument('-do_spacy', dest='do_spacy', type=int, help='Wether or not to apply a spacy model', default = 1)
     parser.add_argument('-do_skip_src_lang_processing', dest='do_skip_src_lang_processing', type=int, help='Wether or not to skip NER for src_lang (assumes NER is already perfored in the data provided)', default = 0)
     parser.add_argument('-do_hf_ner', dest='do_hf_ner', type=int, help='Wether or not to apply a huggingface NER model', default = 1)
-    parser.add_argument('-do_dictionary', dest='do_ontology', type=int, help='Wether or not to use a dictionary', default = 1)
+    parser.add_argument('-do_dictionary', dest='do_dictionary', type=int, help='Wether or not to use a dictionary', default = 1)
     parser.add_argument('-do_trans', dest='do_trans', type=int, help='Wether or not to do translation (setting to 0 will make src_lang == target_lang)', default = 1)
     parser.add_argument('-do_backtrans', dest='do_backtrans', type=int, help='Wether or not to do back translation', default = 1)
     parser.add_argument('-do_augment', dest='do_augment', type=int, help='Wether or not to do translation augmentation', default = 0)
@@ -120,7 +131,7 @@ if __name__ == "__main__":
     parser.add_argument('-do_kenlm', dest='do_kenlm', type=int, help='Wether or not to apply a KenLM model to decide if a name is a common person name', default = 1)
     parser.add_argument('-do_qg_rel', dest='do_qg_rel', type=int, help='Wether or not to infer a relationship between PII entities based an question generation (EXPERIMENTAL)', default = 0)
     parser.add_argument('-num_words_per_chunk', dest='num_words_per_chunk', type=int, help='number of words per chunk', default=70)
-    parser.add_argument('-dictionary_weight', dest='ontology_weight', type=float, help='Weight given to the dictionary model', default=0.85)
+    parser.add_argument('-dictionary_weight', dest='dictionary_weight', type=float, help='Weight given to the dictionary model', default=0.85)
     parser.add_argument('-spacy_weight', dest='spacy_weight', type=float, help='weight given to a spacy decision', default=1.00)
     parser.add_argument('-hf_ner_weight', dest='hf_ner_weight', type=float, help='weight given to a hf model decision', default=1.25)
     parser.add_argument('-regex_weight', dest='regex_weight', type=float, help='weight given to a regex decision', default=1.5)
@@ -142,7 +153,7 @@ if __name__ == "__main__":
       args.do_hf_ner = False
       args.do_regex = False
       args.do_qg_rel = False
-      args.do_ontology_only = False
+      args.do_dictionary_only = False
       args.do_backtrans = False
       args.do_trans = False
       args.target_lang = args.src_lang
@@ -153,7 +164,7 @@ if __name__ == "__main__":
       args.do_hf_ner = False
       args.do_regex = True
       args.do_qg_rel = False
-      args.do_ontology_only = False
+      args.do_dictionary_only = False
       args.do_backtrans = False
       args.do_trans = False
       args.target_lang = args.src_lang
@@ -164,7 +175,7 @@ if __name__ == "__main__":
       args.do_hf_ner = True
       args.do_regex = False
       args.do_qg_rel = False
-      args.do_ontology_only = False
+      args.do_dictionary_only = False
       args.do_backtrans = False
       args.do_trans = False
       args.target_lang = args.src_lang
@@ -177,18 +188,18 @@ if __name__ == "__main__":
       args.do_backtrans = False
       args.do_trans = False
       args.do_qg_rel = True
-      args.do_ontology_only = False
+      args.do_dictionary_only = False
       args.target_lang = args.src_lang
       args.do_anonymization = False
       args.do_augmentation = False
-    elif args.do_ontology_only:
+    elif args.do_dictionary_only:
       args.do_spacy = False
       args.do_hf_ner = False
       args.do_regex = False
       args.do_backtrans = False
       args.do_trans = False
       args.do_qg_rel = False
-      args.do_ontology_only = True
+      args.do_dictionary_only = True
       args.target_lang = args.src_lang
       args.do_anonymization = False
       args.do_augmentation = False
@@ -231,7 +242,7 @@ if __name__ == "__main__":
                     hfdataset=args.hfdataset,
                     do_spacy = args.do_spacy ,
                     do_hf_ner = args.do_hf_ner ,
-                    do_ontology = args.do_ontology,
+                    do_dictionary = args.do_dictionary,
                     do_skip_src_lang_processing=args.do_skip_src_lang_processing,
                     do_backtrans=args.do_backtrans,
                     do_augment=args.do_augment,
@@ -241,7 +252,7 @@ if __name__ == "__main__":
                     do_regex = args.do_regex ,
                     do_marian_mt = args.do_marian_mt,
                     num_words_per_chunk=args.num_words_per_chunk,
-                    ontology_weight=args.ontology_weight,
+                    dictionary_weight=args.dictionary_weight,
                     spacy_weight=args.spacy_weight,
                     hf_ner_weight=args.hf_ner_weight,
                     regex_weight=args.regex_weight,
@@ -263,7 +274,7 @@ if __name__ == "__main__":
                     hfdataset=args.hfdataset,
                     do_spacy = args.do_spacy ,
                     do_hf_ner = args.do_hf_ner ,
-                    do_ontology = args.do_ontology,
+                    do_dictionary = args.do_dictionary,
                     do_skip_src_lang_processing=args.do_skip_src_lang_processing,
                     do_backtrans=args.do_backtrans,
                     do_augment=args.do_augment,
@@ -273,7 +284,7 @@ if __name__ == "__main__":
                     do_regex = args.do_regex ,
                     do_marian_mt = args.do_marian_mt,
                     num_words_per_chunk=args.num_words_per_chunk,
-                    ontology_weight=args.ontology_weight,
+                    dictionary_weight=args.dictionary_weight,
                     spacy_weight=args.spacy_weight,
                     hf_ner_weight=args.hf_ner_weight,
                     regex_weight=args.regex_weight,
