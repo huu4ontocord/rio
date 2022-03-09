@@ -52,18 +52,24 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(
     format='%(asctime)s : %(processName)s : %(levelname)s : %(message)s',
     level=logging.INFO)
-
 try:
-  sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                           os.path.pardir)))
+    sys.path.append(os.path.abspath(os.path.dirname(__file__)))         
 except:
-  sys.path.append(os.path.abspath(os.path.join("./",
-                                           os.path.pardir)))
+    pass
 from cjk import *
 from char_manager import *
 from stopwords import stopwords as all_stopwords
+
+try:
+  onto_dir = os.path.dirname(__file__)
+except:
+  onto_dir = "./"
+
 default_data_dir = os.path.abspath(os.path.join(onto_dir, "data"))
-    
+trannum = str.maketrans("0123456789", "1111111111")
+mt5_underscore = "▁"
+
+word2ngram = None
 mt5_tokenizer = None
 lexicon = None
 
@@ -87,15 +93,20 @@ def cjk_tokenize_text(text, connector="_"):
                         words2[-1] += word
                     continue
             words2.append(word)
-        text = connector.join(words2).replace(mt5_underscore, " ").replace("  ", " ").replace("  ", " ").strip()
+        text = " ".join(words2).replace(mt5_underscore, " ").replace("  ", " ").replace("  ", " ").strip()
         return text
 
-      
-def detect_in_dictionary(text, src_lang="en", stopwords=None, tag_type={'PERSON', 'PUBLIC_FIGURE'}, dictionary=None, connector="_", word2ngram=None, supress_cjk_tokenize=False, check_person_org_loc_caps=True, collapse_consecutive_ner=False, fix_abbreviations=True, label2label=None):
+def has_nonstopword(wordArr, stopwords):
+        for word in wordArr:
+            if word.strip(strip_chars) not in stopwords:
+                return True
+        return False
+
+def detect_in_dictionary(text, src_lang="en", stopwords=None, tag_type={'PERSON', 'PUBLIC_FIGURE'}, dictionary=None, connector="_", w2ngram=None, supress_cjk_tokenize=False, check_person_org_loc_caps=True, collapse_consecutive_ner=False, fix_abbreviations=True, label2label=None):
         """
         :text: the text to detect NER in. 
         :dictionary: word->label
-        :word2ngram: startword->(min_ngram, max_ngram)
+        :w2ngram: startword->(min_ngram, max_ngram)
         :src_lang: the language of this text if known
         :stopwords: the stopwrods for src_lang
         :connector: the connector to use between words in a compound word
@@ -120,10 +131,10 @@ def detect_in_dictionary(text, src_lang="en", stopwords=None, tag_type={'PERSON'
         
         if dictionary is None:
           if lexicon is None:
-             if os.path.exists(default_data_dir+"/lexicon.json.gz"):
+              if os.path.exists(default_data_dir+"/lexicon.json.gz"):
                  with gzip.open(default_data_dir+"/lexicon.json.gz", 'r') as fin:
                     lexicon = json.loads(fin.read().decode('utf-8'))
-                else:
+              else:
                     lexicon = json.load(open(default_data_dir+"/lexicon.json", "rb"))
           dictionary = lexicon
         if stopwords is None:
@@ -134,28 +145,31 @@ def detect_in_dictionary(text, src_lang="en", stopwords=None, tag_type={'PERSON'
         sent = text.strip().split()
         len_sent = len(sent)
         pos = 0
+        ners = []
         for i in range(len_sent - 1):
-            #print (i, sent[i], sent)
             if sent[i] is None: continue
             start_word = sent[i].lower().lstrip(strip_chars)
             if start_word in stopwords:
                 pos += len(sent[i]) + 1
                 continue
             start_word = start_word.translate(trannum).split(connector)[0]
-            start_word = start_word if len(start_word) <= word_shingle_cutoff else start_word[:word_shingle_cutoff]
-            ngram_start, ngram_end = (1,5) if not word2ngram else word2ngram.get(start_word, (1,5))
+            if  w2ngram:
+              start_end = w2ngram.get(start_word)
+              if not start_end: continue
+              ngram_start, ngram_end = start_end
+            else:
+              ngram_start, ngram_end = 5, 1
             if ngram_start > 0:
                 for j in range(ngram_start - 1, ngram_end - 2, -1):
                     if len_sent - i > j:
                         wordArr = sent[i:i + 1 + j]
-                        new_word = connector.join(wordArr).strip(strip_chars)
-                        if not has_nonstopword(wordArr): break
+                        new_word = connector.join(wordArr).strip(strip_chars).lower().replace("-", "_").replace(mt5_underscore, "_")
+                        if not has_nonstopword(wordArr, stopwords): break
                         # we don't match sequences that start and end with stopwords
                         if wordArr[-1].lower() in stopwords: continue
                         label = dictionary.get(new_word)  
 
                         if label is not None:
-                          #check_person_org_gpe_caps
                           # fix abbreviations - this is very general
                           if fix_abbreviations:
                             len_last_word =  len(sent[i + j])
@@ -168,23 +182,19 @@ def detect_in_dictionary(text, src_lang="en", stopwords=None, tag_type={'PERSON'
                             new_word = new_word.replace(" ", connector)
                             is_caps = wordArr[0][0] == wordArr[0][0].upper() and wordArr[-1][0] == wordArr[-1][0].upper()
                             if check_person_org_loc_caps and not is_caps and (
-                                  "PUBLIC_FIGURE" in label or "PERSON" in label or "ORG" in label or "GPE" in label):
+                                  "PUBLIC_FIGURE" in label or "PERSON" in label or "ORG" in label or "LOC" in label):
                               continue
                               
                             if new_word not in stopwords:
-                                #print ('found word', new_word)
                                 sent[i] = new_word
-                                ners.append([new_word, pos, pos + len(new_word), label])
+                                ners.append([text[pos: pos+len(new_word)], pos, pos + len(new_word), label])
                                 for k in range(i + 1, i + j + 1):
                                     sent[k] = None
-                                #print (sent)
                                 break
                           else:
-                            #print ('****', len(new_word))
-                            if len(new_word) <  20 and new_word.count(' ') < 3: #make this a param
+                            if len(new_word) <  20 and new_word.count(' ') < 3: #make 20, 3 a param
                               #if this is a very long word we found, give the tokenizer a chance to find embedded NERs
                               if new_word not in stopwords:
-                                  #print ('found word, but not labeling', label, new_word)
                                   sent[i] = new_word
                                   for k in range(i + 1, i + j + 1):
                                       sent[k] = None
@@ -193,21 +203,19 @@ def detect_in_dictionary(text, src_lang="en", stopwords=None, tag_type={'PERSON'
 
         #collapse NER types if consecutive predictions are the same
         if collapse_consecutive_ner is not None:
-          #print ("collapsing")
           prev_ner = None
           ners2 = []
           for a_ner in ners:
-            #print (prev_ner, ner)
             if prev_ner and a_ner[-1] == prev_ner[-1] and  prev_ner[-1] in collapse_consecutive_ner and ((prev_ner[2] == a_ner[1]) or (prev_ner[2] == a_ner[1]-1)):
               if  (prev_ner[2] == ner[1]-1): 
                 ners2[-1][0] += (connector if text[a_ner[1]-1]==' ' else  text[a_ner[1]-1])+ a_ner[0]
               else:
                 ners2[-1][0] += a_ner[0]
-              ners2[-1][2]= a_ner[0][2
+              ners2[-1][2]= a_ner[0][2]
               prev_ner = a_ner
               continue
             prev_ner = a_ner
             ners2.append(a_ner)
           ners = ners2
 
-        return ners
+        return [tuple(a) for a in ners]
