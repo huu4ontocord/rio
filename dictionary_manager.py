@@ -91,7 +91,7 @@ def cjk_tokenize_text(text, connector="_"):
         return text
 
       
-def detect(text, word2ngram=None, src_lang="en", stopwords=None, connector="_", tag_type={'PERSON', 'PUBLIC_FIGURE'}, dictionary=None, supress_cjk_tokenize=False, check_person_org_loc_caps=True, collapse_consecutive_ner=False, fix_abbreviations=True, label2label=None):
+def detect_in_dictionary(text, src_lang="en", stopwords=None, tag_type={'PERSON', 'PUBLIC_FIGURE'}, dictionary=None, connector="_", word2ngram=None, supress_cjk_tokenize=False, check_person_org_loc_caps=True, collapse_consecutive_ner=False, fix_abbreviations=True, label2label=None):
         """
         :text: the text to detect NER in. 
         :dictionary: word->label
