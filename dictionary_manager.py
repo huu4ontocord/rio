@@ -62,8 +62,10 @@ except:
 from cjk import *
 from char_manager import *
 from stopwords import stopwords as all_stopwords
+default_data_dir = os.path.abspath(os.path.join(onto_dir, "data"))
+    
 mt5_tokenizer = None
-from data.lexicon import lexicon
+lexicon = None
 
 def cjk_tokenize_text(text, connector="_"):
         """ tokenize using mt5. meant for cjk languages"""
@@ -114,7 +116,10 @@ def detect(text, word2ngram=None, src_lang="en", stopwords=None, connector="_", 
         Returns the tokenized text along with word to ner label mapping
         for words in this text.
         """
+        global lexicon
         if dictionary is None:
+          if lexicon is None:
+             lexicon = json.load(open(default_data_dir+"/lexicon.json"))
           dictionary = lexicon
         if stopwords is None:
           stopwords = all_stopwords.get(src_lang, {})
@@ -153,6 +158,7 @@ def detect(text, word2ngram=None, src_lang="en", stopwords=None, connector="_", 
                               new_word = new_word + "."
                           label = label if not label2label else label2label.get(label, label)
                           if new_word in stopwords: continue
+                                
                           if (tag_type is None or label in tag_type) :
                             new_word = new_word.replace(" ", connector)
                             is_caps = wordArr[0][0] == wordArr[0][0].upper() and wordArr[-1][0] == wordArr[-1][0].upper()
