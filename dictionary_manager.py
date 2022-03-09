@@ -64,7 +64,7 @@ try:
   onto_dir = os.path.dirname(__file__)
 except:
   onto_dir = "./"
-
+strip_chars_set = set(strip_chars)
 default_data_dir = os.path.abspath(os.path.join(onto_dir, "data"))
 trannum = str.maketrans("0123456789", "1111111111")
 mt5_underscore = "▁"
@@ -119,7 +119,7 @@ def detect_in_dictionary(text, src_lang="en", stopwords=None, tag_type={'PERSON'
         
         Returns: a  list of 4 tuples of [(entity, start, end, label)...
         
-        This function detect NER in a text using a simple dictionary lookup. 
+        This function detects NER in a text using a simple dictionary lookup. 
         For compound words, transform into single word sequence, with a word potentially
         having a connector seperator.  Optionally, use the mt5 tokenizer
         to separate the words into subtokens first, and then do multi-word
@@ -137,6 +137,8 @@ def detect_in_dictionary(text, src_lang="en", stopwords=None, tag_type={'PERSON'
               else:
                     lexicon = json.load(open(default_data_dir+"/lexicon.json", "rb"))
           dictionary = lexicon
+        if not dictionary: return []
+
         if stopwords is None:
           stopwords = all_stopwords.get(src_lang, {})
         labels = []
@@ -146,6 +148,7 @@ def detect_in_dictionary(text, src_lang="en", stopwords=None, tag_type={'PERSON'
         len_sent = len(sent)
         pos = 0
         ners = []
+        
         for i in range(len_sent - 1):
             if sent[i] is None: continue
             start_word = sent[i].lower().lstrip(strip_chars)
@@ -207,7 +210,7 @@ def detect_in_dictionary(text, src_lang="en", stopwords=None, tag_type={'PERSON'
           ners2 = []
           for a_ner in ners:
             if prev_ner and a_ner[-1] == prev_ner[-1] and  prev_ner[-1] in collapse_consecutive_ner and ((prev_ner[2] == a_ner[1]) or (prev_ner[2] == a_ner[1]-1)):
-              if  (prev_ner[2] == ner[1]-1): 
+              if  (prev_ner[2] == a_ner[1]-1): 
                 ners2[-1][0] += (connector if text[a_ner[1]-1]==' ' else  text[a_ner[1]-1])+ a_ner[0]
               else:
                 ners2[-1][0] += a_ner[0]
