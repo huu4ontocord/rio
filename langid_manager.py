@@ -10,8 +10,10 @@ def get_lang_groups(src_lang):
       lang_groups = ['mr', 'ne', 'hi', ]
     elif src_lang in ('fr', 'br'):
       lang_groups = ['fr','la', 'br' ]
-    elif src_lang in ('pt', 'es', 'oc', 'ca', 'eu', 'an', 'gl' ):
-      lang_groups = ['pt', 'es', 'oc', 'ca', 'eu', 'an', 'gl', 'la' ]
+    elif src_lang in ('pt', ):
+      lang_groups = ['pt','la', 'gl' ]
+    elif src_lang in ('eo', 'es', 'oc', 'ca', 'eu', 'an', 'gl' ):
+      lang_groups = ['eo', 'es', 'oc', 'ca', 'eu', 'an', 'gl', 'la' ]
     elif src_lang in ('arz', 'ar', 'fa', 'ur', 'az', 'azb', 'ckb' ):
       lang_groups = ['arz', 'ar', 'fa', 'ur', 'az', 'azb', 'ckb' ]
     elif src_lang in ('id', 'ms', ):
