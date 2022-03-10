@@ -5,7 +5,7 @@ import multiprocessing
 
 strip_chars = " ,،、{}[]|()\"'“”《》«»!:;?.。…．"
      
-def dedup(langs, src_folder="./src_data/" dst_folder="./dst_data/", min_file_size=1_000_000, max_file_size=2_000_000_000):
+def dedup(langs, src_folder="./src_data/", dst_folder="./dst_data/", min_file_size=1_000_000, max_file_size=2_000_000_000):
   prev_lang = ""
   dup_hash = {}
   o = None
