@@ -4,8 +4,8 @@ def get_lang_groups(src_lang):
     langid can sometimes mistake languages that are in the same group. that is ok for our purpose as
     we mainly use the langid check to confirm the labels from other models. """
     lang_groups=[src_lang]
-    if src_lang in ('ig', 'sn', 'ny', 'st', 'zu', 'xh', 'rw', 'sw', 'yo'):
-      lang_groups = ['ig', 'sn', 'ny', 'st', 'zu', 'xh', 'rw', 'sw', 'yo']
+    if src_lang in ('ig', 'sn', 'ny', 'st', 'zu', 'xh', 'rw', 'sw', 'yo', 'so'):
+      lang_groups = ['ig', 'sn', 'ny', 'st', 'zu', 'xh', 'rw', 'sw', 'yo', 'so']
     elif src_lang in ('mr', 'ne', 'hi', ):
       lang_groups = ['mr', 'ne', 'hi', ]
     elif src_lang in ('fr', 'br'):
@@ -14,8 +14,8 @@ def get_lang_groups(src_lang):
       lang_groups = ['pt','la', 'gl' ]
     elif src_lang in ('eo', 'es', 'oc', 'ca', 'eu', 'an', 'gl' ):
       lang_groups = ['eo', 'es', 'oc', 'ca', 'eu', 'an', 'gl', 'la' ]
-    elif src_lang in ('arz', 'ar', 'fa', 'ur', 'az', 'azb', 'ckb' ):
-      lang_groups = ['arz', 'ar', 'fa', 'ur', 'az', 'azb', 'ckb' ]
+    elif src_lang in ('arz', 'ar', 'fa', 'ur', 'az', 'azb', 'ckb', 'ps' ):
+      lang_groups = ['arz', 'ar', 'fa', 'ur', 'az', 'azb', 'ckb', 'ps' ]
     elif src_lang in ('id', 'ms', ):
       lang_groups = ['id', 'ms',]
     elif src_lang in ('as', 'bn', 'bpy'):
@@ -40,6 +40,6 @@ def get_lang_groups(src_lang):
       lang_groups = ['de', 'lb', 'pl', 'dsb']
     elif src_lang in ('id', 'jv', 'ms', 'tl',):
       lang_groups = ['id', 'jv', 'ms', 'tl', ]
-    elif src_lang in ('av', 'ru', 'bg', 'ba', 'kk', 'uk', 'be', 'ce', 'cv'):
-      lang_groups = ['av', 'ru', 'bg', 'ba', 'kk', 'uk', 'be', 'ce', 'cv']
+    elif src_lang in ('av', 'ru', 'bg', 'ba', 'kk', 'ky', 'uk', 'be', 'ce', 'cv'):
+      lang_groups = ['av', 'ru', 'bg', 'ba', 'kk', 'ky', 'uk', 'be', 'ce', 'cv']
     return set(lang_groups)
