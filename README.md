@@ -252,6 +252,10 @@ python processor.py -src_lang zh -preload_cache
 
 ```
 
+# License
+- The source code authored by Ontocord LLC and contributed by contributors of this project is licensed under Apache 2.0.
+- The TurkuNLP sample data is based on OSCAR and mc4. See the information uder turkunlp_data for more details.
+
 # Contributors
 
 We welcome all contributions. Please feel free to send a PR. Please follow the code of conduct: https://github.com/ontocord/muliwai/blob/main/CODE_OF_CONDUCT.md 
