@@ -1,13 +1,8 @@
 # Intro
-Muliwai (pronounced: mu-lee-why, meaning river in Hawaiian) is a library for text pre-processing, augmentation, anonymization, and synthesis. It is intended to be used to process text datasets for training NLP models. 
+Rio is a library for text pre-processing, augmentation, anonymization, and synthesis. It is intended to be used to process text datasets for training NLP models. This was the original Muliwai repo but the PII code has been refactored to live in its own rep at https://www.github.com/muliwai. 
 
 # Disclaimer
 While we have code to detect and anonymize PII in this library, the intention of the library is to create better text training datasets, and NOT to generally protect PII, and this library is NOT intended as a genearl PII protection engine. 
-
-# What is it
-Muliwai was written in part to support the privacy data-tooling efforts of the BigScience workshop(https://github.com/bigscience-workshop/data_tooling) and the PII hackathon conducted by the AISC community (https://github.com/Aggregate-Intellect/bigscience_aisc_pii_detection), but has grown beyond this. There are several utilities for performing NER and assocaited augmentation and anonymization. In theory, Muliwai can do NER in most of the languages supported by XLMRoberta & M2M100 (100+ languages). However, we have not tested various languages beyond: ar, ur, bn, hi, eu, ca, vi, zh, fr, id, es, pt,  sw, yo. 
-
-There are other features, and we will create documentation soon...
 
 # How it works
 We use a transformer NER model that is good enough for the current language - in this case, a specific model for the language, or a model with some cross-lingual capabilities. Muliwai tags using the transformer, then translates the sentence to a target_lang (e.g., English), and tests to see if the translation preserves the NER tagging, and discoutns or increases the weight of an NER decision accordingly. It then performs NER in the target_lang, and back translates to the src_lang. It then matches the translate sentence to the original sentence, to determine which text spans in the *original* src_lang sentence should be NER tagged based on the target_lang NER.
