@@ -1,11 +1,11 @@
 # Intro
-Rio is a library for text pre-processing, augmentation, anonymization, and synthesis. It is intended to be used to process text datasets for training NLP models. This was the original Muliwai repo but the PII code has been refactored to live in its own rep at https://www.github.com/muliwai. 
+Rio (spanish for river) is a library for text pre-processing, augmentation, anonymization, and synthesis. It is intended to be used to process text datasets for training NLP models. This was the original Muliwai repo but the PII code has been refactored to live in its own rep at https://www.github.com/muliwai. TODO: import the muliwai as a library.
 
 # Disclaimer
 While we have code to detect and anonymize PII in this library, the intention of the library is to create better text training datasets, and NOT to generally protect PII, and this library is NOT intended as a genearl PII protection engine. 
 
 # How it works
-We use a transformer NER model that is good enough for the current language - in this case, a specific model for the language, or a model with some cross-lingual capabilities. Muliwai tags using the transformer, then translates the sentence to a target_lang (e.g., English), and tests to see if the translation preserves the NER tagging, and discoutns or increases the weight of an NER decision accordingly. It then performs NER in the target_lang, and back translates to the src_lang. It then matches the translate sentence to the original sentence, to determine which text spans in the *original* src_lang sentence should be NER tagged based on the target_lang NER.
+We use a transformer NER model that is good enough for the current language - in this case, a specific model for the language, or a model with some cross-lingual capabilities. Rio tags using the transformer, then translates the sentence to a target_lang (e.g., English), and tests to see if the translation preserves the NER tagging, and discoutns or increases the weight of an NER decision accordingly. It then performs NER in the target_lang, and back translates to the src_lang. It then matches the translate sentence to the original sentence, to determine which text spans in the *original* src_lang sentence should be NER tagged based on the target_lang NER.
 
 We also use spacy and regex as added signals for NER tags.
 
@@ -15,7 +15,7 @@ The translation techniques used are very compute heavy, and not intended to perf
 # Installing
 If you want to be able to do gender detection and coref detection, you will need to load neuralcoref below. However, you will only be able to use spacy english if you load neural coref. You can also load a larger spacy model for more accuracy but more memory.
 ```
-git clone https://github.com/ontocord/muliwai
+git clone https://github.com/ontocord/rio
 pip install https://github.com/kpu/kenlm/archive/master.zip
 pip install spacy==2.1.0 dateparser python-stdnum protobuf neuralcoref cdifflib transformers datasets langid faker sentencepiece fsspec tqdm sentence-transformers nltk
 python -m nltk.downloader punkt wordnet
@@ -24,7 +24,7 @@ python -m spacy download en_core_web_sm
 
 If you don't need gender detection and coref detection, install the below which will enable spacy for other languages. Neuralcoref will not be installed. You can also load a larger spacy model for more accuracy but more memory.
 ```
-git clone https://github.com/ontocord/muliwai
+git clone https://github.com/ontocord/rio
 pip install https://github.com/kpu/kenlm/archive/master.zip
 pip install spacy==3.1.0 dateparser python-stdnum protobuf cdifflib transformers datasets langid faker sentencepiece fsspec tqdm sentence-transformers nltk tokenizers==0.11.3
 python -m nltk.downloader punkt wordnet
@@ -54,12 +54,12 @@ cp /usr/local/lib/libpostal.so /usr/lib/libpostal.so.1
 # Running
 If no filenames are passed, the sample data from turkunlp_data/{src_lang}.jsonl.gz will be loaded. The below runs on a sample of 30 documents only.
 ```
-cd muliwai
+cd rio
 python process.py -src_lang zh -cutoff 30
 ```
 If you have more than one GPU
 ```
-cd muliwai
+cd rio
 python process.py -src_lang zh -num_workers=2 -cutoff 30
 ```
 # CLI
@@ -185,10 +185,10 @@ You can modify the regex_rulebase or pass in your own to *detect_ner_with_regex_
 The following *apply_anonymization* for example will annonymize a given text in a target language. 
 
 ```
-from muliwai.regex_manager import detect_ner_with_regex_and_context
-from muliwai.pii_regexes_rulebase import regex_rulebase
-from muliwai.ner_manager import detect_ner_with_hf_model
-from muliwai.faker_manager import augment_anonymize
+from rio.regex_manager import detect_ner_with_regex_and_context
+from rio.pii_regexes_rulebase import regex_rulebase
+from rio.ner_manager import detect_ner_with_hf_model
+from rio.faker_manager import augment_anonymize
 def apply_anonymization(
     sentence: str,
     lang_id: str,
@@ -242,7 +242,7 @@ def apply_anonymization(
 - The neuralcoref cache is stored in ~/.neuralcoref
 - NOTE: the nlkt_data and en_core_web_sm are not stored in ~/.cache directory and will vary based on your system. See the documentation for spacy and nltk for their location.
 ```
-cd muliwai
+cd rio
 python processor.py -src_lang zh -preload_cache
 
 ```
@@ -253,7 +253,7 @@ python processor.py -src_lang zh -preload_cache
 
 # Contributors
 
-We welcome all contributions. Please feel free to send a PR. Please follow the code of conduct: https://github.com/ontocord/muliwai/blob/main/CODE_OF_CONDUCT.md 
+We welcome all contributions. Please feel free to send a PR. Please follow the code of conduct: https://github.com/ontocord/rio/blob/main/CODE_OF_CONDUCT.md 
 Special thanks to these people not just for code contributions but for comments and reviews (in no particular order): 
 - @dadelani
 - @edugp 
