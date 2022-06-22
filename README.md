@@ -1,8 +1,8 @@
 # Intro
-Rio (spanish for river) is a library for text pre-processing, augmentation, anonymization, and synthesis. It is intended to be used to process text datasets for training NLP models. This was the original Muliwai repo but the PII code has been refactored to live in its own rep at https://www.github.com/muliwai. TODO: import the muliwai as a library.
+Rio (spanish for river) is a library for text pre-processing, augmentation, anonymization, and synthesis. It is intended to be used to process text datasets for training NLP models. This was the original Muliwai repo but the PII code has been refactored to live in its own rep at https://www.github.com/piisa/muliwai. TODO: REMOVE pii files and use as an import from the muliwai library instead.
 
 # Disclaimer
-While we have code to detect and anonymize PII in this library, the intention of the library is to create better text training datasets, and NOT to generally protect PII, and this library is NOT intended as a genearl PII protection engine. 
+While we have code to detect and anonymize PII in this library, the intention of the library is to create better text training datasets, and NOT to generally protect PII, and this library is NOT intended as a genearl PII protection engine. Rio is meant to create augmented data to improve NLP training.
 
 # How it works
 We use a transformer NER model that is good enough for the current language - in this case, a specific model for the language, or a model with some cross-lingual capabilities. Rio tags using the transformer, then translates the sentence to a target_lang (e.g., English), and tests to see if the translation preserves the NER tagging, and discoutns or increases the weight of an NER decision accordingly. It then performs NER in the target_lang, and back translates to the src_lang. It then matches the translate sentence to the original sentence, to determine which text spans in the *original* src_lang sentence should be NER tagged based on the target_lang NER.
