@@ -17,7 +17,8 @@ limitations under the License.
 
 from .stopwords import all_stopwords
 import fasttext, langid
-fasttext_model = "lid.176.ftz"
+import os
+fasttext_model = os.path.abspath(os.path.dirname(__file__)))  +"/bin/lid.176.ftz"
 lang_model = fasttext.load_model(fasttext_model)
 
 
