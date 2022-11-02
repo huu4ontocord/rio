@@ -1,5 +1,5 @@
 # Intro
-Rio (spanish for river) is a library for text pre-processing, filtering, and augmentation. It is intended to be used to process text datasets for training NLP models. This is based on the original Muliwai repo but the PII code has been refactored to live in its own rep at https://www.github.com/piisa/muliwai. Howeover, Rio no longer does PII processing. Please use https://www.github.com/piisa/muliwai instead.
+Rio (spanish for river) is a library for using backtranslation or round trip translation to do text pre-processing, filtering, and augmentation. It is intended to be used to process text datasets for training NLP models. This is based on the original Muliwai repo but the PII code has been refactored to live in its own rep at https://www.github.com/piisa/muliwai. Howeover, Rio no longer does PII processing. Please use https://www.github.com/piisa/muliwai instead.
 
 # Installing
 If you want to be able to do gender detection and coref detection, you will need to load neuralcoref below. However, you will only be able to use spacy english if you load neural coref. You can also load a larger spacy model for more accuracy but more memory.
@@ -16,7 +16,7 @@ python -m nltk.downloader punkt wordnet
 # Contributors
 
 We welcome all contributions. Please feel free to send a PR. Please follow the code of conduct: https://github.com/ontocord/rio/blob/main/CODE_OF_CONDUCT.md 
-Special thanks to these people not just for code contributions but for comments and reviews (in no particular order): 
+Special thanks to these people not just for code contributions but for comments and reviews (in no particular order) from the original Muliwai repo: 
 - @dadelani
 - @edugp 
 - @vumichien
