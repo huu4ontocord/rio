@@ -23,6 +23,7 @@ import warnings
 import kenlm
 import sentencepiece
 from huggingface_hub import cached_download, hf_hub_url
+from filelock import FileLock
 
 ## additional code to support kenlm entity querying
 kenlm_models = {
@@ -31,18 +32,23 @@ kenlm_models = {
     'mc4': {},
 }
 
-#NOTE: If you want to use the default cc_net kenlm wikipedia models, you will need to download them.
-#see https://github.com/facebookresearch/cc_net/blob/main/Makefile. These are default models if there aren't any from edugp
-ccnet_langs="af,ar,az,be,bg,bn,ca,cs,da,de,el,en,es,et,fa,fi,fr,gu,he,hi,hr,hu,hy,id,is,it,ja,ka,kk,km,kn,ko,lt,lv,mk,ml,mn,mr,my,ne,nl,no,pl,pt,ro,ru,uk,zh".split(",")
-def download_ccnet_sp_kenlm_models(lang):
-  if not os.path.exists(f"/kenlm_ccnet_wikipedia_models/{lang}.arpa.bin"):
-    os.system(f"wget -c  -P ./kenlm_ccnet_wikipedia_models http://dl.fbaipublicfiles.com/cc_net/lm/{lang}.arpa.bin")
-  if not os.path.exists(f"/kenlm_ccnet_wikipedia_models/{lang}.sp.model"):
-    print (f"wget -c  -P ./kenlm_ccnet_wikipedia_models http://dl.fbaipublicfiles.com/cc_net/lm/{lang}.sp.model")
-    os.system(f"wget -c  -P ./kenlm_ccnet_wikipedia_models http://dl.fbaipublicfiles.com/cc_net/lm/{lang}.sp.model")
+#NOTE: If you want to use the default cc_net kenlm wikipedia models, you will need to download them. You can manually download per the below or copy them from a saved dir.
+#Alternately, they will be downloaded automatically using the load_kenlm_model function.
 
-def get_kenlm_models_from_savedir(save_dir="/content/drive/Shareddrives/LAION/kenlm_ccnet_wikipedia_models"):
-  os.system(f"cp -rf {save_dir} ./kenlm_ccnet_wikipedia_models")
+#see https://github.com/facebookresearch/cc_net/blob/main/Makefile. These are default models if there aren't any from edugp
+ccnet_langs=set("af,ar,az,be,bg,bn,ca,cs,da,de,el,en,es,et,fa,fi,fr,gu,he,hi,hr,hu,hy,id,is,it,ja,ka,kk,km,kn,ko,lt,lv,mk,ml,mn,mr,my,ne,nl,no,pl,pt,ro,ru,uk,zh".split(","))
+def download_ccnet_sp_kenlm_models(lang, default_kenlm_wikipedia="./kenlm_ccnet_wikipedia_models"):
+  if not os.path.exists(f"{default_kenlm_wikipedia}/{lang}.arpa.bin"):
+    with FileLock(f"{default_kenlm_wikipedia}/{lang}.arpa.bin.lock"):
+        os.system(f"wget -c  -P {default_kenlm_wikipedia} http://dl.fbaipublicfiles.com/cc_net/lm/{lang}.arpa.bin")
+  if not os.path.exists(f"{default_kenlm_wikipedia}/{lang}.sp.model"):
+    with FileLock(f"{default_kenlm_wikipedia}/{lang}.sp.model.lock"):
+        os.system(f"wget -c  -P {default_kenlm_wikipedia} http://dl.fbaipublicfiles.com/cc_net/lm/{lang}.sp.model")
+
+def get_kenlm_models_from_savedir( default_kenlm_wikipedia="./kenlm_ccnet_wikipedia_models", save_dir="/content/drive/Shareddrives/LAION/kenlm_ccnet_wikipedia_models"):
+  if not os.path.exists(default_kenlm_wikipedia):
+    with FileLock(f"{default_kenlm_wikipedia}.lock"):
+        os.system(f"cp -rf {save_dir} {default_kenlm_wikipedia}")
 
 # WOULD be good if we can create models based on cc100.
 
@@ -129,6 +135,12 @@ def load_kenlm_model(
         if src_lang in kenlm_models[model_type]:
             all_models[model_type] = kenlm_models[model_type][src_lang]
         elif model_type == "wikipedia" and os.path.exists(f"{default_kenlm_wikipedia}/{src_lang}.arpa.bin"):
+            model = KenlmModel(default_kenlm_wikipedia, src_lang, do_normalize_spacing_for_tok=True)
+            all_models[model_type] = model
+            if store_model:
+              kenlm_models[model_type][src_lang] = model
+        elif model_type == "wikipedia" and src_lang in ccnet_langs:
+            download_ccnet_sp_kenlm_models(src_lang, default_kenlm_wikipedia)
             model = KenlmModel(default_kenlm_wikipedia, src_lang, do_normalize_spacing_for_tok=True)
             all_models[model_type] = model
             if store_model:
