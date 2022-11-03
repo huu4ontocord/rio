@@ -1,5 +1,5 @@
 # Intro
-Rio (spanish for river) is a library for using backtranslation or round trip translation to do text pre-processing, filtering, and augmentation. It is intended to be used to process text datasets for training NLP models. This is based on the original Muliwai repo but the PII code has been refactored to live in its own rep at https://www.github.com/piisa/muliwai. Howeover, Rio no longer does PII processing. Please use https://www.github.com/piisa/muliwai instead.
+Rio (spanish for river) is a library for using backtranslation or round trip translation to do text pre-processing, filtering, and augmentation. It is intended to be used to process text datasets for training NLP models. This is based on the original Muliwai repo but the PII code has been refactored to live in its own repo at https://www.github.com/piisa/muliwai. Rio no longer does PII processing. Please use https://www.github.com/piisa/muliwai instead.
 
 # Installing
 If you want to be able to do gender detection and coref detection, you will need to load neuralcoref below. However, you will only be able to use spacy english if you load neural coref. You can also load a larger spacy model for more accuracy but more memory.
