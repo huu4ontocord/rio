@@ -70,7 +70,7 @@ class QGPipeline:
           default_answers=[]
           if 'default_answers' in generate_kwargs:
             default_answers = generate_kwargs['default_answers']
-            if type(default_answers[0]) is str:
+            if default_answers and type(default_answers[0]) is str:
               default_answers = [default_answers] * len(inputs)
           if len(default_answers) < len(inputs):
             default_answers.extend([[]]*(len(inputs)-len(default_answers)))
@@ -386,7 +386,7 @@ def pipeline(
             # For tuple we have (tokenizer name, {kwargs})
             tokenizer = AutoTokenizer.from_pretrained(tokenizer[0], **tokenizer[1])
         else:
-            print(tokenizer)
+            #print(tokenizer)
             tokenizer = AutoTokenizer.from_pretrained(tokenizer)
 
                 
